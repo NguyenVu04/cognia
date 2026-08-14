@@ -1,0 +1,1296 @@
+<!doctype html>
+<!--
+  USE CASE SPECIFICATION TEMPLATE
+  ===============================
+  Copy this file into your project (for example docs/USECASE_SPECIFICATION.html),
+  open it in a browser to read it, and edit it in your editor to fill it in.
+  It is one self-contained file: no build step, no internet access, no scripts.
+
+  Two conventions govern this file.
+
+  1. PLACEHOLDERS are SCREAMING_SNAKE_CASE names in angle brackets, written
+     escaped so the browser shows them instead of treating them as HTML tags:
+
+         <span class="ph">&lt;PROJECT_NAME&gt;</span>
+
+     Replace every one. The completion check is a single command:
+
+         grep -n '&lt;[A-Z][A-Z0-9_]*&gt;' USECASE_SPECIFICATION.html   # must return nothing
+
+     Note the escaped form in the pattern. That differs from the Markdown
+     templates in this directory, and it is the reason: an unescaped placeholder
+     in an HTML file is parsed as an unknown tag and disappears from the rendered
+     page, so nobody ever sees the blank they were meant to fill in.
+
+  2. MARKERS say whether a section applies to you. In the Markdown templates they
+     are HTML comments; here they are visible boxes on the page, because a
+     comment is invisible to somebody reading this document in a browser:
+
+         GUIDANCE     what belongs in this section and what does not.
+                      Always delete before publishing.
+         OPTIONAL     judgement call; default to deleting.
+         REQUIRED-IF  keep when the condition holds, otherwise delete the whole
+                      section - heading, box and body.
+
+     No section is silently optional. A section with no marker is required, so a
+     reviewer can tell a deliberate omission from an oversight.
+
+  HOW TO WRITE THIS DOCUMENT
+  Its readers are not all engineers. Use short sentences and everyday business
+  words. Any term that needs explaining goes in the glossary rather than into the
+  body of a requirement. Precision comes from being specific and measurable, not
+  from vocabulary: "the page opens in under 2 seconds for 95 out of 100 requests"
+  is technical writing; "the page is highly performant" is not.
+
+  Delete this comment block once you are done.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use Case Specification</title>
+<style>
+  :root {
+    --bg:        #0d1117;
+    --panel:     #161b22;
+    --panel-2:   #1c2230;
+    --border:    #30363d;
+    --border-2:  #3d4653;
+    --text:      #e6edf3;
+    --heading:   #f0f6fc;
+    --muted:     #9aa7b4;
+    --accent:    #58a6ff;
+    --ph-fg:     #ffb454;
+    --ph-bg:     rgba(255, 180, 84, 0.12);
+    --guide-fg:  #a5d6ff;
+    --guide-bar: #388bfd;
+    --opt-fg:    #ffd591;
+    --opt-bar:   #d29922;
+    --req-fg:    #ffb4ab;
+    --req-bar:   #f85149;
+    --ok:        #7ee787;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 6rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main { max-width: 62rem; margin: 0 auto; }
+
+  h1, h2, h3, h4 { color: var(--heading); line-height: 1.25; font-weight: 600; }
+  h1 { font-size: 2rem; margin: 0 0 .35rem; letter-spacing: -0.01em; }
+  h2 {
+    font-size: 1.4rem;
+    margin: 3.25rem 0 1rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.1rem; margin: 2rem 0 .6rem; }
+  h4 { font-size: .95rem; margin: 1.5rem 0 .4rem; color: var(--muted);
+       text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+
+  p, ul, ol { margin: 0 0 1rem; }
+  ul, ol { padding-left: 1.4rem; }
+  li { margin: .3rem 0; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover, a:focus { text-decoration: underline; }
+
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .9em;
+  }
+
+  /* --- Document header ------------------------------------------------- */
+
+  header.doc {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 1.5rem 1.75rem;
+  }
+  header.doc .subtitle { color: var(--muted); margin: 0; font-size: 1rem; }
+
+  /* --- Tables ----------------------------------------------------------- */
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1rem; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .93rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: .65rem .85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--panel-2);
+    color: var(--heading);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) td { background: rgba(255, 255, 255, .022); }
+  tbody tr:last-child td { border-bottom: none; }
+  table.fields th { width: 14rem; }
+
+  /* --- Placeholders ----------------------------------------------------- */
+
+  .ph {
+    color: var(--ph-fg);
+    background: var(--ph-bg);
+    border-radius: 4px;
+    padding: 0 .3em;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .88em;
+    white-space: nowrap;
+  }
+
+  /* --- Marker callouts -------------------------------------------------- */
+
+  .note {
+    position: relative;
+    margin: 1rem 0 1.25rem;
+    padding: 1.5rem 1.1rem .9rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--guide-bar);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--guide-fg);
+    font-size: .9rem;
+  }
+  .note::before {
+    content: attr(data-marker);
+    position: absolute;
+    top: .5rem;
+    left: 1.1rem;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .85;
+  }
+  .note :last-child { margin-bottom: 0; }
+  .note.optional     { border-left-color: var(--opt-bar); color: var(--opt-fg); }
+  .note.required-if  { border-left-color: var(--req-bar); color: var(--req-fg); }
+
+  /* --- Positioning statement -------------------------------------------- */
+
+  blockquote.positioning {
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--ok);
+    border-radius: 6px;
+    background: var(--panel);
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+  blockquote.positioning .label {
+    display: block;
+    margin-bottom: .5rem;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  /* --- Use case blocks --------------------------------------------------- */
+
+  section.usecase {
+    margin: 2rem 0;
+    border: 1px solid var(--border-2);
+    border-radius: 8px;
+    background: var(--panel);
+    padding: 0 1.5rem 1.5rem;
+    break-inside: avoid;
+  }
+  section.usecase > h3 {
+    margin: 0 -1.5rem 0;
+    padding: 1rem 1.5rem;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    font-size: 1.15rem;
+  }
+  .uc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.5rem;
+    margin: 0 -1.5rem 1rem;
+    padding: .6rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, .02);
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .uc-meta b { color: var(--text); font-weight: 600; }
+
+  .flow { counter-reset: step; list-style: none; padding-left: 0; }
+  .flow > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.6rem;
+    margin: .5rem 0;
+  }
+  .flow > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: .15rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-2);
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .flow .who {
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: block;
+  }
+
+  .altflow {
+    margin: 1rem 0;
+    padding: .9rem 1.1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--opt-bar);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, .02);
+  }
+  .altflow > h5 {
+    margin: 0 0 .5rem;
+    font-size: .95rem;
+    color: var(--heading);
+  }
+  .altflow .cond { color: var(--muted); font-size: .88rem; margin-bottom: .5rem; }
+
+  /* --- Contents ---------------------------------------------------------- */
+
+  nav.toc ol { columns: 2; column-gap: 2.5rem; padding-left: 1.4rem; }
+  nav.toc li { break-inside: avoid; }
+
+  /* --- Checklist --------------------------------------------------------- */
+
+  .checklist {
+    margin-top: 3rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px dashed var(--req-bar);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+  .checklist h2 { border: none; margin-top: 0; color: var(--req-fg); }
+  .checklist ul { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 1.9rem; position: relative; }
+  .checklist li::before {
+    content: "\2610";
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+  /* --- Small screens ------------------------------------------------------ */
+
+  @media (max-width: 700px) {
+    body { padding: 1.5rem .85rem 4rem; font-size: 15px; }
+    nav.toc ol { columns: 1; }
+    section.usecase { padding: 0 1rem 1rem; }
+    section.usecase > h3, .uc-meta { margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem; }
+    table.fields th { width: auto; }
+  }
+
+  /* --- Print / PDF -------------------------------------------------------- */
+
+  @media print {
+    :root {
+      --bg: #ffffff; --panel: #ffffff; --panel-2: #f2f2f2;
+      --border: #b9b9b9; --border-2: #999999;
+      --text: #000000; --heading: #000000; --muted: #444444;
+      --accent: #0b4fa8; --ph-fg: #8a5300; --ph-bg: #fdf3e3;
+      --guide-fg: #333333; --opt-fg: #333333; --req-fg: #333333;
+    }
+    body { padding: 0; font-size: 10.5pt; }
+    a { color: #000; text-decoration: underline; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: #444; }
+    h2 { page-break-after: avoid; }
+    section.usecase, .altflow, table, .note { page-break-inside: avoid; }
+    tbody tr:nth-child(even) td { background: #f7f7f7; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="doc">
+  <h1>Use Case Specification &mdash; <span class="ph">&lt;SYSTEM_NAME&gt;</span></h1>
+  <p class="subtitle">
+    <span class="ph">&lt;DOCUMENT_ID&gt;</span> &middot;
+    version <span class="ph">&lt;DOCUMENT_VERSION&gt;</span> &middot;
+    <span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED / SUPERSEDED&gt;</span>
+  </p>
+</header>
+
+<div class="note" data-marker="GUIDANCE">
+  <p><b>How to write this document.</b> Its readers are not all engineers:
+  sponsors, subject-matter experts, testers and auditors read it too. Use short
+  sentences and everyday business words. Put any term that needs explaining in
+  the glossary rather than inside a requirement. Be specific and measurable
+  &mdash; that, not vocabulary, is what makes it technical.</p>
+  <p>Replace every <span class="ph">&lt;PLACEHOLDER&gt;</span>. Delete every one
+  of these boxes before the document is published. The check is one command:
+  <code>grep -n '&amp;lt;[A-Z][A-Z0-9_]*&amp;gt;' USECASE_SPECIFICATION.html</code>
+  &mdash; it must return nothing.</p>
+</div>
+
+<h2 id="document-control">1. Document control</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  Every field must resolve to a real person, team or date. &ldquo;TBD&rdquo; in
+  this table means nobody owns the document, and an unowned specification is out
+  of date within a month.
+</div>
+
+<div class="table-wrap">
+<table class="fields">
+  <tbody>
+    <tr><th>Document title</th><td>Use Case Specification &mdash; <span class="ph">&lt;SYSTEM_NAME&gt;</span></td></tr>
+    <tr><th>Document ID</th><td><span class="ph">&lt;DOCUMENT_ID&gt;</span></td></tr>
+    <tr><th>Project</th><td><span class="ph">&lt;PROJECT_NAME&gt;</span> (<span class="ph">&lt;PROJECT_CODE&gt;</span>)</td></tr>
+    <tr><th>Version</th><td><span class="ph">&lt;DOCUMENT_VERSION&gt;</span></td></tr>
+    <tr><th>Status</th><td><span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED / SUPERSEDED&gt;</span></td></tr>
+    <tr><th>Author</th><td><span class="ph">&lt;AUTHOR_NAME&gt;</span>, <span class="ph">&lt;AUTHOR_ROLE&gt;</span> &middot; <span class="ph">&lt;AUTHOR_CONTACT&gt;</span></td></tr>
+    <tr><th>Document owner</th><td><span class="ph">&lt;OWNER_NAME_OR_TEAM&gt;</span> &mdash; keeps this document current</td></tr>
+    <tr><th>Business sponsor</th><td><span class="ph">&lt;SPONSOR_NAME&gt;</span>, <span class="ph">&lt;SPONSOR_ROLE&gt;</span></td></tr>
+    <tr><th>Created</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
+    <tr><th>Last updated</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
+    <tr><th>Next review</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
+    <tr><th>Classification</th><td><span class="ph">&lt;PUBLIC / INTERNAL / CONFIDENTIAL / RESTRICTED&gt;</span></td></tr>
+    <tr><th>Distribution</th><td><span class="ph">&lt;WHO_MAY_RECEIVE_THIS_DOCUMENT&gt;</span></td></tr>
+    <tr><th>Source of record</th><td><span class="ph">&lt;REPOSITORY_OR_DOCUMENT_LIBRARY_URL&gt;</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="revision-history">1.1 Revision history</h3>
+
+<div class="note" data-marker="GUIDANCE">
+  One row per issued version. Say what changed and why, not just
+  &ldquo;updates&rdquo; &mdash; a reader six months from now is trying to find
+  out when a rule changed and who agreed to it.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Version</th><th>Date</th><th>Author</th><th>Summary of change</th><th>Approved by</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0.1</td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td><span class="ph">&lt;AUTHOR_NAME&gt;</span></td>
+      <td>First draft for review.</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;VERSION&gt;</span></td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td><span class="ph">&lt;AUTHOR_NAME&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_CHANGED_AND_WHY&gt;</span></td>
+      <td><span class="ph">&lt;APPROVER_NAME&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="approvals">1.2 Approvals</h3>
+
+<div class="note" data-marker="GUIDANCE">
+  The people whose agreement makes this document binding. Keep the list short:
+  everyone else is a reviewer, and reviewers belong in the stakeholder table.
+  This document is only <b>Approved</b> when every row here is signed.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Name</th><th>Role</th><th>Approving on behalf of</th><th>Decision</th><th>Date</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="ph">&lt;APPROVER_1_NAME&gt;</span></td>
+      <td><span class="ph">&lt;APPROVER_1_ROLE&gt;</span></td>
+      <td><span class="ph">&lt;BUSINESS_UNIT_OR_FUNCTION&gt;</span></td>
+      <td><span class="ph">&lt;APPROVED / APPROVED_WITH_COMMENTS / REJECTED&gt;</span></td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;APPROVER_2_NAME&gt;</span></td>
+      <td><span class="ph">&lt;APPROVER_2_ROLE&gt;</span></td>
+      <td><span class="ph">&lt;BUSINESS_UNIT_OR_FUNCTION&gt;</span></td>
+      <td><span class="ph">&lt;APPROVED / APPROVED_WITH_COMMENTS / REJECTED&gt;</span></td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="contents">2. Contents</h2>
+
+<nav class="toc">
+<ol>
+  <li><a href="#document-control">Document control</a></li>
+  <li><a href="#contents">Contents</a></li>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#goals">Goals</a></li>
+  <li><a href="#out-of-scope">Out of scope</a></li>
+  <li><a href="#stakeholders">Stakeholders</a></li>
+  <li><a href="#assumptions-constraints">Assumptions and constraints</a></li>
+  <li><a href="#functional-requirements">Functional requirements</a></li>
+  <li><a href="#nonfunctional-requirements">Non-functional requirements</a></li>
+  <li><a href="#use-cases">Use case specifications</a></li>
+  <li><a href="#traceability">Traceability matrix</a></li>
+  <li><a href="#glossary">Glossary</a></li>
+  <li><a href="#references">References</a></li>
+</ol>
+</nav>
+
+<h2 id="overview">3. Overview</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  Two or three short paragraphs. Lead with the problem, not the solution: a
+  reader who does not have this problem should be able to stop here. Say what
+  people do today and why it is not good enough. No technology names in this
+  section unless the technology is itself the subject.
+</div>
+
+<p><span class="ph">&lt;WHAT_PEOPLE_DO_TODAY_AND_WHY_IT_IS_A_PROBLEM&gt;</span></p>
+
+<p><span class="ph">&lt;WHAT_THIS_SYSTEM_DOES_ABOUT_IT_IN_PLAIN_LANGUAGE&gt;</span></p>
+
+<p><span class="ph">&lt;WHO_WILL_USE_IT_AND_IN_WHAT_SITUATION&gt;</span></p>
+
+<div class="note" data-marker="GUIDANCE">
+  Close the overview with the sentence below. It is the one line people repeat in
+  meetings when you are not in the room, so it has to survive being quoted on its
+  own. Keep the shape; fill in the blanks. If you cannot name a real alternative,
+  the system may not be needed &mdash; that is worth finding out now.
+</div>
+
+<blockquote class="positioning">
+  <span class="label">Positioning statement</span>
+  For <span class="ph">&lt;TARGET_USER&gt;</span> who
+  <span class="ph">&lt;NEED_OR_SITUATION&gt;</span>,
+  <span class="ph">&lt;SYSTEM_NAME&gt;</span> is a
+  <span class="ph">&lt;CATEGORY_OF_SYSTEM&gt;</span> that
+  <span class="ph">&lt;KEY_BENEFIT&gt;</span>. Unlike
+  <span class="ph">&lt;CURRENT_ALTERNATIVE&gt;</span>, it
+  <span class="ph">&lt;WHAT_MAKES_IT_DIFFERENT&gt;</span>.
+</blockquote>
+
+<h2 id="goals">4. Goals</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  A goal is a business outcome, not a feature. &ldquo;Cut the time to approve an
+  order from two days to four hours&rdquo; is a goal; &ldquo;build an approval
+  screen&rdquo; is not. Every goal needs a number and a date, otherwise nobody
+  can ever say whether the project succeeded.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Goal</th><th>Why it matters</th><th>How success is measured</th><th>Target</th><th>By when</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>G-01</td>
+      <td><span class="ph">&lt;BUSINESS_OUTCOME_1&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_IT_COSTS_US_TODAY&gt;</span></td>
+      <td><span class="ph">&lt;MEASURE_AND_WHERE_IT_COMES_FROM&gt;</span></td>
+      <td><span class="ph">&lt;FROM_X_TO_Y&gt;</span></td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+    </tr>
+    <tr>
+      <td>G-02</td>
+      <td><span class="ph">&lt;BUSINESS_OUTCOME_2&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_IT_COSTS_US_TODAY&gt;</span></td>
+      <td><span class="ph">&lt;MEASURE_AND_WHERE_IT_COMES_FROM&gt;</span></td>
+      <td><span class="ph">&lt;FROM_X_TO_Y&gt;</span></td>
+      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="out-of-scope">5. Out of scope</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  The section most often missing and most often needed. State plainly what this
+  system will <b>not</b> do, so nobody proposes it, plans around it, or reports it
+  as a defect. Give the reason: &ldquo;later phase&rdquo;, &ldquo;another team
+  owns it&rdquo; and &ldquo;deliberately never&rdquo; lead to very different
+  conversations.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Not included</th><th>Why</th><th>Who owns it instead, if anyone</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="ph">&lt;EXCLUDED_ITEM_1&gt;</span></td>
+      <td><span class="ph">&lt;REASON, e.g. planned for phase 2&gt;</span></td>
+      <td><span class="ph">&lt;TEAM_OR_NOBODY&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;EXCLUDED_ITEM_2&gt;</span></td>
+      <td><span class="ph">&lt;REASON&gt;</span></td>
+      <td><span class="ph">&lt;TEAM_OR_NOBODY&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="stakeholders">6. Stakeholders</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  Everyone whose agreement, information or daily work is affected. Include the
+  people who will operate and support the system after launch, and anybody who
+  can block it &mdash; legal, security, finance, an external partner. The
+  responsibility column has three settings: <b>decides</b> (their agreement is
+  required), <b>is consulted</b> (their opinion is sought before a decision) and
+  <b>is informed</b> (they are told afterwards).
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Stakeholder or group</th><th>Role</th><th>What they need from the system</th><th>Responsibility</th><th>Contact</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="ph">&lt;STAKEHOLDER_1&gt;</span></td>
+      <td><span class="ph">&lt;ROLE&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
+      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
+      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;STAKEHOLDER_2&gt;</span></td>
+      <td><span class="ph">&lt;ROLE&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
+      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
+      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;STAKEHOLDER_3&gt;</span></td>
+      <td><span class="ph">&lt;ROLE&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
+      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
+      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="actors">6.1 Actors</h3>
+
+<div class="note" data-marker="GUIDANCE">
+  An actor is anyone or anything that interacts with the system: a person in a
+  particular role, another system, or a scheduled job. Name actors by role, never
+  by person &mdash; &ldquo;Approving manager&rdquo;, not &ldquo;Maria&rdquo;. The
+  use cases below refer back to these names, so define each one once here.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Actor</th><th>Type</th><th>Description</th><th>Roughly how many</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="ph">&lt;ACTOR_1&gt;</span></td>
+      <td><span class="ph">&lt;PERSON / SYSTEM / SCHEDULED_JOB&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_THIS_ACTOR_DOES&gt;</span></td>
+      <td><span class="ph">&lt;COUNT_OR_NA&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;ACTOR_2&gt;</span></td>
+      <td><span class="ph">&lt;PERSON / SYSTEM / SCHEDULED_JOB&gt;</span></td>
+      <td><span class="ph">&lt;WHAT_THIS_ACTOR_DOES&gt;</span></td>
+      <td><span class="ph">&lt;COUNT_OR_NA&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="assumptions-constraints">7. Assumptions and constraints</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  An <b>assumption</b> is something you are treating as true without having
+  confirmed it. A <b>constraint</b> is a limit you must work within, whether you
+  agree with it or not. Writing them down is what lets you re-open a decision
+  later without re-arguing it from the start.
+</div>
+
+<h3>7.1 Assumptions</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Assumption</th><th>What happens if it turns out to be false</th><th>Who can confirm it</th><th>Confirmed?</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>A-01</td>
+      <td><span class="ph">&lt;ASSUMPTION_1&gt;</span></td>
+      <td><span class="ph">&lt;IMPACT_IF_FALSE&gt;</span></td>
+      <td><span class="ph">&lt;NAME_OR_TEAM&gt;</span></td>
+      <td><span class="ph">&lt;YES / NO / PENDING&gt;</span></td>
+    </tr>
+    <tr>
+      <td>A-02</td>
+      <td><span class="ph">&lt;ASSUMPTION_2&gt;</span></td>
+      <td><span class="ph">&lt;IMPACT_IF_FALSE&gt;</span></td>
+      <td><span class="ph">&lt;NAME_OR_TEAM&gt;</span></td>
+      <td><span class="ph">&lt;YES / NO / PENDING&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>7.2 Constraints</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Constraint</th><th>Type</th><th>Where it comes from</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>C-01</td>
+      <td><span class="ph">&lt;CONSTRAINT_1&gt;</span></td>
+      <td><span class="ph">&lt;TIME / BUDGET / TECHNICAL / LEGAL / ORGANISATIONAL&gt;</span></td>
+      <td><span class="ph">&lt;POLICY_CONTRACT_OR_DECISION&gt;</span></td>
+    </tr>
+    <tr>
+      <td>C-02</td>
+      <td><span class="ph">&lt;CONSTRAINT_2&gt;</span></td>
+      <td><span class="ph">&lt;TIME / BUDGET / TECHNICAL / LEGAL / ORGANISATIONAL&gt;</span></td>
+      <td><span class="ph">&lt;POLICY_CONTRACT_OR_DECISION&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="functional-requirements">8. Functional requirements</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  What the system must <b>do</b>. One requirement per row, one sentence each, in
+  the form <em>&ldquo;The system must let <span class="ph">&lt;ACTOR&gt;</span>
+  <span class="ph">&lt;DO_SOMETHING&gt;</span>&rdquo;</em>. If a row contains the
+  word &ldquo;and&rdquo;, it is probably two requirements. Do not describe screens
+  or database tables here &mdash; those are design decisions, and pinning them
+  down this early removes choices the delivery team needs.
+  <br><br>
+  Priority uses MoSCoW: <b>Must</b> (the release fails without it),
+  <b>Should</b> (important, but there is a workaround), <b>Could</b> (do it if
+  time allows), <b>Won't</b> (agreed as out of scope for this release &mdash;
+  keep the row, it prevents the question being re-asked).
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Requirement</th><th>Priority</th><th>Raised by</th><th>Use case</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FR-01</td>
+      <td>The system must let <span class="ph">&lt;ACTOR&gt;</span> <span class="ph">&lt;DO_SOMETHING&gt;</span>.</td>
+      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
+      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
+      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+    </tr>
+    <tr>
+      <td>FR-02</td>
+      <td>The system must <span class="ph">&lt;REQUIREMENT_2&gt;</span>.</td>
+      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
+      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
+      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+    </tr>
+    <tr>
+      <td>FR-03</td>
+      <td>The system must <span class="ph">&lt;REQUIREMENT_3&gt;</span>.</td>
+      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
+      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
+      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="business-rules">8.1 Business rules</h3>
+
+<div class="note" data-marker="OPTIONAL">
+  Keep this if the same rule governs several use cases &mdash; a credit limit, an
+  approval threshold, a retention period. Writing it once here and referring to
+  it by ID stops the rule drifting apart in three places. Delete the section if
+  every rule belongs to exactly one use case; state it in that use case instead.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Rule</th><th>Applies to</th><th>Source</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>BR-01</td>
+      <td><span class="ph">&lt;RULE_STATED_AS_A_CONDITION_AND_AN_OUTCOME&gt;</span></td>
+      <td><span class="ph">&lt;UC-NN, UC-NN&gt;</span></td>
+      <td><span class="ph">&lt;POLICY_OR_OWNER&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="nonfunctional-requirements">9. Non-functional requirements</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  How well the system must do it. A target with no number in it is not a
+  requirement &mdash; it is a hope. &ldquo;Fast&rdquo;, &ldquo;secure&rdquo; and
+  &ldquo;user-friendly&rdquo; cannot be tested, disagreed with, or signed off.
+  Every row needs a measurable target and a stated way of checking it, or it
+  should be deleted.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Category</th><th>Requirement</th><th>Measurable target</th><th>How it is verified</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>NFR-01</td>
+      <td>Performance</td>
+      <td><span class="ph">&lt;WHICH_OPERATION_MUST_BE_FAST&gt;</span></td>
+      <td><span class="ph">&lt;e.g. completes in under 2 seconds for 95 of 100 requests&gt;</span></td>
+      <td><span class="ph">&lt;LOAD_TEST_OR_MONITORING&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-02</td>
+      <td>Availability</td>
+      <td><span class="ph">&lt;WHEN_THE_SYSTEM_MUST_BE_USABLE&gt;</span></td>
+      <td><span class="ph">&lt;e.g. 99.5% during business hours, measured monthly&gt;</span></td>
+      <td><span class="ph">&lt;HOW_MEASURED&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-03</td>
+      <td>Security</td>
+      <td><span class="ph">&lt;WHO_MAY_SEE_OR_CHANGE_WHAT&gt;</span></td>
+      <td><span class="ph">&lt;e.g. no access without an authenticated session; all admin actions logged&gt;</span></td>
+      <td><span class="ph">&lt;REVIEW_OR_PENETRATION_TEST&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-04</td>
+      <td>Capacity</td>
+      <td><span class="ph">&lt;HOW_MUCH_IT_MUST_HANDLE&gt;</span></td>
+      <td><span class="ph">&lt;e.g. 500 users at once, 50,000 records per day&gt;</span></td>
+      <td><span class="ph">&lt;HOW_MEASURED&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-05</td>
+      <td>Usability</td>
+      <td><span class="ph">&lt;WHAT_A_NEW_USER_MUST_MANAGE_UNAIDED&gt;</span></td>
+      <td><span class="ph">&lt;e.g. a new user completes UC-01 without training in under 3 minutes&gt;</span></td>
+      <td><span class="ph">&lt;USER_TESTING&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-06</td>
+      <td>Accessibility</td>
+      <td><span class="ph">&lt;ACCESSIBILITY_OBLIGATION&gt;</span></td>
+      <td><span class="ph">&lt;e.g. WCAG 2.2 level AA on all user-facing screens&gt;</span></td>
+      <td><span class="ph">&lt;AUDIT_TOOL_AND_MANUAL_CHECK&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-07</td>
+      <td>Compliance</td>
+      <td><span class="ph">&lt;RULE_OR_REGIME_THAT_APPLIES&gt;</span></td>
+      <td><span class="ph">&lt;OBLIGATION_STATED_CONCRETELY&gt;</span></td>
+      <td><span class="ph">&lt;EVIDENCE_PRODUCED_FOR_AUDIT&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-08</td>
+      <td>Supportability</td>
+      <td><span class="ph">&lt;WHAT_SUPPORT_STAFF_MUST_BE_ABLE_TO_DO&gt;</span></td>
+      <td><span class="ph">&lt;e.g. every failed transaction traceable to a user and a timestamp within 5 minutes&gt;</span></td>
+      <td><span class="ph">&lt;HOW_VERIFIED&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note required-if" data-marker="REQUIRED-IF">
+  Add a <b>Data handling</b> row for every category of personal, payment or
+  health data the system touches: what is stored, how long it is kept, and who
+  may see it. Delete this box if the system holds none &mdash; but read the
+  condition twice before deciding it does not apply, since names, email addresses
+  and IP addresses all count.
+</div>
+
+<h2 id="use-cases">10. Use case specifications</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  One use case per goal an actor can achieve in a single sitting. If a flow runs
+  past about a dozen steps, it is probably two use cases. Write every step as
+  something an actor does or the system does in response &mdash; never as an
+  internal detail like &ldquo;the service queries the database&rdquo;, which
+  belongs in the design, not here.
+</div>
+
+<h3 id="uc-index">10.1 Use case index</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Primary actor</th><th>Priority</th><th>Requirements covered</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="#uc-01">UC-01</a></td>
+      <td>Sign in to the system</td>
+      <td>Registered user</td>
+      <td>Must</td>
+      <td>FR-01, FR-02, NFR-03</td>
+    </tr>
+    <tr>
+      <td><a href="#uc-02">UC-02</a></td>
+      <td><span class="ph">&lt;USE_CASE_NAME&gt;</span></td>
+      <td><span class="ph">&lt;PRIMARY_ACTOR&gt;</span></td>
+      <td><span class="ph">&lt;MUST / SHOULD / COULD&gt;</span></td>
+      <td><span class="ph">&lt;FR-NN, NFR-NN&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note" data-marker="GUIDANCE">
+  <b>UC-01 below is a worked example</b>, filled in to show the level of detail
+  expected. It is not part of your system unless it happens to fit. Read it,
+  then delete it and use the empty <b>UC-02</b> block as your pattern &mdash; copy
+  that block once per use case.
+</div>
+
+<section class="usecase" id="uc-01">
+  <h3>UC-01 &mdash; Sign in to the system <span style="font-weight:400;color:var(--muted);font-size:.8em">(worked example &mdash; delete)</span></h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Several times a day, per user</span>
+    <span><b>Requirements:</b> FR-01, FR-02, NFR-03</span>
+    <span><b>Status:</b> Approved</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>A registered user proves who they are so the system can show them their own
+  work and apply the permissions of their role. This is the entry point to almost
+  every other use case, so it has to be quick for the person who remembers their
+  password and forgiving for the person who does not.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Registered user &mdash; anyone with an active account.</li>
+    <li><b>Secondary actors:</b> Email service, which delivers the reset link.</li>
+    <li><b>Systems involved:</b> The company directory, which holds the account and its role.</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>The user has an account, and it is active rather than suspended or expired.</li>
+    <li>The user is not already signed in on this device.</li>
+    <li>The system can reach the company directory.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has a session, sees the home page for their
+    role, and the sign-in is recorded in the audit log with the time and the
+    device.</li>
+    <li><b>On failure:</b> no session is created, and the failed attempt is
+    recorded against the account.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens the sign-in page.</li>
+    <li><span class="who">System</span>Shows fields for the email address and the password.</li>
+    <li><span class="who">User</span>Enters their email address and password, and confirms.</li>
+    <li><span class="who">System</span>Checks the details against the company directory.</li>
+    <li><span class="who">System</span>Creates a session and records the sign-in in the audit log.</li>
+    <li><span class="who">System</span>Opens the home page for the user's role.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-01-A1 &mdash; The user has forgotten their password</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user cannot remember their password.</p>
+    <ol>
+      <li>The user chooses &ldquo;Forgotten your password?&rdquo; and enters their email address.</li>
+      <li>The system sends a reset link that expires after 30 minutes. It shows the
+      same confirmation message whether or not the address belongs to an account,
+      so the page cannot be used to discover who has one.</li>
+      <li>The user opens the link and sets a new password.</li>
+      <li>The system confirms the change, ends every other session for that account,
+      and returns the user to step 2 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-01-A2 &mdash; The user's role requires a second factor</h5>
+    <p class="cond"><b>Branches from step 4</b>, after the details are accepted. The
+    account holds an administrative role.</p>
+    <ol>
+      <li>The system asks for the six-digit code from the user's authenticator app.</li>
+      <li>The user enters the code.</li>
+      <li>The system accepts it and continues from step 5 of the main flow.</li>
+      <li>If the code is wrong three times in a row, the flow continues as UC-01-E2.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-01-E1 &mdash; The details are not correct</h5>
+    <p class="cond"><b>Branches from step 4.</b> The email address or the password
+    does not match.</p>
+    <ol>
+      <li>The system shows one message &mdash; &ldquo;those details do not
+      match&rdquo; &mdash; without saying which of the two was wrong.</li>
+      <li>The system records the failed attempt and returns the user to step 2.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-01-E2 &mdash; Too many failed attempts</h5>
+    <p class="cond"><b>Branches from UC-01-E1.</b> Five failed attempts on the same
+    account within 15 minutes.</p>
+    <ol>
+      <li>The system locks the account for 15 minutes and tells the user when they
+      can try again.</li>
+      <li>The system emails the account holder that this happened.</li>
+      <li>The use case ends without a session.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-01-E3 &mdash; The company directory cannot be reached</h5>
+    <p class="cond"><b>Branches from step 4.</b> The directory does not answer within
+    five seconds.</p>
+    <ol>
+      <li>The system tells the user that sign-in is temporarily unavailable and asks
+      them to try again shortly. It does not show the technical error.</li>
+      <li>The system raises an alert to the support team.</li>
+      <li>The use case ends without a session.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Business rule.</b> A session ends after 12 hours, or after 30 minutes with
+    no activity &mdash; whichever comes first (BR-01).</li>
+    <li><b>Deliberately excluded.</b> Signing in with a Google or Microsoft account is
+    out of scope for this release; see the out of scope table.</li>
+    <li><b>Open question.</b> Should the lock in UC-01-E2 clear itself after 15
+    minutes, or wait for the support team to release it? Owner: the security team.
+    Needed by <span class="ph">&lt;YYYY-MM-DD&gt;</span>.</li>
+    <li><b>Assumption.</b> Every user has an email address the system can reach
+    (A-01).</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-02">
+  <h3>UC-02 &mdash; <span class="ph">&lt;USE_CASE_NAME&gt;</span></h3>
+
+  <div class="note" data-marker="GUIDANCE">
+    Copy this whole block once for each use case, and number them in the order a
+    user meets them rather than in the order you thought of them. Name each one
+    in the heading above, as an ID and a short verb phrase describing the actor's
+    goal: &ldquo;Submit an expense claim&rdquo;, not &ldquo;Expenses screen&rdquo;.
+  </div>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> <span class="ph">&lt;MUST / SHOULD / COULD&gt;</span></span>
+    <span><b>Frequency:</b> <span class="ph">&lt;HOW_OFTEN_IT_HAPPENS&gt;</span></span>
+    <span><b>Requirements:</b> <span class="ph">&lt;FR-NN, NFR-NN&gt;</span></span>
+    <span><b>Status:</b> <span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED&gt;</span></span>
+  </div>
+
+  <h4>Description</h4>
+  <div class="note" data-marker="GUIDANCE">
+    Two or three sentences: what the actor is trying to achieve and why it
+    matters to the business. Somebody who reads only this paragraph should
+    understand the point of the use case.
+  </div>
+  <p><span class="ph">&lt;WHAT_THE_ACTOR_IS_TRYING_TO_ACHIEVE&gt;</span>
+  <span class="ph">&lt;WHY_IT_MATTERS&gt;</span></p>
+
+  <h4>Actors</h4>
+  <div class="note" data-marker="GUIDANCE">
+    Use the role names defined in section 6.1. The primary actor is the one whose
+    goal this is.
+  </div>
+  <ul>
+    <li><b>Primary actor:</b> <span class="ph">&lt;PRIMARY_ACTOR&gt;</span></li>
+    <li><b>Secondary actors:</b> <span class="ph">&lt;SECONDARY_ACTORS_OR_NONE&gt;</span></li>
+    <li><b>Systems involved:</b> <span class="ph">&lt;OTHER_SYSTEMS_OR_NONE&gt;</span></li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <div class="note" data-marker="GUIDANCE">
+    What must already be true before the first step can happen. Facts about the
+    state of the world, not actions: &ldquo;the order exists and is
+    unapproved&rdquo;, not &ldquo;the user opens the order&rdquo;.
+  </div>
+  <ul>
+    <li><span class="ph">&lt;PRECONDITION_1&gt;</span></li>
+    <li><span class="ph">&lt;PRECONDITION_2&gt;</span></li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <div class="note" data-marker="GUIDANCE">
+    What is true once the use case ends. Testers work from this, so state the
+    failure case as well as the success case.
+  </div>
+  <ul>
+    <li><b>On success:</b> <span class="ph">&lt;WHAT_IS_TRUE_AFTERWARDS&gt;</span></li>
+    <li><b>On failure:</b> <span class="ph">&lt;WHAT_IS_TRUE_AFTERWARDS&gt;</span></li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <div class="note" data-marker="GUIDANCE">
+    The path where everything goes right, alternating what the actor does and how
+    the system responds. Numbered steps, because the alternative flows refer to
+    them by number. Keep the steps free of screen and technology detail.
+  </div>
+  <ol class="flow">
+    <li><span class="who">Actor</span><span class="ph">&lt;WHAT_THE_ACTOR_DOES&gt;</span></li>
+    <li><span class="who">System</span><span class="ph">&lt;HOW_THE_SYSTEM_RESPONDS&gt;</span></li>
+    <li><span class="who">Actor</span><span class="ph">&lt;WHAT_THE_ACTOR_DOES&gt;</span></li>
+    <li><span class="who">System</span><span class="ph">&lt;HOW_THE_SYSTEM_RESPONDS&gt;</span></li>
+    <li><span class="who">System</span><span class="ph">&lt;FINAL_RESPONSE_THAT_MEETS_THE_GOAL&gt;</span></li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+  <div class="note" data-marker="GUIDANCE">
+    Every way the main flow can bend or break. Number them <b>A</b> for a valid
+    alternative route and <b>E</b> for an error or exception. Each one names the
+    step it branches from, the condition that triggers it, and where it rejoins
+    the main flow &mdash; or that it ends the use case. Cover at least: the actor
+    cancels, the input is invalid, permission is refused, and another system is
+    unavailable.
+  </div>
+
+  <div class="altflow">
+    <h5>UC-02-A1 &mdash; <span class="ph">&lt;ALTERNATIVE_NAME&gt;</span></h5>
+    <p class="cond"><b>Branches from step <span class="ph">&lt;N&gt;</span>.</b>
+    <span class="ph">&lt;CONDITION_THAT_TRIGGERS_IT&gt;</span></p>
+    <ol>
+      <li><span class="ph">&lt;STEP_1&gt;</span></li>
+      <li><span class="ph">&lt;STEP_2&gt;</span></li>
+      <li>The flow returns to step <span class="ph">&lt;N&gt;</span> of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-02-E1 &mdash; <span class="ph">&lt;ERROR_NAME&gt;</span></h5>
+    <p class="cond"><b>Branches from step <span class="ph">&lt;N&gt;</span>.</b>
+    <span class="ph">&lt;CONDITION_THAT_TRIGGERS_IT&gt;</span></p>
+    <ol>
+      <li><span class="ph">&lt;WHAT_THE_SYSTEM_TELLS_THE_ACTOR&gt;</span></li>
+      <li><span class="ph">&lt;WHAT_THE_SYSTEM_RECORDS_OR_WHO_IT_NOTIFIES&gt;</span></li>
+      <li>The use case ends without <span class="ph">&lt;THE_GOAL&gt;</span>.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <div class="note" data-marker="GUIDANCE">
+    Anything a reader needs that does not fit above: business rules that apply
+    here, open questions with an owner and a date, and anything deliberately
+    deferred. An open question with no owner will still be open at the end of the
+    project.
+  </div>
+  <ul>
+    <li><b>Business rule.</b> <span class="ph">&lt;RULE_OR_REFERENCE_TO_BR-NN&gt;</span></li>
+    <li><b>Open question.</b> <span class="ph">&lt;QUESTION&gt;</span> Owner:
+    <span class="ph">&lt;NAME&gt;</span>. Needed by <span class="ph">&lt;YYYY-MM-DD&gt;</span>.</li>
+    <li><b>Deliberately excluded.</b> <span class="ph">&lt;WHAT_AND_WHY&gt;</span></li>
+  </ul>
+</section>
+
+<h2 id="traceability">11. Traceability matrix</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  This table answers two questions an auditor or a test lead will ask: is every
+  requirement delivered by some use case, and is every use case there for a
+  reason? A requirement with no use case is unbuilt. A use case covering no
+  requirement is unasked for. Keep the table in step by hand whenever a
+  requirement or use case is added.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Requirement</th><th>Use case</th><th>Test or acceptance reference</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FR-01</td>
+      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
+      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
+    </tr>
+    <tr>
+      <td>FR-02</td>
+      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
+      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
+    </tr>
+    <tr>
+      <td>NFR-01</td>
+      <td><span class="ph">&lt;UC-NN_OR_ALL&gt;</span></td>
+      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
+      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="glossary">12. Glossary</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  Every business term, abbreviation and status name used in this document,
+  defined once in plain language. If two departments use the same word
+  differently, this is where that gets settled &mdash; say which meaning applies
+  here.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Term</th><th>Definition</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Actor</td>
+      <td>A person in a particular role, another system, or a scheduled job that interacts with this system.</td>
+      <td>Named by role, never by person.</td>
+    </tr>
+    <tr>
+      <td>Main flow</td>
+      <td>The sequence of steps taken when everything goes as intended.</td>
+      <td>Also called the &ldquo;happy path&rdquo;.</td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;TERM_1&gt;</span></td>
+      <td><span class="ph">&lt;PLAIN_LANGUAGE_DEFINITION&gt;</span></td>
+      <td><span class="ph">&lt;NOTE_OR_DASH&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;TERM_2&gt;</span></td>
+      <td><span class="ph">&lt;PLAIN_LANGUAGE_DEFINITION&gt;</span></td>
+      <td><span class="ph">&lt;NOTE_OR_DASH&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="references">13. References</h2>
+
+<div class="note" data-marker="GUIDANCE">
+  Documents this one depends on or points to. Give the version, so a reader can
+  tell whether what they are holding is the one this document was written
+  against.
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Document</th><th>ID and version</th><th>Owner</th><th>Where to find it</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="ph">&lt;RELATED_DOCUMENT_1&gt;</span></td>
+      <td><span class="ph">&lt;DOC_ID_AND_VERSION&gt;</span></td>
+      <td><span class="ph">&lt;OWNER&gt;</span></td>
+      <td><span class="ph">&lt;URL_OR_LOCATION&gt;</span></td>
+    </tr>
+    <tr>
+      <td><span class="ph">&lt;RELATED_DOCUMENT_2&gt;</span></td>
+      <td><span class="ph">&lt;DOC_ID_AND_VERSION&gt;</span></td>
+      <td><span class="ph">&lt;OWNER&gt;</span></td>
+      <td><span class="ph">&lt;URL_OR_LOCATION&gt;</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<hr>
+
+<section class="checklist">
+  <h2>Before you publish</h2>
+  <ul>
+    <li><code>grep -n '&amp;lt;[A-Z][A-Z0-9_]*&amp;gt;' USECASE_SPECIFICATION.html</code> returns nothing.</li>
+    <li>The comment block at the top of the file is deleted.</li>
+    <li>Every GUIDANCE, OPTIONAL and REQUIRED-IF box is deleted, along with any section it told you to remove &mdash; heading, box and body.</li>
+    <li>The worked example UC-01 is deleted, or replaced by a real use case of your own.</li>
+    <li>The overview ends with the positioning statement, and it reads well when quoted on its own.</li>
+    <li>Every goal has a number and a date.</li>
+    <li>Every stakeholder resolves to a real person or team with a working contact.</li>
+    <li>Every non-functional requirement has a measurable target and a stated way of checking it.</li>
+    <li>Every functional requirement appears in the traceability matrix, and every use case covers at least one requirement.</li>
+    <li>Every use case has at least one error flow, and states what happens when the actor cancels.</li>
+    <li>Every open question in a Notes section has an owner and a date.</li>
+    <li>Every term that a reader outside the team would not know is in the glossary.</li>
+    <li>Document control lists the author, the version, the status and the approvers, and the revision history has a row for this version.</li>
+    <li>No password, token, internal hostname or customer name appears anywhere in the document.</li>
+    <li>The document has been read once in a browser and once as a printed PDF.</li>
+    <li>Delete this checklist.</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>
