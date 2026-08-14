@@ -1,54 +1,9 @@
 <!doctype html>
-<!--
-  USE CASE SPECIFICATION TEMPLATE
-  ===============================
-  Copy this file into your project (for example docs/USECASE_SPECIFICATION.html),
-  open it in a browser to read it, and edit it in your editor to fill it in.
-  It is one self-contained file: no build step, no internet access, no scripts.
-
-  Two conventions govern this file.
-
-  1. PLACEHOLDERS are SCREAMING_SNAKE_CASE names in angle brackets, written
-     escaped so the browser shows them instead of treating them as HTML tags:
-
-         <span class="ph">&lt;PROJECT_NAME&gt;</span>
-
-     Replace every one. The completion check is a single command:
-
-         grep -n '&lt;[A-Z][A-Z0-9_]*&gt;' USECASE_SPECIFICATION.html   # must return nothing
-
-     Note the escaped form in the pattern. That differs from the Markdown
-     templates in this directory, and it is the reason: an unescaped placeholder
-     in an HTML file is parsed as an unknown tag and disappears from the rendered
-     page, so nobody ever sees the blank they were meant to fill in.
-
-  2. MARKERS say whether a section applies to you. In the Markdown templates they
-     are HTML comments; here they are visible boxes on the page, because a
-     comment is invisible to somebody reading this document in a browser:
-
-         GUIDANCE     what belongs in this section and what does not.
-                      Always delete before publishing.
-         OPTIONAL     judgement call; default to deleting.
-         REQUIRED-IF  keep when the condition holds, otherwise delete the whole
-                      section - heading, box and body.
-
-     No section is silently optional. A section with no marker is required, so a
-     reviewer can tell a deliberate omission from an oversight.
-
-  HOW TO WRITE THIS DOCUMENT
-  Its readers are not all engineers. Use short sentences and everyday business
-  words. Any term that needs explaining goes in the glossary rather than into the
-  body of a requirement. Precision comes from being specific and measurable, not
-  from vocabulary: "the page opens in under 2 seconds for 95 out of 100 requests"
-  is technical writing; "the page is highly performant" is not.
-
-  Delete this comment block once you are done.
--->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Use Case Specification</title>
+<title>Use Case Specification &mdash; Cognia</title>
 <style>
   :root {
     --bg:        #0d1117;
@@ -152,24 +107,11 @@
   tbody tr:last-child td { border-bottom: none; }
   table.fields th { width: 14rem; }
 
-  /* --- Placeholders ----------------------------------------------------- */
+  /* --- Callout ---------------------------------------------------------- */
 
-  .ph {
-    color: var(--ph-fg);
-    background: var(--ph-bg);
-    border-radius: 4px;
-    padding: 0 .3em;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    font-size: .88em;
-    white-space: nowrap;
-  }
-
-  /* --- Marker callouts -------------------------------------------------- */
-
-  .note {
-    position: relative;
+  .callout {
     margin: 1rem 0 1.25rem;
-    padding: 1.5rem 1.1rem .9rem;
+    padding: .9rem 1.1rem;
     border: 1px solid var(--border);
     border-left: 4px solid var(--guide-bar);
     border-radius: 6px;
@@ -177,20 +119,8 @@
     color: var(--guide-fg);
     font-size: .9rem;
   }
-  .note::before {
-    content: attr(data-marker);
-    position: absolute;
-    top: .5rem;
-    left: 1.1rem;
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    opacity: .85;
-  }
-  .note :last-child { margin-bottom: 0; }
-  .note.optional     { border-left-color: var(--opt-bar); color: var(--opt-fg); }
-  .note.required-if  { border-left-color: var(--req-bar); color: var(--req-fg); }
+  .callout :last-child { margin-bottom: 0; }
+  .callout.caution { border-left-color: var(--opt-bar); color: var(--opt-fg); }
 
   /* --- Positioning statement -------------------------------------------- */
 
@@ -298,26 +228,6 @@
   nav.toc ol { columns: 2; column-gap: 2.5rem; padding-left: 1.4rem; }
   nav.toc li { break-inside: avoid; }
 
-  /* --- Checklist --------------------------------------------------------- */
-
-  .checklist {
-    margin-top: 3rem;
-    padding: 1.5rem 1.75rem;
-    border: 1px dashed var(--req-bar);
-    border-radius: 8px;
-    background: var(--panel);
-  }
-  .checklist h2 { border: none; margin-top: 0; color: var(--req-fg); }
-  .checklist ul { list-style: none; padding-left: 0; }
-  .checklist li { padding-left: 1.9rem; position: relative; }
-  .checklist li::before {
-    content: "\2610";
-    position: absolute;
-    left: 0;
-    color: var(--muted);
-    font-size: 1.1rem;
-  }
-
   hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
 
   /* --- Small screens ------------------------------------------------------ */
@@ -344,7 +254,7 @@
     a { color: #000; text-decoration: underline; }
     a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: #444; }
     h2 { page-break-after: avoid; }
-    section.usecase, .altflow, table, .note { page-break-inside: avoid; }
+    section.usecase, .altflow, table, .callout { page-break-inside: avoid; }
     tbody tr:nth-child(even) td { background: #f7f7f7; }
   }
 </style>
@@ -353,62 +263,38 @@
 <main>
 
 <header class="doc">
-  <h1>Use Case Specification &mdash; <span class="ph">&lt;SYSTEM_NAME&gt;</span></h1>
+  <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
-    <span class="ph">&lt;DOCUMENT_ID&gt;</span> &middot;
-    version <span class="ph">&lt;DOCUMENT_VERSION&gt;</span> &middot;
-    <span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED / SUPERSEDED&gt;</span>
+    COG-UCS-001 &middot;
+    version 2.0 &middot;
+    Draft
   </p>
 </header>
 
-<div class="note" data-marker="GUIDANCE">
-  <p><b>How to write this document.</b> Its readers are not all engineers:
-  sponsors, subject-matter experts, testers and auditors read it too. Use short
-  sentences and everyday business words. Put any term that needs explaining in
-  the glossary rather than inside a requirement. Be specific and measurable
-  &mdash; that, not vocabulary, is what makes it technical.</p>
-  <p>Replace every <span class="ph">&lt;PLACEHOLDER&gt;</span>. Delete every one
-  of these boxes before the document is published. The check is one command:
-  <code>grep -n '&amp;lt;[A-Z][A-Z0-9_]*&amp;gt;' USECASE_SPECIFICATION.html</code>
-  &mdash; it must return nothing.</p>
-</div>
-
 <h2 id="document-control">1. Document control</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  Every field must resolve to a real person, team or date. &ldquo;TBD&rdquo; in
-  this table means nobody owns the document, and an unowned specification is out
-  of date within a month.
-</div>
 
 <div class="table-wrap">
 <table class="fields">
   <tbody>
-    <tr><th>Document title</th><td>Use Case Specification &mdash; <span class="ph">&lt;SYSTEM_NAME&gt;</span></td></tr>
-    <tr><th>Document ID</th><td><span class="ph">&lt;DOCUMENT_ID&gt;</span></td></tr>
-    <tr><th>Project</th><td><span class="ph">&lt;PROJECT_NAME&gt;</span> (<span class="ph">&lt;PROJECT_CODE&gt;</span>)</td></tr>
-    <tr><th>Version</th><td><span class="ph">&lt;DOCUMENT_VERSION&gt;</span></td></tr>
-    <tr><th>Status</th><td><span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED / SUPERSEDED&gt;</span></td></tr>
-    <tr><th>Author</th><td><span class="ph">&lt;AUTHOR_NAME&gt;</span>, <span class="ph">&lt;AUTHOR_ROLE&gt;</span> &middot; <span class="ph">&lt;AUTHOR_CONTACT&gt;</span></td></tr>
-    <tr><th>Document owner</th><td><span class="ph">&lt;OWNER_NAME_OR_TEAM&gt;</span> &mdash; keeps this document current</td></tr>
-    <tr><th>Business sponsor</th><td><span class="ph">&lt;SPONSOR_NAME&gt;</span>, <span class="ph">&lt;SPONSOR_ROLE&gt;</span></td></tr>
-    <tr><th>Created</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
-    <tr><th>Last updated</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
-    <tr><th>Next review</th><td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td></tr>
-    <tr><th>Classification</th><td><span class="ph">&lt;PUBLIC / INTERNAL / CONFIDENTIAL / RESTRICTED&gt;</span></td></tr>
-    <tr><th>Distribution</th><td><span class="ph">&lt;WHO_MAY_RECEIVE_THIS_DOCUMENT&gt;</span></td></tr>
-    <tr><th>Source of record</th><td><span class="ph">&lt;REPOSITORY_OR_DOCUMENT_LIBRARY_URL&gt;</span></td></tr>
+    <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
+    <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
+    <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
+    <tr><th>Version</th><td>2.0</td></tr>
+    <tr><th>Status</th><td>Draft</td></tr>
+    <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
+    <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
+    <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no commercial sponsor; the supervising lecturer and the review panel hold the approving role &mdash; see 1.2.</td></tr>
+    <tr><th>Created</th><td>2026-08-14</td></tr>
+    <tr><th>Last updated</th><td>2026-08-14</td></tr>
+    <tr><th>Next review</th><td>To be set at the review that approves version 2.0</td></tr>
+    <tr><th>Classification</th><td>Public</td></tr>
+    <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
+    <tr><th>Source of record</th><td><a href="https://github.com/NguyenVu04/cognia">https://github.com/NguyenVu04/cognia</a></td></tr>
   </tbody>
 </table>
 </div>
 
 <h3 id="revision-history">1.1 Revision history</h3>
-
-<div class="note" data-marker="GUIDANCE">
-  One row per issued version. Say what changed and why, not just
-  &ldquo;updates&rdquo; &mdash; a reader six months from now is trying to find
-  out when a rule changed and who agreed to it.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -417,30 +303,24 @@
   </thead>
   <tbody>
     <tr>
-      <td>0.1</td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
-      <td><span class="ph">&lt;AUTHOR_NAME&gt;</span></td>
-      <td>First draft for review.</td>
+      <td>1.0</td>
+      <td>2026-08-14</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>First issue, written in Vietnamese. Cognia specified as a personal assistant built around reminders, with three pillars: Personality, Memory, Proactivity. Eighteen use cases.</td>
       <td>&mdash;</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;VERSION&gt;</span></td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
-      <td><span class="ph">&lt;AUTHOR_NAME&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_CHANGED_AND_WHY&gt;</span></td>
-      <td><span class="ph">&lt;APPROVER_NAME&gt;</span></td>
+      <td>2.0</td>
+      <td>2026-08-14</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>Repositioned from a reminder tool to a desk companion, and reissued in English. The pillars become Character, Continuity and Presence. The work session replaces the break reminder as the core interaction. Task and reminder management, precise-time alarms, mail and calendar integration are moved from &ldquo;later phase&rdquo; to deliberately never. Nineteen use cases. Two base rules added. Reason: the reminder framing measured the wrong thing and put the product in a category it could not win.</td>
+      <td>Pending</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h3 id="approvals">1.2 Approvals</h3>
-
-<div class="note" data-marker="GUIDANCE">
-  The people whose agreement makes this document binding. Keep the list short:
-  everyone else is a reviewer, and reviewers belong in the stakeholder table.
-  This document is only <b>Approved</b> when every row here is signed.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -449,21 +329,28 @@
   </thead>
   <tbody>
     <tr>
-      <td><span class="ph">&lt;APPROVER_1_NAME&gt;</span></td>
-      <td><span class="ph">&lt;APPROVER_1_ROLE&gt;</span></td>
-      <td><span class="ph">&lt;BUSINESS_UNIT_OR_FUNCTION&gt;</span></td>
-      <td><span class="ph">&lt;APPROVED / APPROVED_WITH_COMMENTS / REJECTED&gt;</span></td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td>Not yet named</td>
+      <td>Supervising lecturer</td>
+      <td>Academic supervision</td>
+      <td>Pending</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;APPROVER_2_NAME&gt;</span></td>
-      <td><span class="ph">&lt;APPROVER_2_ROLE&gt;</span></td>
-      <td><span class="ph">&lt;BUSINESS_UNIT_OR_FUNCTION&gt;</span></td>
-      <td><span class="ph">&lt;APPROVED / APPROVED_WITH_COMMENTS / REJECTED&gt;</span></td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td>Not yet named</td>
+      <td>Review panel</td>
+      <td>Examination</td>
+      <td>Pending</td>
+      <td>&mdash;</td>
     </tr>
   </tbody>
 </table>
+</div>
+
+<div class="callout caution">
+  <p><b>This document is a draft.</b> It becomes <b>Approved</b> only when both rows
+  above are signed. Until then, three things in it are proposals rather than
+  agreements: the names in 1.2, the targets and dates in section 4, and the
+  resource figures in NFR-05 to NFR-07.</p>
 </div>
 
 <h2 id="contents">2. Contents</h2>
@@ -488,45 +375,97 @@
 
 <h2 id="overview">3. Overview</h2>
 
-<div class="note" data-marker="GUIDANCE">
-  Two or three short paragraphs. Lead with the problem, not the solution: a
-  reader who does not have this problem should be able to stop here. Say what
-  people do today and why it is not good enough. No technology names in this
-  section unless the technology is itself the subject.
-</div>
+<p>People who work alone at a computer for long stretches &mdash; a thesis, a
+freelance contract, a remote job &mdash; spend most of the working day with nobody
+present. The day has no shape given to it by anyone else: no one asks what you are
+starting, no one is there when you stop, and the hours run together. The tools that
+claim to help are aimed at a different problem. Task managers organise work that is
+already decided. Chat assistants answer questions and then forget you: the character
+you talked to yesterday does not exist today, it has no idea what time it is or
+whether you are even at your desk, and the messages it sends are designed to bring
+you back rather than to help you.</p>
 
-<p><span class="ph">&lt;WHAT_PEOPLE_DO_TODAY_AND_WHY_IT_IS_A_PROBLEM&gt;</span></p>
+<p>Cognia is a character that sits at your desk with you. You give it a name and a
+role, or write your own from scratch. It keeps you company through a work session:
+you say in one line what you are about to do, it stays quiet while you do it, and it
+asks one question at the end. It remembers those sessions, so it is not starting
+from nothing every morning. It runs on your machine, in the background, so it knows
+the real time of day and whether you are actually at the desk &mdash; and everything
+it knows about you is written to your own disk, where you can read it, correct it,
+and delete it.</p>
 
-<p><span class="ph">&lt;WHAT_THIS_SYSTEM_DOES_ABOUT_IT_IN_PLAIN_LANGUAGE&gt;</span></p>
+<p>It is used by one person, on one Windows machine, through the ordinary working
+day. It is not a reminder app, not a task manager, and not an assistant that runs
+errands. It speaks at most three times a day by default, never between 22:00 and
+07:00, and never in the middle of your typing.</p>
 
-<p><span class="ph">&lt;WHO_WILL_USE_IT_AND_IN_WHAT_SITUATION&gt;</span></p>
+<h3 id="pillars">3.1 The three pillars</h3>
 
-<div class="note" data-marker="GUIDANCE">
-  Close the overview with the sentence below. It is the one line people repeat in
-  meetings when you are not in the room, so it has to survive being quoted on its
-  own. Keep the shape; fill in the blanks. If you cannot name a real alternative,
-  the system may not be needed &mdash; that is worth finding out now.
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Pillar</th><th>What it means</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Character</b></td>
+      <td>The companion has a name, a role, and a history with you. It is not a tone setting on a chat box.</td>
+    </tr>
+    <tr>
+      <td><b>Continuity</b></td>
+      <td>It remembers the sessions you have shared, so it is not amnesiac. It is not a note-taking service.</td>
+    </tr>
+    <tr>
+      <td><b>Presence</b></td>
+      <td>It is there while you work, rather than sending you notifications.</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
 <blockquote class="positioning">
   <span class="label">Positioning statement</span>
-  For <span class="ph">&lt;TARGET_USER&gt;</span> who
-  <span class="ph">&lt;NEED_OR_SITUATION&gt;</span>,
-  <span class="ph">&lt;SYSTEM_NAME&gt;</span> is a
-  <span class="ph">&lt;CATEGORY_OF_SYSTEM&gt;</span> that
-  <span class="ph">&lt;KEY_BENEFIT&gt;</span>. Unlike
-  <span class="ph">&lt;CURRENT_ALTERNATIVE&gt;</span>, it
-  <span class="ph">&lt;WHAT_MAKES_IT_DIFFERENT&gt;</span>.
+  For someone who works alone at a computer for long stretches, Cognia is a desktop
+  companion &mdash; a character that sits at your desk with you &mdash; that turns
+  solitary work into shared work by being present through each session. Unlike chat
+  assistants that wait in a browser tab, Cognia lives on your machine, knows when you
+  are actually at the desk, keeps the same character for months, and is quiet by
+  design.
 </blockquote>
 
-<h2 id="goals">4. Goals</h2>
+<h3 id="competitive-frame">3.2 Where the alternatives break</h3>
 
-<div class="note" data-marker="GUIDANCE">
-  A goal is a business outcome, not a feature. &ldquo;Cut the time to approve an
-  order from two days to four hours&rdquo; is a goal; &ldquo;build an approval
-  screen&rdquo; is not. Every goal needs a number and a date, otherwise nobody
-  can ever say whether the project succeeded.
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Where character chat apps break</th><th>Cognia&rsquo;s answer</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>The character forgets you when the context window ends</td>
+      <td>Memory is written to disk. It is permanent, and you can read and edit it (UC-12, UC-13)</td>
+    </tr>
+    <tr>
+      <td>The character has no idea what is happening in your real day</td>
+      <td>It runs in the background. It knows the real time and whether you are at the desk (UC-04, UC-05)</td>
+    </tr>
+    <tr>
+      <td>Proactive messages are engagement bait</td>
+      <td>Six base rules. Every proactive message must have a reason and must be explainable (BR-01 to BR-06, UC-17)</td>
+    </tr>
+    <tr>
+      <td>The character is not yours; the vendor can change it or take it away</td>
+      <td>The data is local. Nobody can take it away (NFR-01)</td>
+    </tr>
+  </tbody>
+</table>
 </div>
+
+<p>The sharpest of these is BR-04, <b>no clinging</b>. Every competitor in this
+category has a commercial reason to keep the user coming back. Cognia has none, and
+the absence is a designed feature rather than an omission.</p>
+
+<h2 id="goals">4. Goals</h2>
 
 <div class="table-wrap">
 <table>
@@ -536,33 +475,57 @@
   <tbody>
     <tr>
       <td>G-01</td>
-      <td><span class="ph">&lt;BUSINESS_OUTCOME_1&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_IT_COSTS_US_TODAY&gt;</span></td>
-      <td><span class="ph">&lt;MEASURE_AND_WHERE_IT_COMES_FROM&gt;</span></td>
-      <td><span class="ph">&lt;FROM_X_TO_Y&gt;</span></td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td>Starting a work session becomes the normal way to begin work</td>
+      <td>The session is the core interaction. If people do not start sessions, the product is a chat box with a break timer attached</td>
+      <td>Proportion of working days on which at least one session is started, taken from the local session record</td>
+      <td>From 0 to at least 3 days in every 5 working days</td>
+      <td>2026-12-15</td>
     </tr>
     <tr>
       <td>G-02</td>
-      <td><span class="ph">&lt;BUSINESS_OUTCOME_2&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_IT_COSTS_US_TODAY&gt;</span></td>
-      <td><span class="ph">&lt;MEASURE_AND_WHERE_IT_COMES_FROM&gt;</span></td>
-      <td><span class="ph">&lt;FROM_X_TO_Y&gt;</span></td>
-      <td><span class="ph">&lt;YYYY-MM-DD&gt;</span></td>
+      <td>Proactive messages are answered rather than dismissed</td>
+      <td>A companion that gets muted in the first week is not a companion. This is the single measure that says whether the base rules work</td>
+      <td>Share of proactive messages that get any response other than dismissal, taken from the local message record</td>
+      <td>At least 60% of proactive messages answered</td>
+      <td>2026-12-15</td>
+    </tr>
+    <tr>
+      <td>G-03</td>
+      <td>The character stays recognisably the same over months</td>
+      <td>A character that drifts is a different character. Continuity of the relationship is the thing being sold</td>
+      <td>Participants are asked at week 1 and week 8 whether it still sounds like the character they set</td>
+      <td>4 of 5 participants answer yes at week 8</td>
+      <td>2026-12-15</td>
+    </tr>
+    <tr>
+      <td>G-04</td>
+      <td>The user can always see and correct what the companion remembers</td>
+      <td>Local storage is worth nothing if it is opaque. Being able to read and edit the memory is what makes the character yours</td>
+      <td>Clicks needed to reach any remembered item, and to delete it, measured on the built application</td>
+      <td>Any item reachable in 2 clicks and deletable in 2 more</td>
+      <td>2026-12-15</td>
+    </tr>
+    <tr>
+      <td>G-05</td>
+      <td>Nothing leaves the machine unless the user switched it on</td>
+      <td>The local-only claim is the structural advantage over every hosted competitor. One unexplained connection destroys it</td>
+      <td>Network capture across a full week of ordinary use</td>
+      <td>Zero outbound connections the user did not enable</td>
+      <td>2026-12-15</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<h2 id="out-of-scope">5. Out of scope</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  The section most often missing and most often needed. State plainly what this
-  system will <b>not</b> do, so nobody proposes it, plans around it, or reports it
-  as a defect. Give the reason: &ldquo;later phase&rdquo;, &ldquo;another team
-  owns it&rdquo; and &ldquo;deliberately never&rdquo; lead to very different
-  conversations.
+<div class="callout caution">
+  <p><b>The figures above are proposals, not measurements.</b> The targets, the
+  trial size in G-03 and the date of 2026-12-15 are put forward for agreement at the
+  review that approves this version. They follow the same convention as the resource
+  figures in NFR-05 to NFR-07: a number that has not been measured is labelled as
+  such rather than presented as a finding.</p>
 </div>
+
+<h2 id="out-of-scope">5. Out of scope</h2>
 
 <div class="table-wrap">
 <table>
@@ -571,29 +534,60 @@
   </thead>
   <tbody>
     <tr>
-      <td><span class="ph">&lt;EXCLUDED_ITEM_1&gt;</span></td>
-      <td><span class="ph">&lt;REASON, e.g. planned for phase 2&gt;</span></td>
-      <td><span class="ph">&lt;TEAM_OR_NOBODY&gt;</span></td>
+      <td>Reading email; calendar integration</td>
+      <td><b>Deliberately never.</b> Existing tools do it better. In a conversational product the user is the input channel &mdash; one sentence replaces an OAuth integration. Integration would also break the local-only privacy claim, which is the strongest thing the product has</td>
+      <td>Existing mail and calendar clients</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;EXCLUDED_ITEM_2&gt;</span></td>
-      <td><span class="ph">&lt;REASON&gt;</span></td>
-      <td><span class="ph">&lt;TEAM_OR_NOBODY&gt;</span></td>
+      <td>Task and reminder management</td>
+      <td><b>Deliberately never.</b> Todoist and Outlook own this category. Dropping it is what removes the &ldquo;reminder app&rdquo; reading of the product</td>
+      <td>Todoist, Outlook, and every other task manager</td>
+    </tr>
+    <tr>
+      <td>Precise-time alarms (&ldquo;remind me at 09:00&rdquo;)</td>
+      <td><b>Deliberately never.</b> Structurally a bad fit: the machine may be asleep, and BR-02 and BR-03 both forbid firing on an exact second. Anything that is ruined by being missed belongs on a phone, and the companion says so plainly when asked</td>
+      <td>The user&rsquo;s phone</td>
+    </tr>
+    <tr>
+      <td>Acting on the user&rsquo;s behalf &mdash; sending mail, editing files</td>
+      <td><b>Deliberately never.</b> It contradicts the positioning. A companion at your desk is not an agent running errands</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>Synchronising across devices</td>
+      <td><b>Deliberately never.</b> It contradicts local-only data, which would have to be redesigned from the ground up</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>Reading which application or window is open</td>
+      <td><b>Deliberately never.</b> Tempting for desk presence, but asking the user one question gives better information at no privacy cost &mdash; which is exactly what UC-05 does</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>Practice and rehearsal sessions (interview, thesis defence)</td>
+      <td><b>Deliberately never.</b> Considered and dropped. Out of scope for this positioning</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>Long-arc &ldquo;remember it for you&rdquo; tracking</td>
+      <td><b>Deliberately never.</b> Considered and dropped. Memory serves continuity of the relationship, not record-keeping</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>Sharing, and more than one user on a machine</td>
+      <td><b>Deliberately never.</b> The product is one person on one machine. A second person is a different privacy problem altogether</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>macOS and Linux builds</td>
+      <td><b>Later phase, for resourcing reasons only.</b> Each operating system reports desk activity differently. Windows is being finished first. This is the one exclusion in this table that is not a positioning decision</td>
+      <td>Nobody yet</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h2 id="stakeholders">6. Stakeholders</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  Everyone whose agreement, information or daily work is affected. Include the
-  people who will operate and support the system after launch, and anybody who
-  can block it &mdash; legal, security, finance, an external partner. The
-  responsibility column has three settings: <b>decides</b> (their agreement is
-  required), <b>is consulted</b> (their opinion is sought before a decision) and
-  <b>is informed</b> (they are told afterwards).
-</div>
 
 <div class="table-wrap">
 <table>
@@ -602,38 +596,38 @@
   </thead>
   <tbody>
     <tr>
-      <td><span class="ph">&lt;STAKEHOLDER_1&gt;</span></td>
-      <td><span class="ph">&lt;ROLE&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
-      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
-      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+      <td>The user</td>
+      <td>Owner of the machine; the only person with any authority over the system</td>
+      <td>Company through a working session, without being interrupted, and complete control over what is remembered about them</td>
+      <td>Decides</td>
+      <td>nguyenvu04.work@gmail.com (the author is also the first user)</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;STAKEHOLDER_2&gt;</span></td>
-      <td><span class="ph">&lt;ROLE&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
-      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
-      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+      <td>Developer</td>
+      <td>Builds and maintains Cognia</td>
+      <td>To be able to measure whether the companion spoke at the right moment, and to replay a decision on recorded data (NFR-14)</td>
+      <td>Decides</td>
+      <td>nguyenvu04.work@gmail.com</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;STAKEHOLDER_3&gt;</span></td>
-      <td><span class="ph">&lt;ROLE&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_THEY_NEED&gt;</span></td>
-      <td><span class="ph">&lt;DECIDES / IS_CONSULTED / IS_INFORMED&gt;</span></td>
-      <td><span class="ph">&lt;EMAIL_OR_CHANNEL&gt;</span></td>
+      <td>Supervising lecturer</td>
+      <td>Academic supervision</td>
+      <td>A defined scope, an evaluation method that stands up, and evidence that the privacy risks were handled</td>
+      <td>Decides</td>
+      <td>Not yet named &mdash; see 1.2</td>
+    </tr>
+    <tr>
+      <td>Review panel</td>
+      <td>Examination</td>
+      <td>The same, plus a clear account of what was deliberately excluded and why</td>
+      <td>Decides</td>
+      <td>Not yet named &mdash; see 1.2</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h3 id="actors">6.1 Actors</h3>
-
-<div class="note" data-marker="GUIDANCE">
-  An actor is anyone or anything that interacts with the system: a person in a
-  particular role, another system, or a scheduled job. Name actors by role, never
-  by person &mdash; &ldquo;Approving manager&rdquo;, not &ldquo;Maria&rdquo;. The
-  use cases below refer back to these names, so define each one once here.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -642,29 +636,40 @@
   </thead>
   <tbody>
     <tr>
-      <td><span class="ph">&lt;ACTOR_1&gt;</span></td>
-      <td><span class="ph">&lt;PERSON / SYSTEM / SCHEDULED_JOB&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_THIS_ACTOR_DOES&gt;</span></td>
-      <td><span class="ph">&lt;COUNT_OR_NA&gt;</span></td>
+      <td>User</td>
+      <td>Person</td>
+      <td>The person at the desk. There is exactly one, and they hold every permission the system has</td>
+      <td>1 per installation</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;ACTOR_2&gt;</span></td>
-      <td><span class="ph">&lt;PERSON / SYSTEM / SCHEDULED_JOB&gt;</span></td>
-      <td><span class="ph">&lt;WHAT_THIS_ACTOR_DOES&gt;</span></td>
-      <td><span class="ph">&lt;COUNT_OR_NA&gt;</span></td>
+      <td>Companion</td>
+      <td>System</td>
+      <td>The part of Cognia that runs in the background. It is the primary actor wherever the companion speaks first, deciding on its own when to say something without the user being present</td>
+      <td>1 per installation</td>
+    </tr>
+    <tr>
+      <td>Session timer</td>
+      <td>Scheduled job</td>
+      <td>Counts continuous time at the machine and raises the break threshold to the companion. It holds no content, only elapsed time</td>
+      <td>1 per installation</td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td>System</td>
+      <td>Supplies exactly three facts and nothing else: how long since the mouse or keyboard was touched, whether the machine is locked, and whether the user is presenting full-screen</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>AI model</td>
+      <td>System</td>
+      <td>Generates the companion&rsquo;s replies. Runs on the user&rsquo;s machine, or through an outside service only if the user switches one on</td>
+      <td>1</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h2 id="assumptions-constraints">7. Assumptions and constraints</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  An <b>assumption</b> is something you are treating as true without having
-  confirmed it. A <b>constraint</b> is a limit you must work within, whether you
-  agree with it or not. Writing them down is what lets you re-open a decision
-  later without re-arguing it from the start.
-</div>
 
 <h3>7.1 Assumptions</h3>
 
@@ -676,17 +681,31 @@
   <tbody>
     <tr>
       <td>A-01</td>
-      <td><span class="ph">&lt;ASSUMPTION_1&gt;</span></td>
-      <td><span class="ph">&lt;IMPACT_IF_FALSE&gt;</span></td>
-      <td><span class="ph">&lt;NAME_OR_TEAM&gt;</span></td>
-      <td><span class="ph">&lt;YES / NO / PENDING&gt;</span></td>
+      <td>Time since the mouse or keyboard was last touched is a good enough proxy for whether the user is at the desk</td>
+      <td>Presence becomes guesswork. UC-06 and UC-08 would need a different signal, and the only better ones are the privacy-invasive ones ruled out in section 5</td>
+      <td>Developer, by trial use</td>
+      <td>Pending</td>
     </tr>
     <tr>
       <td>A-02</td>
-      <td><span class="ph">&lt;ASSUMPTION_2&gt;</span></td>
-      <td><span class="ph">&lt;IMPACT_IF_FALSE&gt;</span></td>
-      <td><span class="ph">&lt;NAME_OR_TEAM&gt;</span></td>
-      <td><span class="ph">&lt;YES / NO / PENDING&gt;</span></td>
+      <td>An AI model small enough to run on an ordinary personal machine can hold a character convincingly across months</td>
+      <td>G-03 fails. Either the character quality drops, or the user must switch on an outside service and give up part of the privacy claim</td>
+      <td>Developer, by trial use</td>
+      <td>Pending</td>
+    </tr>
+    <tr>
+      <td>A-03</td>
+      <td>The user is willing to answer one question at the start of a session and one at the end</td>
+      <td>G-01 fails and the session, which is the core interaction, does not happen. Everything about desk presence would have to be inferred instead of asked</td>
+      <td>Users, by trial use</td>
+      <td>Pending</td>
+    </tr>
+    <tr>
+      <td>A-04</td>
+      <td>Solitary workers want company at the desk rather than more productivity tooling</td>
+      <td>The whole repositioning in version 2.0 is wrong and the document returns to a productivity framing</td>
+      <td>Users; review panel</td>
+      <td>Pending</td>
     </tr>
   </tbody>
 </table>
@@ -702,15 +721,33 @@
   <tbody>
     <tr>
       <td>C-01</td>
-      <td><span class="ph">&lt;CONSTRAINT_1&gt;</span></td>
-      <td><span class="ph">&lt;TIME / BUDGET / TECHNICAL / LEGAL / ORGANISATIONAL&gt;</span></td>
-      <td><span class="ph">&lt;POLICY_CONTRACT_OR_DECISION&gt;</span></td>
+      <td>Windows 10 and 11 only</td>
+      <td>Technical</td>
+      <td>Scope decision; see the macOS and Linux row in section 5</td>
     </tr>
     <tr>
       <td>C-02</td>
-      <td><span class="ph">&lt;CONSTRAINT_2&gt;</span></td>
-      <td><span class="ph">&lt;TIME / BUDGET / TECHNICAL / LEGAL / ORGANISATIONAL&gt;</span></td>
-      <td><span class="ph">&lt;POLICY_CONTRACT_OR_DECISION&gt;</span></td>
+      <td>One user, one machine. No account, no server, no synchronisation</td>
+      <td>Technical</td>
+      <td>Positioning decision, version 2.0. It is what makes NFR-01 possible</td>
+    </tr>
+    <tr>
+      <td>C-03</td>
+      <td>All data stays on the user&rsquo;s disk unless the user themselves switches on an outside AI service</td>
+      <td>Legal, technical</td>
+      <td>The privacy commitment in NFR-01 to NFR-04</td>
+    </tr>
+    <tr>
+      <td>C-04</td>
+      <td>The six base rules in 8.1 bind every use case in this document. They are not configurable away by the character</td>
+      <td>Organisational</td>
+      <td>Decided in version 1.0 as four laws; extended to six in version 2.0</td>
+    </tr>
+    <tr>
+      <td>C-05</td>
+      <td>Only the three facts listed against the Windows actor may be read from the operating system</td>
+      <td>Technical</td>
+      <td>Privacy commitment; see UC-04 and NFR-03</td>
     </tr>
   </tbody>
 </table>
@@ -718,59 +755,193 @@
 
 <h2 id="functional-requirements">8. Functional requirements</h2>
 
-<div class="note" data-marker="GUIDANCE">
-  What the system must <b>do</b>. One requirement per row, one sentence each, in
-  the form <em>&ldquo;The system must let <span class="ph">&lt;ACTOR&gt;</span>
-  <span class="ph">&lt;DO_SOMETHING&gt;</span>&rdquo;</em>. If a row contains the
-  word &ldquo;and&rdquo;, it is probably two requirements. Do not describe screens
-  or database tables here &mdash; those are design decisions, and pinning them
-  down this early removes choices the delivery team needs.
-  <br><br>
-  Priority uses MoSCoW: <b>Must</b> (the release fails without it),
-  <b>Should</b> (important, but there is a workaround), <b>Could</b> (do it if
-  time allows), <b>Won't</b> (agreed as out of scope for this release &mdash;
-  keep the row, it prevents the question being re-asked).
-</div>
-
 <div class="table-wrap">
 <table>
   <thead>
     <tr><th>ID</th><th>Requirement</th><th>Priority</th><th>Raised by</th><th>Use case</th></tr>
   </thead>
   <tbody>
+    <tr><td colspan="5"><b>Character</b></td></tr>
     <tr>
       <td>FR-01</td>
-      <td>The system must let <span class="ph">&lt;ACTOR&gt;</span> <span class="ph">&lt;DO_SOMETHING&gt;</span>.</td>
-      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
-      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
-      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+      <td>The system must let the user choose a ready-made character, each shown with its name, its role and a sample exchange.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-01</td>
     </tr>
     <tr>
       <td>FR-02</td>
-      <td>The system must <span class="ph">&lt;REQUIREMENT_2&gt;</span>.</td>
-      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
-      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
-      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+      <td>The system must let the user describe a character of their own in plain words, with no special syntax, and try it immediately.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-02</td>
     </tr>
     <tr>
       <td>FR-03</td>
-      <td>The system must <span class="ph">&lt;REQUIREMENT_3&gt;</span>.</td>
-      <td><span class="ph">&lt;MUST / SHOULD / COULD / WONT&gt;</span></td>
-      <td><span class="ph">&lt;STAKEHOLDER&gt;</span></td>
-      <td><span class="ph">&lt;UC-NN&gt;</span></td>
+      <td>The system must let the user change the character at any time, keeping earlier versions so the user can go back.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-03</td>
+    </tr>
+    <tr>
+      <td>FR-04</td>
+      <td>The character must define who the companion is &mdash; its name, its role, its manner of speaking and its history with the user. What a character must never be able to change is the safety behaviour in NFR-13 and the base rules in 8.1.</td>
+      <td>Must</td>
+      <td>Developer</td>
+      <td>UC-01, UC-02</td>
+    </tr>
+    <tr>
+      <td>FR-05</td>
+      <td>The system must refuse to take on the identity of a specific real person.</td>
+      <td>Must</td>
+      <td>Developer</td>
+      <td>UC-02</td>
+    </tr>
+    <tr><td colspan="5"><b>Sessions and presence</b></td></tr>
+    <tr>
+      <td>FR-06</td>
+      <td>The system must let the user switch desk awareness on and off, having first stated plainly what it reads and what it does not.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-04</td>
+    </tr>
+    <tr>
+      <td>FR-07</td>
+      <td>The system must let the user open a work session by declaring an intent in one line.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-05</td>
+    </tr>
+    <tr>
+      <td>FR-08</td>
+      <td>The system must stay silent for the length of a session, with the break nudge as the only exception.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-05, UC-06</td>
+    </tr>
+    <tr>
+      <td>FR-09</td>
+      <td>The system must measure continuous time at the machine and offer a break at the threshold the user has set.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-06</td>
+    </tr>
+    <tr>
+      <td>FR-10</td>
+      <td>The system must let the user close a session with a single question, and record what the session was.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-07</td>
+    </tr>
+    <tr>
+      <td>FR-11</td>
+      <td>The system must show a returning user what they were in the middle of.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-08</td>
+    </tr>
+    <tr>
+      <td>FR-12</td>
+      <td>The system must let the user stop all collection and all messages with one action.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-15</td>
+    </tr>
+    <tr><td colspan="5"><b>Conversation and continuity</b></td></tr>
+    <tr>
+      <td>FR-13</td>
+      <td>The system must hold a conversation in character, keeping the thread of what was said in earlier sessions.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-09</td>
+    </tr>
+    <tr>
+      <td>FR-14</td>
+      <td>The system must record what the user says about themselves and show back the exact line it stored.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-09</td>
+    </tr>
+    <tr>
+      <td>FR-15</td>
+      <td>The system must accept an adjustment to how it talks during a conversation, and ask before keeping that adjustment permanently.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-10</td>
+    </tr>
+    <tr>
+      <td>FR-16</td>
+      <td>The system must be able to propose a change to how it behaves, including a change to its own character, and may apply it only once the user has approved it.</td>
+      <td>Could</td>
+      <td>Developer</td>
+      <td>UC-11</td>
+    </tr>
+    <tr>
+      <td>FR-17</td>
+      <td>The system must show everything it remembers, separated into what the user told it and what it noticed, with a stated reason on every noticed item.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-12</td>
+    </tr>
+    <tr>
+      <td>FR-18</td>
+      <td>The system must let the user correct or remove any single remembered item.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-13</td>
+    </tr>
+    <tr>
+      <td>FR-19</td>
+      <td>The system must let the user erase all memory while keeping the character, or erase everything.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-14</td>
+    </tr>
+    <tr><td colspan="5"><b>Staying welcome</b></td></tr>
+    <tr>
+      <td>FR-20</td>
+      <td>The system must greet the user in character when the application is opened, stating what they have on as context rather than as an alarm.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-16</td>
+    </tr>
+    <tr>
+      <td>FR-21</td>
+      <td>The system must explain, on request, why any proactive message appeared, using the real figures the decision was made from.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-17</td>
+    </tr>
+    <tr>
+      <td>FR-22</td>
+      <td>The system must let the user set how often it speaks up, when its quiet hours are, and whether each kind of message is switched on at all.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-18</td>
+    </tr>
+    <tr>
+      <td>FR-23</td>
+      <td>The system must reduce the frequency of a kind of message the user keeps ignoring, and say that it has done so.</td>
+      <td>Could</td>
+      <td>Developer</td>
+      <td>UC-19</td>
+    </tr>
+    <tr>
+      <td>FR-24</td>
+      <td>The system will not manage tasks, hold reminders, fire alarms at a stated time, or act on the user&rsquo;s behalf. Recorded here so the question is not re-asked; see section 5.</td>
+      <td>Won&rsquo;t</td>
+      <td>Developer</td>
+      <td>&mdash;</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<h3 id="business-rules">8.1 Business rules</h3>
+<h3 id="business-rules">8.1 Base rules</h3>
 
-<div class="note" data-marker="OPTIONAL">
-  Keep this if the same rule governs several use cases &mdash; a credit limit, an
-  approval threshold, a retention period. Writing it once here and referring to
-  it by ID stops the rule drifting apart in three places. Delete the section if
-  every rule belongs to exactly one use case; state it in that use case instead.
-</div>
+<p>These six rules govern every use case below. They are not preferences and not
+options: they are the reason the companion is still switched on in week three. A
+character cannot override them (FR-04).</p>
 
 <div class="table-wrap">
 <table>
@@ -780,23 +951,45 @@
   <tbody>
     <tr>
       <td>BR-01</td>
-      <td><span class="ph">&lt;RULE_STATED_AS_A_CONDITION_AND_AN_OUTCOME&gt;</span></td>
-      <td><span class="ph">&lt;UC-NN, UC-NN&gt;</span></td>
-      <td><span class="ph">&lt;POLICY_OR_OWNER&gt;</span></td>
+      <td><b>Speak sparingly.</b> At most 3 proactive messages a day, adjustable by the user. Once the allowance is spent, the companion is silent.</td>
+      <td>UC-06, UC-11, UC-16, UC-19</td>
+      <td>Version 1.0, Law 1</td>
+    </tr>
+    <tr>
+      <td>BR-02</td>
+      <td><b>Quiet hours.</b> Nothing is sent between 22:00 and 07:00 by default, nor while the machine is locked, nor while the user is presenting full-screen.</td>
+      <td>Every proactive use case</td>
+      <td>Version 1.0, Law 2</td>
+    </tr>
+    <tr>
+      <td>BR-03</td>
+      <td><b>Wait for a pause.</b> Continuous typing is never interrupted. The message waits until the user stops.</td>
+      <td>UC-06, UC-11, UC-19</td>
+      <td>Version 1.0, Law 3</td>
+    </tr>
+    <tr>
+      <td>BR-04</td>
+      <td><b>No clinging.</b> No streaks, no &ldquo;we miss you&rdquo;, no message whose purpose is to bring the user back.</td>
+      <td>Every proactive use case</td>
+      <td>Version 1.0, Law 4</td>
+    </tr>
+    <tr>
+      <td>BR-05</td>
+      <td><b>In-session silence.</b> While a session is open, nothing at all is sent except the break nudge.</td>
+      <td>UC-05, UC-06, UC-07</td>
+      <td>New in version 2.0</td>
+    </tr>
+    <tr>
+      <td>BR-06</td>
+      <td><b>Honest wording.</b> The companion says &ldquo;at the machine for 90 minutes&rdquo;, never &ldquo;working for 90 minutes&rdquo;. It states only what it actually observed; with no evidence, it says nothing.</td>
+      <td>Every use case</td>
+      <td>Version 1.0, promoted from a note to a rule in version 2.0</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h2 id="nonfunctional-requirements">9. Non-functional requirements</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  How well the system must do it. A target with no number in it is not a
-  requirement &mdash; it is a hope. &ldquo;Fast&rdquo;, &ldquo;secure&rdquo; and
-  &ldquo;user-friendly&rdquo; cannot be tested, disagreed with, or signed off.
-  Every row needs a measurable target and a stated way of checking it, or it
-  should be deleted.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -806,81 +999,113 @@
   <tbody>
     <tr>
       <td>NFR-01</td>
-      <td>Performance</td>
-      <td><span class="ph">&lt;WHICH_OPERATION_MUST_BE_FAST&gt;</span></td>
-      <td><span class="ph">&lt;e.g. completes in under 2 seconds for 95 of 100 requests&gt;</span></td>
-      <td><span class="ph">&lt;LOAD_TEST_OR_MONITORING&gt;</span></td>
+      <td>Privacy</td>
+      <td>All data stays on the user&rsquo;s machine. There is no account and no usage reporting</td>
+      <td>Zero outbound network connections that the user did not switch on, across a full week of ordinary use</td>
+      <td>Network capture over a trial week</td>
     </tr>
     <tr>
       <td>NFR-02</td>
-      <td>Availability</td>
-      <td><span class="ph">&lt;WHEN_THE_SYSTEM_MUST_BE_USABLE&gt;</span></td>
-      <td><span class="ph">&lt;e.g. 99.5% during business hours, measured monthly&gt;</span></td>
-      <td><span class="ph">&lt;HOW_MEASURED&gt;</span></td>
+      <td>Privacy</td>
+      <td>If the user switches on an outside AI service, the application warns clearly beforehand and records every send</td>
+      <td>The warning is shown before the first send; 100% of sends recorded with time and destination</td>
+      <td>Inspection of the send log against a captured session</td>
     </tr>
     <tr>
       <td>NFR-03</td>
-      <td>Security</td>
-      <td><span class="ph">&lt;WHO_MAY_SEE_OR_CHANGE_WHAT&gt;</span></td>
-      <td><span class="ph">&lt;e.g. no access without an authenticated session; all admin actions logged&gt;</span></td>
-      <td><span class="ph">&lt;REVIEW_OR_PENETRATION_TEST&gt;</span></td>
+      <td>Privacy</td>
+      <td>The application never records keystrokes, screenshots or the clipboard, never reads browsing history, and never reads which application or window is open</td>
+      <td>Zero calls to any operating system interface that would supply these</td>
+      <td>Code review plus an audit of system calls, each release</td>
     </tr>
     <tr>
       <td>NFR-04</td>
-      <td>Capacity</td>
-      <td><span class="ph">&lt;HOW_MUCH_IT_MUST_HANDLE&gt;</span></td>
-      <td><span class="ph">&lt;e.g. 500 users at once, 50,000 records per day&gt;</span></td>
-      <td><span class="ph">&lt;HOW_MEASURED&gt;</span></td>
+      <td>Data handling</td>
+      <td>Personal data held: what the user says about themselves; session records (intent, start, end, time at the machine, closing answer); observations the companion derived, each with the evidence behind it; the character and its earlier versions</td>
+      <td>Kept on the user&rsquo;s disk until the user deletes it, with no second copy anywhere. Visible only to the person at that machine. Every category above is listed in UC-12 and removable through UC-13 and UC-14</td>
+      <td>Walk every category through UC-12, UC-13 and UC-14; inspect the disk afterwards</td>
     </tr>
     <tr>
       <td>NFR-05</td>
-      <td>Usability</td>
-      <td><span class="ph">&lt;WHAT_A_NEW_USER_MUST_MANAGE_UNAIDED&gt;</span></td>
-      <td><span class="ph">&lt;e.g. a new user completes UC-01 without training in under 3 minutes&gt;</span></td>
-      <td><span class="ph">&lt;USER_TESTING&gt;</span></td>
+      <td>Performance</td>
+      <td>Pausing takes effect at once, and the application opens quickly</td>
+      <td>Pause fully in effect in under 1 second; main window shown in under 2 seconds</td>
+      <td>Timed measurement on the target machine</td>
     </tr>
     <tr>
       <td>NFR-06</td>
-      <td>Accessibility</td>
-      <td><span class="ph">&lt;ACCESSIBILITY_OBLIGATION&gt;</span></td>
-      <td><span class="ph">&lt;e.g. WCAG 2.2 level AA on all user-facing screens&gt;</span></td>
-      <td><span class="ph">&lt;AUDIT_TOOL_AND_MANUAL_CHECK&gt;</span></td>
+      <td>Performance</td>
+      <td>A reply starts appearing quickly, or the user is shown that it is working</td>
+      <td>First words within 3 seconds, otherwise a visible working indicator; never a blank pause</td>
+      <td>Timed measurement on the target machine</td>
     </tr>
     <tr>
       <td>NFR-07</td>
-      <td>Compliance</td>
-      <td><span class="ph">&lt;RULE_OR_REGIME_THAT_APPLIES&gt;</span></td>
-      <td><span class="ph">&lt;OBLIGATION_STATED_CONCRETELY&gt;</span></td>
-      <td><span class="ph">&lt;EVIDENCE_PRODUCED_FOR_AUDIT&gt;</span></td>
+      <td>Resource use</td>
+      <td>Running in the background costs the machine almost nothing</td>
+      <td>Under 1% CPU while idle; under 150 MB of memory, not counting the AI model</td>
+      <td>Resource monitoring across an 8-hour idle run</td>
     </tr>
     <tr>
       <td>NFR-08</td>
-      <td>Supportability</td>
-      <td><span class="ph">&lt;WHAT_SUPPORT_STAFF_MUST_BE_ABLE_TO_DO&gt;</span></td>
-      <td><span class="ph">&lt;e.g. every failed transaction traceable to a user and a timestamp within 5 minutes&gt;</span></td>
-      <td><span class="ph">&lt;HOW_VERIFIED&gt;</span></td>
+      <td>Reliability</td>
+      <td>An abrupt shutdown loses nothing that was already recorded</td>
+      <td>Zero loss of memory items or closed sessions across 20 forced power-offs</td>
+      <td>Repeated power-off test</td>
+    </tr>
+    <tr>
+      <td>NFR-09</td>
+      <td>Reliability</td>
+      <td>If the AI model fails, the parts that do not need it keep working</td>
+      <td>Session timing, the break nudge, the memory list and pausing all remain fully usable with the model stopped</td>
+      <td>Test with the model deliberately disabled</td>
+    </tr>
+    <tr>
+      <td>NFR-10</td>
+      <td>Transparency</td>
+      <td>No proactive message may be sent without a complete explanation attached (BR-06)</td>
+      <td>100%. A message whose explanation cannot be assembled is not sent at all; the check refuses rather than warns</td>
+      <td>Automated check in the build, plus inspection of the message log</td>
+    </tr>
+    <tr>
+      <td>NFR-11</td>
+      <td>Usability</td>
+      <td>A new user gets from a finished installation to a first conversation without reading anything</td>
+      <td>Under 5 minutes, with no documentation open</td>
+      <td>User testing with participants who have not seen it before</td>
+    </tr>
+    <tr>
+      <td>NFR-12</td>
+      <td>Accessibility</td>
+      <td>The application is fully usable without a mouse, and comfortably readable</td>
+      <td>Every function reachable from the keyboard; text contrast meeting WCAG 2.2 level AA</td>
+      <td>Keyboard-only walkthrough of every use case, plus a contrast audit</td>
+    </tr>
+    <tr>
+      <td>NFR-13</td>
+      <td>Safety</td>
+      <td>If the user says something serious about their mental health, the companion states its own limits honestly instead of playing the part of a supporter</td>
+      <td>In every scripted test case, the reply names its limits and does not stay in character as a source of help. No character can switch this off (FR-04)</td>
+      <td>Scripted test cases reviewed by a person, each release</td>
+    </tr>
+    <tr>
+      <td>NFR-14</td>
+      <td>Reproducibility</td>
+      <td>The developer can replay every decision to speak on recorded data and get the same result</td>
+      <td>Identical output on a re-run over the same recorded input, so two decision strategies can be compared fairly</td>
+      <td>Replay run compared against the original decision log</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<div class="note required-if" data-marker="REQUIRED-IF">
-  Add a <b>Data handling</b> row for every category of personal, payment or
-  health data the system touches: what is stored, how long it is kept, and who
-  may see it. Delete this box if the system holds none &mdash; but read the
-  condition twice before deciding it does not apply, since names, email addresses
-  and IP addresses all count.
+<div class="callout caution">
+  <p><b>NFR-05, NFR-06 and NFR-07 are targets, not results.</b> They are the ordinary
+  expectations of a background desktop application, not figures measured on the target
+  machine. They are to be measured and this document updated before it is approved.</p>
 </div>
 
 <h2 id="use-cases">10. Use case specifications</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  One use case per goal an actor can achieve in a single sitting. If a flow runs
-  past about a dozen steps, it is probably two use cases. Write every step as
-  something an actor does or the system does in response &mdash; never as an
-  internal detail like &ldquo;the service queries the database&rdquo;, which
-  belongs in the design, not here.
-</div>
 
 <h3 id="uc-index">10.1 Use case index</h3>
 
@@ -890,285 +1115,1692 @@
     <tr><th>ID</th><th>Name</th><th>Primary actor</th><th>Priority</th><th>Requirements covered</th></tr>
   </thead>
   <tbody>
+    <tr><td colspan="5"><b>Setting up</b></td></tr>
+    <tr><td><a href="#uc-01">UC-01</a></td><td>Choose a character</td><td>User</td><td>Must</td><td>FR-01, FR-04, NFR-11</td></tr>
+    <tr><td><a href="#uc-02">UC-02</a></td><td>Write your own character</td><td>User</td><td>Must</td><td>FR-02, FR-04, FR-05, NFR-13</td></tr>
+    <tr><td><a href="#uc-03">UC-03</a></td><td>Change the character later</td><td>User</td><td>Should</td><td>FR-03</td></tr>
+    <tr><td><a href="#uc-04">UC-04</a></td><td>Turn on desk awareness</td><td>User</td><td>Must</td><td>FR-06, NFR-03</td></tr>
+    <tr><td colspan="5"><b>At the desk</b></td></tr>
+    <tr><td><a href="#uc-05">UC-05</a></td><td>Start a work session</td><td>User</td><td>Must</td><td>FR-07, FR-08</td></tr>
+    <tr><td><a href="#uc-06">UC-06</a></td><td>Be nudged to take a break</td><td>Companion</td><td>Should</td><td>FR-09, NFR-10</td></tr>
+    <tr><td><a href="#uc-07">UC-07</a></td><td>Close a work session</td><td>User</td><td>Must</td><td>FR-10, NFR-08</td></tr>
+    <tr><td><a href="#uc-08">UC-08</a></td><td>Return to the desk</td><td>Companion</td><td>Should</td><td>FR-11</td></tr>
+    <tr><td colspan="5"><b>Talking</b></td></tr>
+    <tr><td><a href="#uc-09">UC-09</a></td><td>Talk to the companion</td><td>User</td><td>Must</td><td>FR-13, FR-14, NFR-06, NFR-09</td></tr>
+    <tr><td><a href="#uc-10">UC-10</a></td><td>Adjust how the companion talks</td><td>User</td><td>Should</td><td>FR-15</td></tr>
+    <tr><td><a href="#uc-11">UC-11</a></td><td>Companion asks to change how it behaves</td><td>Companion</td><td>Could</td><td>FR-16</td></tr>
+    <tr><td colspan="5"><b>Memory and control</b></td></tr>
+    <tr><td><a href="#uc-12">UC-12</a></td><td>Review what the companion remembers</td><td>User</td><td>Must</td><td>FR-17, NFR-04</td></tr>
+    <tr><td><a href="#uc-13">UC-13</a></td><td>Correct or remove a remembered item</td><td>User</td><td>Must</td><td>FR-18, NFR-04</td></tr>
+    <tr><td><a href="#uc-14">UC-14</a></td><td>Erase everything</td><td>User</td><td>Must</td><td>FR-19, NFR-04</td></tr>
+    <tr><td><a href="#uc-15">UC-15</a></td><td>Pause the companion</td><td>User</td><td>Must</td><td>FR-12, NFR-05</td></tr>
+    <tr><td colspan="5"><b>Staying welcome</b></td></tr>
+    <tr><td><a href="#uc-16">UC-16</a></td><td>Be greeted when opening the app</td><td>Companion</td><td>Should</td><td>FR-20</td></tr>
+    <tr><td><a href="#uc-17">UC-17</a></td><td>Ask why a message appeared</td><td>User</td><td>Must</td><td>FR-21, NFR-10</td></tr>
+    <tr><td><a href="#uc-18">UC-18</a></td><td>Adjust how much the companion speaks up</td><td>User</td><td>Should</td><td>FR-22</td></tr>
+    <tr><td><a href="#uc-19">UC-19</a></td><td>Companion notices it is being ignored</td><td>Companion</td><td>Could</td><td>FR-23</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="delivery-order">10.2 Delivery order</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Phase</th><th>Use cases</th><th>What exists at the end of it</th></tr>
+  </thead>
+  <tbody>
     <tr>
-      <td><a href="#uc-01">UC-01</a></td>
-      <td>Sign in to the system</td>
-      <td>Registered user</td>
-      <td>Must</td>
-      <td>FR-01, FR-02, NFR-03</td>
+      <td><b>1</b></td>
+      <td>UC-01, 02, 03, 09, 10, 12, 13, 14</td>
+      <td>A character with a memory, usable every day. No presence yet</td>
     </tr>
     <tr>
-      <td><a href="#uc-02">UC-02</a></td>
-      <td><span class="ph">&lt;USE_CASE_NAME&gt;</span></td>
-      <td><span class="ph">&lt;PRIMARY_ACTOR&gt;</span></td>
-      <td><span class="ph">&lt;MUST / SHOULD / COULD&gt;</span></td>
-      <td><span class="ph">&lt;FR-NN, NFR-NN&gt;</span></td>
+      <td><b>2</b></td>
+      <td>UC-04, 05, 06, 07, 08, 15, 17, 18</td>
+      <td>Work sessions. This is the phase that makes the product what it is, and it needs the same single operating system signal as version 1.0&rsquo;s break reminder did &mdash; the same technical cost, a different product</td>
+    </tr>
+    <tr>
+      <td><b>3</b></td>
+      <td>UC-11, 16, 19</td>
+      <td>Presence tuning and the character evolving over time</td>
     </tr>
   </tbody>
 </table>
 </div>
 
-<div class="note" data-marker="GUIDANCE">
-  <b>UC-01 below is a worked example</b>, filled in to show the level of detail
-  expected. It is not part of your system unless it happens to fit. Read it,
-  then delete it and use the empty <b>UC-02</b> block as your pattern &mdash; copy
-  that block once per use case.
-</div>
+<p>The version that can be demonstrated ends at phase 2. Each use case below repeats
+its phase in the header line.</p>
 
 <section class="usecase" id="uc-01">
-  <h3>UC-01 &mdash; Sign in to the system <span style="font-weight:400;color:var(--muted);font-size:.8em">(worked example &mdash; delete)</span></h3>
+  <h3>UC-01 &mdash; Choose a character</h3>
 
   <div class="uc-meta">
     <span><b>Priority:</b> Must</span>
-    <span><b>Frequency:</b> Several times a day, per user</span>
-    <span><b>Requirements:</b> FR-01, FR-02, NFR-03</span>
-    <span><b>Status:</b> Approved</span>
+    <span><b>Frequency:</b> Once, at first run</span>
+    <span><b>Requirements:</b> FR-01, FR-04, NFR-11</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
   </div>
 
   <h4>Description</h4>
-  <p>A registered user proves who they are so the system can show them their own
-  work and apply the permissions of their role. This is the entry point to almost
-  every other use case, so it has to be quick for the person who remembers their
-  password and forgiving for the person who does not.</p>
+  <p>On first run the user picks who is going to be sitting at the desk with them.
+  Each ready-made character is shown as a character &mdash; a name, a role, and a
+  sample exchange in its own voice &mdash; not as a tone setting on a slider. This
+  is the first thing the user ever does, and it is the decision the rest of the
+  product rests on.</p>
 
   <h4>Actors</h4>
   <ul>
-    <li><b>Primary actor:</b> Registered user &mdash; anyone with an active account.</li>
-    <li><b>Secondary actors:</b> Email service, which delivers the reset link.</li>
-    <li><b>Systems involved:</b> The company directory, which holds the account and its role.</li>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> AI model, which produces the sample exchange</li>
   </ul>
 
   <h4>Preconditions</h4>
   <ul>
-    <li>The user has an account, and it is active rather than suspended or expired.</li>
-    <li>The user is not already signed in on this device.</li>
-    <li>The system can reach the company directory.</li>
+    <li>Cognia is installed and being opened for the first time, or no character has been chosen yet.</li>
+    <li>The user is at the machine.</li>
   </ul>
 
   <h4>Postconditions</h4>
   <ul>
-    <li><b>On success:</b> the user has a session, sees the home page for their
-    role, and the sign-in is recorded in the audit log with the time and the
-    device.</li>
-    <li><b>On failure:</b> no session is created, and the failed attempt is
-    recorded against the account.</li>
+    <li><b>On success:</b> a character is saved and applies to every reply from that point on.</li>
+    <li><b>On failure:</b> no character is saved and the application returns to the choice screen; the user is asked again next time it opens.</li>
   </ul>
 
   <h4>Main flow</h4>
   <ol class="flow">
-    <li><span class="who">User</span>Opens the sign-in page.</li>
-    <li><span class="who">System</span>Shows fields for the email address and the password.</li>
-    <li><span class="who">User</span>Enters their email address and password, and confirms.</li>
-    <li><span class="who">System</span>Checks the details against the company directory.</li>
-    <li><span class="who">System</span>Creates a session and records the sign-in in the audit log.</li>
-    <li><span class="who">System</span>Opens the home page for the user's role.</li>
+    <li><span class="who">User</span>Opens Cognia for the first time.</li>
+    <li><span class="who">System</span>Shows four ready-made characters. Each one has a name, a stated role, and a short sample exchange.</li>
+    <li><span class="who">User</span>Picks one to look at more closely.</li>
+    <li><span class="who">System</span>Answers a sample question in that character&rsquo;s voice, so the user hears it before committing.</li>
+    <li><span class="who">User</span>Confirms the choice.</li>
+    <li><span class="who">System</span>Saves the character and greets the user in it.</li>
   </ol>
 
   <h4>Alternative flows</h4>
 
   <div class="altflow">
-    <h5>UC-01-A1 &mdash; The user has forgotten their password</h5>
-    <p class="cond"><b>Branches from step 2.</b> The user cannot remember their password.</p>
+    <h5>UC-01-A1 &mdash; The user wants to write their own instead</h5>
+    <p class="cond"><b>Branches from step 2.</b> None of the four is what the user wants.</p>
     <ol>
-      <li>The user chooses &ldquo;Forgotten your password?&rdquo; and enters their email address.</li>
-      <li>The system sends a reset link that expires after 30 minutes. It shows the
-      same confirmation message whether or not the address belongs to an account,
-      so the page cannot be used to discover who has one.</li>
-      <li>The user opens the link and sets a new password.</li>
-      <li>The system confirms the change, ends every other session for that account,
-      and returns the user to step 2 of the main flow.</li>
+      <li>The user chooses to write their own.</li>
+      <li>The flow continues as UC-02, and returns here only if the user abandons it.</li>
     </ol>
   </div>
 
   <div class="altflow">
-    <h5>UC-01-A2 &mdash; The user's role requires a second factor</h5>
-    <p class="cond"><b>Branches from step 4</b>, after the details are accepted. The
-    account holds an administrative role.</p>
+    <h5>UC-01-A2 &mdash; The user tries several before deciding</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user wants to compare.</p>
     <ol>
-      <li>The system asks for the six-digit code from the user's authenticator app.</li>
-      <li>The user enters the code.</li>
-      <li>The system accepts it and continues from step 5 of the main flow.</li>
-      <li>If the code is wrong three times in a row, the flow continues as UC-01-E2.</li>
+      <li>The user goes back to the list without confirming.</li>
+      <li>Nothing is saved, and no preference is inferred from the ones that were tried and rejected.</li>
+      <li>The flow returns to step 3 of the main flow.</li>
     </ol>
   </div>
 
   <div class="altflow">
-    <h5>UC-01-E1 &mdash; The details are not correct</h5>
-    <p class="cond"><b>Branches from step 4.</b> The email address or the password
-    does not match.</p>
+    <h5>UC-01-E1 &mdash; No AI model is installed</h5>
+    <p class="cond"><b>Branches from step 4.</b> The model needed to produce the sample is not present.</p>
     <ol>
-      <li>The system shows one message &mdash; &ldquo;those details do not
-      match&rdquo; &mdash; without saying which of the two was wrong.</li>
-      <li>The system records the failed attempt and returns the user to step 2.</li>
+      <li>The system says so plainly and explains how to install one.</li>
+      <li>The system still lets the user choose a character, showing the written sample exchange instead of a live one.</li>
+      <li>The flow continues at step 5 of the main flow.</li>
     </ol>
   </div>
 
   <div class="altflow">
-    <h5>UC-01-E2 &mdash; Too many failed attempts</h5>
-    <p class="cond"><b>Branches from UC-01-E1.</b> Five failed attempts on the same
-    account within 15 minutes.</p>
+    <h5>UC-01-E2 &mdash; The user closes the window without choosing</h5>
+    <p class="cond"><b>Branches from any step.</b> The user cancels.</p>
     <ol>
-      <li>The system locks the account for 15 minutes and tells the user when they
-      can try again.</li>
-      <li>The system emails the account holder that this happened.</li>
-      <li>The use case ends without a session.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-01-E3 &mdash; The company directory cannot be reached</h5>
-    <p class="cond"><b>Branches from step 4.</b> The directory does not answer within
-    five seconds.</p>
-    <ol>
-      <li>The system tells the user that sign-in is temporarily unavailable and asks
-      them to try again shortly. It does not show the technical error.</li>
-      <li>The system raises an alert to the support team.</li>
-      <li>The use case ends without a session.</li>
+      <li>Nothing is saved. No character is assumed on the user&rsquo;s behalf.</li>
+      <li>The use case ends without a character, and the choice is offered again next time the application opens.</li>
     </ol>
   </div>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Business rule.</b> A session ends after 12 hours, or after 30 minutes with
-    no activity &mdash; whichever comes first (BR-01).</li>
-    <li><b>Deliberately excluded.</b> Signing in with a Google or Microsoft account is
-    out of scope for this release; see the out of scope table.</li>
-    <li><b>Open question.</b> Should the lock in UC-01-E2 clear itself after 15
-    minutes, or wait for the support team to release it? Owner: the security team.
-    Needed by <span class="ph">&lt;YYYY-MM-DD&gt;</span>.</li>
-    <li><b>Assumption.</b> Every user has an email address the system can reach
-    (A-01).</li>
+    <li><b>Base rule.</b> A character sets how the companion speaks and who it is, but never what it will refuse to do (FR-04, NFR-13).</li>
+    <li><b>Open question.</b> The four ready-made characters need names and stated roles. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
+    <li><b>Deliberately excluded.</b> No character is chosen for the user by default. An unchosen companion is not a companion.</li>
   </ul>
 </section>
 
 <section class="usecase" id="uc-02">
-  <h3>UC-02 &mdash; <span class="ph">&lt;USE_CASE_NAME&gt;</span></h3>
-
-  <div class="note" data-marker="GUIDANCE">
-    Copy this whole block once for each use case, and number them in the order a
-    user meets them rather than in the order you thought of them. Name each one
-    in the heading above, as an ID and a short verb phrase describing the actor's
-    goal: &ldquo;Submit an expense claim&rdquo;, not &ldquo;Expenses screen&rdquo;.
-  </div>
+  <h3>UC-02 &mdash; Write your own character</h3>
 
   <div class="uc-meta">
-    <span><b>Priority:</b> <span class="ph">&lt;MUST / SHOULD / COULD&gt;</span></span>
-    <span><b>Frequency:</b> <span class="ph">&lt;HOW_OFTEN_IT_HAPPENS&gt;</span></span>
-    <span><b>Requirements:</b> <span class="ph">&lt;FR-NN, NFR-NN&gt;</span></span>
-    <span><b>Status:</b> <span class="ph">&lt;DRAFT / IN_REVIEW / APPROVED&gt;</span></span>
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Once or twice in the first week</span>
+    <span><b>Requirements:</b> FR-02, FR-04, FR-05, NFR-13</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
   </div>
 
   <h4>Description</h4>
-  <div class="note" data-marker="GUIDANCE">
-    Two or three sentences: what the actor is trying to achieve and why it
-    matters to the business. Somebody who reads only this paragraph should
-    understand the point of the use case.
-  </div>
-  <p><span class="ph">&lt;WHAT_THE_ACTOR_IS_TRYING_TO_ACHIEVE&gt;</span>
-  <span class="ph">&lt;WHY_IT_MATTERS&gt;</span></p>
+  <p>The user describes the character they want in ordinary words, with no syntax to
+  learn, and hears it answer immediately so they can adjust. This is where the
+  product stops being a settings screen: the user is writing a person, including a
+  role to play, not filling in a tone preference.</p>
 
   <h4>Actors</h4>
-  <div class="note" data-marker="GUIDANCE">
-    Use the role names defined in section 6.1. The primary actor is the one whose
-    goal this is.
-  </div>
   <ul>
-    <li><b>Primary actor:</b> <span class="ph">&lt;PRIMARY_ACTOR&gt;</span></li>
-    <li><b>Secondary actors:</b> <span class="ph">&lt;SECONDARY_ACTORS_OR_NONE&gt;</span></li>
-    <li><b>Systems involved:</b> <span class="ph">&lt;OTHER_SYSTEMS_OR_NONE&gt;</span></li>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> AI model</li>
   </ul>
 
   <h4>Preconditions</h4>
-  <div class="note" data-marker="GUIDANCE">
-    What must already be true before the first step can happen. Facts about the
-    state of the world, not actions: &ldquo;the order exists and is
-    unapproved&rdquo;, not &ldquo;the user opens the order&rdquo;.
-  </div>
   <ul>
-    <li><span class="ph">&lt;PRECONDITION_1&gt;</span></li>
-    <li><span class="ph">&lt;PRECONDITION_2&gt;</span></li>
+    <li>The user has reached the character screen, either at first run or later through settings.</li>
   </ul>
 
   <h4>Postconditions</h4>
-  <div class="note" data-marker="GUIDANCE">
-    What is true once the use case ends. Testers work from this, so state the
-    failure case as well as the success case.
-  </div>
   <ul>
-    <li><b>On success:</b> <span class="ph">&lt;WHAT_IS_TRUE_AFTERWARDS&gt;</span></li>
-    <li><b>On failure:</b> <span class="ph">&lt;WHAT_IS_TRUE_AFTERWARDS&gt;</span></li>
+    <li><b>On success:</b> the written character is saved and in force from the next message; the previous character is kept so the user can go back (UC-03).</li>
+    <li><b>On failure:</b> nothing is saved and whichever character was in force stays in force.</li>
   </ul>
 
   <h4>Main flow</h4>
-  <div class="note" data-marker="GUIDANCE">
-    The path where everything goes right, alternating what the actor does and how
-    the system responds. Numbered steps, because the alternative flows refer to
-    them by number. Keep the steps free of screen and technology detail.
-  </div>
   <ol class="flow">
-    <li><span class="who">Actor</span><span class="ph">&lt;WHAT_THE_ACTOR_DOES&gt;</span></li>
-    <li><span class="who">System</span><span class="ph">&lt;HOW_THE_SYSTEM_RESPONDS&gt;</span></li>
-    <li><span class="who">Actor</span><span class="ph">&lt;WHAT_THE_ACTOR_DOES&gt;</span></li>
-    <li><span class="who">System</span><span class="ph">&lt;HOW_THE_SYSTEM_RESPONDS&gt;</span></li>
-    <li><span class="who">System</span><span class="ph">&lt;FINAL_RESPONSE_THAT_MEETS_THE_GOAL&gt;</span></li>
+    <li><span class="who">User</span>Chooses to write their own character.</li>
+    <li><span class="who">System</span>Offers a plain text box, with an example of the kind of thing that can be written in it.</li>
+    <li><span class="who">User</span>Describes the character &mdash; who it is, what it does, how it talks, what it should never do.</li>
+    <li><span class="who">System</span>Answers a sample question in that character straight away.</li>
+    <li><span class="who">User</span>Adjusts the description, or accepts it.</li>
+    <li><span class="who">System</span>Saves the character and applies it to the next message.</li>
   </ol>
 
   <h4>Alternative flows</h4>
-  <div class="note" data-marker="GUIDANCE">
-    Every way the main flow can bend or break. Number them <b>A</b> for a valid
-    alternative route and <b>E</b> for an error or exception. Each one names the
-    step it branches from, the condition that triggers it, and where it rejoins
-    the main flow &mdash; or that it ends the use case. Cover at least: the actor
-    cancels, the input is invalid, permission is refused, and another system is
-    unavailable.
-  </div>
 
   <div class="altflow">
-    <h5>UC-02-A1 &mdash; <span class="ph">&lt;ALTERNATIVE_NAME&gt;</span></h5>
-    <p class="cond"><b>Branches from step <span class="ph">&lt;N&gt;</span>.</b>
-    <span class="ph">&lt;CONDITION_THAT_TRIGGERS_IT&gt;</span></p>
+    <h5>UC-02-A1 &mdash; Starting from a ready-made character</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user wants to edit rather than start from a blank box.</p>
     <ol>
-      <li><span class="ph">&lt;STEP_1&gt;</span></li>
-      <li><span class="ph">&lt;STEP_2&gt;</span></li>
-      <li>The flow returns to step <span class="ph">&lt;N&gt;</span> of the main flow.</li>
+      <li>The user picks one of the four ready-made characters as a starting point.</li>
+      <li>The system fills the box with that character&rsquo;s description in the same plain words the user would have written.</li>
+      <li>The flow returns to step 3 of the main flow.</li>
     </ol>
   </div>
 
   <div class="altflow">
-    <h5>UC-02-E1 &mdash; <span class="ph">&lt;ERROR_NAME&gt;</span></h5>
-    <p class="cond"><b>Branches from step <span class="ph">&lt;N&gt;</span>.</b>
-    <span class="ph">&lt;CONDITION_THAT_TRIGGERS_IT&gt;</span></p>
+    <h5>UC-02-E1 &mdash; The description tries to remove a limit</h5>
+    <p class="cond"><b>Branches from step 4.</b> The description asks the companion to drop a safety behaviour or one of the base rules.</p>
     <ol>
-      <li><span class="ph">&lt;WHAT_THE_SYSTEM_TELLS_THE_ACTOR&gt;</span></li>
-      <li><span class="ph">&lt;WHAT_THE_SYSTEM_RECORDS_OR_WHO_IT_NOTIFIES&gt;</span></li>
-      <li>The use case ends without <span class="ph">&lt;THE_GOAL&gt;</span>.</li>
+      <li>The system says plainly which part it will not take on, and why.</li>
+      <li>The system keeps every other part of the description and shows the sample answer with those in force.</li>
+      <li>The flow returns to step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-02-E2 &mdash; The description names a specific real person</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user asks the companion to be a named real person.</p>
+    <ol>
+      <li>The system declines that part and says why: it will not take on a real person&rsquo;s identity.</li>
+      <li>The system offers the same character without the real identity attached, and lets the user carry on.</li>
+      <li>The flow returns to step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-02-E3 &mdash; The user leaves without saving</h5>
+    <p class="cond"><b>Branches from any step.</b> The user cancels.</p>
+    <ol>
+      <li>The system discards the draft description without storing it or learning from it.</li>
+      <li>The use case ends with the previous character unchanged.</li>
     </ol>
   </div>
 
   <h4>Notes</h4>
-  <div class="note" data-marker="GUIDANCE">
-    Anything a reader needs that does not fit above: business rules that apply
-    here, open questions with an owner and a date, and anything deliberately
-    deferred. An open question with no owner will still be open at the end of the
-    project.
-  </div>
   <ul>
-    <li><b>Business rule.</b> <span class="ph">&lt;RULE_OR_REFERENCE_TO_BR-NN&gt;</span></li>
-    <li><b>Open question.</b> <span class="ph">&lt;QUESTION&gt;</span> Owner:
-    <span class="ph">&lt;NAME&gt;</span>. Needed by <span class="ph">&lt;YYYY-MM-DD&gt;</span>.</li>
-    <li><b>Deliberately excluded.</b> <span class="ph">&lt;WHAT_AND_WHY&gt;</span></li>
+    <li><b>Limits.</b> A character may take on a role, including a fictional one. It may not take on the identity of a specific real person (FR-05). What it can never change is the safety behaviour in NFR-13 and the base rules in 8.1.</li>
+    <li><b>Changed in version 2.0.</b> Version 1.0 said a personality &ldquo;only changes tone of voice&rdquo; and forbade role-play outright. Both blocked the character concept and are replaced by the narrower limit above.</li>
+    <li><b>Base rule.</b> BR-06 &mdash; whatever character is written, the companion still states only what it observed.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-03">
+  <h3>UC-03 &mdash; Change the character later</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> A few times in the first month, rarely after that</span>
+    <span><b>Requirements:</b> FR-03</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>After a few days the user may find the companion too talkative, or too formal.
+  They can edit the character at any time, and every earlier version is kept so they
+  can go back &mdash; because a rewrite is not always an improvement.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> AI model</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is already in force.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the edited character is in force from the next message, and the previous version is stored and restorable.</li>
+    <li><b>On failure:</b> the character in force is unchanged, and the stored history is intact.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens the character settings.</li>
+    <li><span class="who">System</span>Shows the character as it stands, in the same plain words it was written in.</li>
+    <li><span class="who">User</span>Edits it and saves.</li>
+    <li><span class="who">System</span>Stores the previous version, applies the new one, and confirms that it takes effect from the next message.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-03-A1 &mdash; Going back to an earlier version</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user prefers how it used to be.</p>
+    <ol>
+      <li>The user opens the list of earlier versions, each shown with the date it was in force.</li>
+      <li>The user picks one and restores it.</li>
+      <li>The system applies it and keeps the version being replaced, so the move can itself be undone.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-03-E1 &mdash; The saved history cannot be read</h5>
+    <p class="cond"><b>Branches from UC-03-A1.</b> The stored earlier versions are missing or unreadable.</p>
+    <ol>
+      <li>The system says plainly that the history is unavailable, rather than showing an empty list as though there had never been one.</li>
+      <li>The character currently in force is left untouched.</li>
+      <li>The use case ends without a restore.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-03-E2 &mdash; The user leaves the editor without saving</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user cancels.</p>
+    <ol>
+      <li>The system discards the edit.</li>
+      <li>The use case ends with the character unchanged.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Why history is kept.</b> The user needs a way back. A rewritten character that turns out worse is otherwise unrecoverable.</li>
+    <li><b>Related.</b> The companion may propose a change to its own character, but only the user can apply one (UC-11, FR-16).</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-04">
+  <h3>UC-04 &mdash; Turn on desk awareness</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Once, plus occasional changes of mind</span>
+    <span><b>Requirements:</b> FR-06, NFR-03</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Before anything can know whether the user is at the desk, the user has to switch
+  it on. The system states in plain words what it will read and what it will not, and
+  the honest part of that list is short. Turning it down costs the user nothing:
+  conversation works in full either way.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> Windows, which supplies idle time, lock state and presentation state</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Cognia is installed and a character is in force.</li>
+    <li>Desk awareness is currently off.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> desk awareness is on, and the use cases that depend on it (UC-05 to UC-08) become available.</li>
+    <li><b>On failure:</b> desk awareness stays off, no activity information is read, and conversation is unaffected.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Reaches the desk awareness screen, either during setup or from settings.</li>
+    <li><span class="who">System</span>States what it reads: how long since the mouse or keyboard was touched, whether the machine is locked, whether the user is presenting full-screen.</li>
+    <li><span class="who">System</span>States what it never reads: what the user types, the screen, the clipboard, browsing history, and which application or window is open.</li>
+    <li><span class="who">User</span>Switches it on.</li>
+    <li><span class="who">System</span>Confirms it is on, and says plainly that it now knows only whether the user is at the machine, not what they are doing.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-04-A1 &mdash; The user decides not to, or not yet</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user declines or closes the screen.</p>
+    <ol>
+      <li>The system leaves it off and does not ask again unprompted.</li>
+      <li>Conversation, memory and the character remain fully available; only the desk use cases are unavailable.</li>
+      <li>The use case ends with desk awareness off.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-04-A2 &mdash; Switching it off again later</h5>
+    <p class="cond"><b>Branches from step 1.</b> Desk awareness is already on and the user wants it off.</p>
+    <ol>
+      <li>The user switches it off.</li>
+      <li>The system stops reading activity immediately and says what has stopped.</li>
+      <li>Any open session is closed as it stands (UC-07).</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-04-E1 &mdash; Windows does not supply the information</h5>
+    <p class="cond"><b>Branches from step 4.</b> The operating system does not report idle time on this machine.</p>
+    <ol>
+      <li>The system says plainly that it cannot tell whether the user is at the desk on this machine.</li>
+      <li>The system leaves desk awareness off rather than guessing from anything else.</li>
+      <li>The use case ends with desk awareness off.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Base rule.</b> BR-06 &mdash; the companion says &ldquo;at the machine&rdquo;, never &ldquo;working&rdquo;. This screen is where that distinction is first explained to the user.</li>
+    <li><b>Deliberately excluded.</b> Reading which application or window is open would give better context, and is refused anyway: asking one question at the start of a session (UC-05) gives better information at no privacy cost.</li>
+    <li><b>Constraint.</b> C-05 &mdash; only the three facts listed in step 2 may ever be read.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-05">
+  <h3>UC-05 &mdash; Start a work session</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> One to four times a working day</span>
+    <span><b>Requirements:</b> FR-07, FR-08</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>This is the core interaction of the product. The user says in one line what they
+  are about to do; the companion notes it, says it will be there, and then goes quiet
+  for the length of the session. The value is not in the sentence being recorded &mdash;
+  it is in having said it to somebody, and in knowing somebody is there while the work
+  happens.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> Companion, which is present for the length of the session</li>
+    <li><b>Systems involved:</b> Session timer; Windows, for desk activity</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force.</li>
+    <li>No session is currently open.</li>
+    <li>Desk awareness is on &mdash; or off, in which case UC-05-E1 applies.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> a session is open, with a start time and, usually, a one-line intent. The companion is silent until the session ends, except for the break nudge.</li>
+    <li><b>On failure:</b> no session is open and nothing is recorded.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Starts a session, from the application or from the tray icon.</li>
+    <li><span class="who">System</span>Asks one question, in character: what are you working on?</li>
+    <li><span class="who">User</span>Answers in one line.</li>
+    <li><span class="who">System</span>Repeats the intent back, notes the start time, and says it will be around and will stay out of the way.</li>
+    <li><span class="who">System</span>Stays silent for the length of the session, sending nothing at all except the break nudge (BR-05).</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-05-A1 &mdash; Starting without saying what it is for</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user skips the question.</p>
+    <ol>
+      <li>The system starts the session with a start time and no intent.</li>
+      <li>The system does not ask a second time, and does not guess what the session is for.</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-05-A2 &mdash; The work changes part-way through</h5>
+    <p class="cond"><b>Branches from step 5.</b> The user is now doing something else.</p>
+    <ol>
+      <li>The user states the new intent.</li>
+      <li>The system records it against the same session, keeping the original line as well rather than overwriting it.</li>
+      <li>The flow returns to step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-05-E1 &mdash; Desk awareness is off</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user has not switched on desk awareness.</p>
+    <ol>
+      <li>The system says plainly that it will not know whether the user is at the desk, and that the session will be timed by the clock alone.</li>
+      <li>The system offers to switch desk awareness on (UC-04), and starts the session either way.</li>
+      <li>The flow continues at step 2 of the main flow, with the break nudge unavailable.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-05-E2 &mdash; A session is already open</h5>
+    <p class="cond"><b>Branches from step 1.</b> An earlier session was never closed.</p>
+    <ol>
+      <li>The system shows the open session and how long it has been running.</li>
+      <li>The user either carries on with it, or closes it (UC-07) and starts the new one.</li>
+      <li>The system never runs two sessions at once.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-05-E3 &mdash; The user dismisses the question</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user cancels.</p>
+    <ol>
+      <li>The system starts nothing and records nothing.</li>
+      <li>The use case ends with no session open.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Base rule.</b> BR-05 &mdash; during a session the companion sends nothing except the break nudge. A session is a promise to be quiet, and breaking it once would undo the whole idea.</li>
+    <li><b>New in version 2.0.</b> This use case did not exist in version 1.0, which had no notion of a session at all.</li>
+    <li><b>Deliberately excluded.</b> The system does not detect the start of work by itself. Asking a question is more accurate than any inference and costs no privacy.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-06">
+  <h3>UC-06 &mdash; Be nudged to take a break</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> At most a few times a day</span>
+    <span><b>Requirements:</b> FR-09, NFR-10</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The one thing the companion is allowed to say during a session. When the user has
+  been at the machine longer than their own threshold, the companion waits for a pause
+  in the typing and then says so. It is a detail of being present through a session,
+  not a feature in its own right.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Companion</li>
+    <li><b>Secondary actors:</b> User</li>
+    <li><b>Systems involved:</b> Session timer; Windows</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Desk awareness is on and a session is open.</li>
+    <li>Continuous time at the machine has passed the user&rsquo;s threshold, 90 minutes by default.</li>
+    <li>It is not quiet hours, the machine is not locked, and the user is not presenting.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the nudge has been shown with an explanation attached, and the user&rsquo;s response is recorded.</li>
+    <li><b>On failure:</b> nothing is shown, and the reason it was withheld is recorded so that UC-17 can still tell the truth about it.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">System</span>Notices that continuous time at the machine has passed the threshold.</li>
+    <li><span class="who">System</span>Waits for the user to stop typing (BR-03), holding the message rather than interrupting.</li>
+    <li><span class="who">System</span>Shows the nudge, in character, with the wording of BR-06 &mdash; at the machine for 90 minutes, not working for 90 minutes &mdash; and a way to ask why.</li>
+    <li><span class="who">User</span>Takes the break, postpones it, or silences it for the day.</li>
+    <li><span class="who">System</span>Records the response and resets the count if a break was taken.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-06-A1 &mdash; Postponing</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user is in the middle of something.</p>
+    <ol>
+      <li>The user postpones by 20 minutes.</li>
+      <li>The system waits, and comes back subject to the same rules as before.</li>
+      <li>The flow returns to step 2 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-06-A2 &mdash; Postponed three times</h5>
+    <p class="cond"><b>Branches from UC-06-A1.</b> The user has postponed three times in a row.</p>
+    <ol>
+      <li>The system asks whether the threshold should be raised, instead of continuing to nudge at a number the user is visibly rejecting.</li>
+      <li>The user raises the threshold, or leaves it.</li>
+      <li>The use case ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-06-A3 &mdash; Silencing it for the day</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user does not want break nudges today.</p>
+    <ol>
+      <li>The system stops sending them until tomorrow, and says so in one line.</li>
+      <li>The use case ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-06-E1 &mdash; The moment is not allowed</h5>
+    <p class="cond"><b>Branches from step 2.</b> Quiet hours have started, the machine has been locked, the user has begun presenting, or the daily allowance is spent.</p>
+    <ol>
+      <li>The system does not show the nudge at all, and does not queue it up to fire later as a batch.</li>
+      <li>The system records which rule withheld it, so that the explanation in UC-17 stays truthful.</li>
+      <li>The use case ends without a nudge.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-06-E2 &mdash; The user ignores the nudge entirely</h5>
+    <p class="cond"><b>Branches from step 4.</b> The nudge is dismissed without any response, while the user is at the desk.</p>
+    <ol>
+      <li>The system records it as ignored &mdash; but only because the user was at the desk to see it.</li>
+      <li>After three in a row, the flow continues as UC-19.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Base rules.</b> BR-01 (allowance), BR-02 (quiet hours), BR-03 (wait for a pause), BR-05 (the only message allowed during a session), BR-06 (honest wording) all apply here at once. This is the use case where the rules do the most work.</li>
+    <li><b>Changed in version 2.0.</b> In version 1.0 this was UC-12, a headline feature standing on its own. It is now a detail inside a session.</li>
+    <li><b>Never.</b> Interrupting continuous typing would damage exactly the thing the nudge exists to protect.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-07">
+  <h3>UC-07 &mdash; Close a work session</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Once per session</span>
+    <span><b>Requirements:</b> FR-10, NFR-08</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The other half of the core interaction. One question at the end, an honest and
+  specific acknowledgement, and the session is written down so that tomorrow does not
+  start from nothing. The acknowledgement is deliberately unflattering: praise that is
+  general, repeated and unearned loses its value within a week.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> Companion</li>
+    <li><b>Systems involved:</b> Session timer</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A session is open.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the session is closed and recorded &mdash; intent, start, end, time at the machine, and the closing answer if one was given. It is available to UC-08 and UC-12.</li>
+    <li><b>On failure:</b> the session stays open and nothing is silently lost.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Ends the session.</li>
+    <li><span class="who">System</span>Asks one question, in character: how did that go?</li>
+    <li><span class="who">User</span>Answers in a line, or skips it.</li>
+    <li><span class="who">System</span>Records the session: what it was for, when it started and ended, how long the user was at the machine, and the answer.</li>
+    <li><span class="who">System</span>Acknowledges it specifically &mdash; naming what the session was and how long it ran &mdash; and does not congratulate.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-07-A1 &mdash; Skipping the question</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user does not want to answer.</p>
+    <ol>
+      <li>The system closes and records the session without an answer.</li>
+      <li>The system does not ask again later, and does not infer how it went from the time alone.</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-07-A2 &mdash; The application is closed with the session still open</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user shuts down without ending the session.</p>
+    <ol>
+      <li>At the next start-up the system closes the session as of the last recorded activity, not as of the moment it noticed.</li>
+      <li>The system marks it as ended without an answer, and says so plainly rather than presenting it as a completed session.</li>
+      <li>The flow continues as UC-08.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-07-E1 &mdash; The session cannot be written to disk</h5>
+    <p class="cond"><b>Branches from step 4.</b> Writing the record fails.</p>
+    <ol>
+      <li>The system says plainly that it could not save the session.</li>
+      <li>The system keeps the session open rather than closing it and losing it silently, and offers to try again.</li>
+      <li>The use case ends without a recorded session.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>New in version 2.0.</b> This use case absorbs version 1.0&rsquo;s UC-14, which acknowledged completed work as a feature of its own.</li>
+    <li><b>Never.</b> &ldquo;You&rsquo;re amazing&rdquo;, &ldquo;I&rsquo;m proud of you&rdquo;, or any praise not tied to something specific. &ldquo;Two hours on the positioning chapter&rdquo; is the register.</li>
+    <li><b>Base rule.</b> BR-06 &mdash; the record says how long the user was at the machine, not how long they worked.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-08">
+  <h3>UC-08 &mdash; Return to the desk</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> Several times a day</span>
+    <span><b>Requirements:</b> FR-11</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The user comes back from lunch, or a meeting, or the next morning, and the
+  companion tells them what they were in the middle of. It is the payoff for having
+  said what the session was for: the thread is picked up rather than restarted.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Companion</li>
+    <li><b>Secondary actors:</b> User</li>
+    <li><b>Systems involved:</b> Session timer; Windows</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Desk awareness is on.</li>
+    <li>A session is open, and the desk has been empty for long enough to count as an absence.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has been shown the open session and has either continued it or closed it.</li>
+    <li><b>On failure:</b> nothing is shown, and no session time is invented for the period the machine could not observe.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">System</span>Notices activity at the desk after an absence.</li>
+    <li><span class="who">System</span>Waits for a pause before saying anything (BR-03).</li>
+    <li><span class="who">System</span>Says what was in progress: the session&rsquo;s intent and how long ago it started.</li>
+    <li><span class="who">User</span>Carries on with the session, or closes it.</li>
+    <li><span class="who">System</span>Either returns to silence for the rest of the session, or continues as UC-07.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-08-A1 &mdash; The absence was a long one</h5>
+    <p class="cond"><b>Branches from step 3.</b> The desk was empty for longer than a session plausibly runs.</p>
+    <ol>
+      <li>The system offers to close the session as of the last recorded activity, rather than counting the whole gap as time at the machine.</li>
+      <li>The user accepts, or keeps the session running.</li>
+      <li>The flow continues at step 4 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-08-A2 &mdash; There is nothing in progress</h5>
+    <p class="cond"><b>Branches from step 1.</b> No session is open.</p>
+    <ol>
+      <li>The system says nothing at all. Returning to an idle desk is not an event.</li>
+      <li>The use case ends. If the user opens the application, UC-16 applies instead.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-08-E1 &mdash; The machine slept, or the clock jumped</h5>
+    <p class="cond"><b>Branches from step 1.</b> The elapsed time cannot be trusted.</p>
+    <ol>
+      <li>The system says plainly that it cannot tell how long the user was away.</li>
+      <li>The system asks whether the session should be continued or closed, instead of guessing a number.</li>
+      <li>The flow continues at step 4 of the main flow.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>New in version 2.0.</b> Version 1.0 had nothing to return to, because it had no sessions.</li>
+    <li><b>Base rules.</b> BR-03 &mdash; waiting for a pause applies even to a welcome back. BR-06 &mdash; an absence of unknown length is described as unknown.</li>
+    <li><b>Never.</b> &ldquo;Where have you been?&rdquo; and anything else that treats an absence as something to answer for (BR-04).</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-09">
+  <h3>UC-09 &mdash; Talk to the companion</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Many times a day</span>
+    <span><b>Requirements:</b> FR-13, FR-14, NFR-06, NFR-09</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The ordinary conversation. The companion answers in character and draws on what
+  it remembers from earlier sessions, showing which remembered thing it used. When the
+  user tells it something about themselves, it confirms what it stored, in the exact
+  words it stored, so a misunderstanding is caught immediately rather than accumulating
+  quietly.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> AI model</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force.</li>
+    <li>The AI model is available &mdash; or not, in which case UC-09-E1 applies.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has a reply in character, and anything they said about themselves has been stored and shown back for checking.</li>
+    <li><b>On failure:</b> the user is told plainly what is not working, and nothing is stored from a conversation that did not happen.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Writes a message.</li>
+    <li><span class="who">System</span>Replies in character, drawing on what it remembers.</li>
+    <li><span class="who">System</span>Shows which remembered item the reply drew on, where it drew on one.</li>
+    <li><span class="who">User</span>Says something about themselves in passing &mdash; what they are working on, how they prefer to be helped.</li>
+    <li><span class="who">System</span>Stores it and shows back the exact line it stored, inviting a correction.</li>
+    <li><span class="who">User</span>Corrects the line, deletes it, or leaves it as it is.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-09-A1 &mdash; Asking what a reply was based on</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user wants to see the whole basis.</p>
+    <ol>
+      <li>The user asks what the reply drew on.</li>
+      <li>The system lists the remembered items used, each with the date it was recorded and where it came from.</li>
+      <li>The flow returns to step 1 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-09-A2 &mdash; Rating a reply</h5>
+    <p class="cond"><b>Branches from step 2.</b> The reply was good, or was not.</p>
+    <ol>
+      <li>The user marks the reply up or down.</li>
+      <li>The system records the rating, and does not change how it behaves on the strength of it without asking (UC-11).</li>
+      <li>The flow returns to step 1 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-09-E1 &mdash; The AI model is unavailable</h5>
+    <p class="cond"><b>Branches from step 2.</b> The model is not installed, not running, or has failed.</p>
+    <ol>
+      <li>The system says plainly that it cannot reply, and what would fix it.</li>
+      <li>Memory stays fully browsable as a list, and session timing, the break nudge and pausing continue &mdash; none of them needs the model (NFR-09).</li>
+      <li>The use case ends without a reply.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-09-E2 &mdash; The user closes the window mid-reply</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user cancels.</p>
+    <ol>
+      <li>The system discards the partial reply.</li>
+      <li>Nothing from the abandoned exchange is stored in memory.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-09-E3 &mdash; The user raises something serious about their mental health</h5>
+    <p class="cond"><b>Branches from step 1.</b> The message is about the user&rsquo;s wellbeing in a serious way.</p>
+    <ol>
+      <li>The system states honestly what it is and what it cannot do, instead of staying in character as a source of support.</li>
+      <li>No character can switch this off (NFR-13, FR-04).</li>
+      <li>The flow returns to step 1 of the main flow.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-06, telling the companion something about yourself, is folded in here at steps 4 to 6. It was never a separate task the user set out to do.</li>
+    <li><b>Base rule.</b> BR-06 &mdash; if the companion has no basis for something, it does not say it.</li>
+    <li><b>Related.</b> Everything stored here appears in UC-12 and can be corrected in UC-13.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-10">
+  <h3>UC-10 &mdash; Adjust how the companion talks</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> Occasionally, mostly in the first weeks</span>
+    <span><b>Requirements:</b> FR-15</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Mid-conversation, the user says &ldquo;shorter&rdquo;, or &ldquo;less
+  formal&rdquo;, or &ldquo;stop explaining that part&rdquo;. It applies at once, and
+  then the companion asks whether to keep it &mdash; because wanting a short answer
+  now is not the same as wanting short answers always, and guessing wrong builds a
+  false picture of the user that they never agreed to.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> AI model</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A conversation is in progress.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the next reply reflects the adjustment, and it is stored permanently only if the user said so.</li>
+    <li><b>On failure:</b> nothing is stored, and the way the companion talks is unchanged.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Asks for an adjustment in passing.</li>
+    <li><span class="who">System</span>Applies it to the very next reply.</li>
+    <li><span class="who">System</span>Asks whether to keep it from now on.</li>
+    <li><span class="who">User</span>Chooses just this once, or from now on.</li>
+    <li><span class="who">System</span>Stores it as a remembered preference only if the user chose to keep it, and says which it did.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-10-A1 &mdash; Just this once</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user wants it for this answer only.</p>
+    <ol>
+      <li>The system applies it to this reply and stores nothing.</li>
+      <li>The system does not count the request as evidence of a preference.</li>
+      <li>The flow ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-10-E1 &mdash; The adjustment contradicts the character</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user asks for something the character rules out.</p>
+    <ol>
+      <li>The system says plainly that this conflicts with the character in force, and names the conflict.</li>
+      <li>The system asks which should win, and offers to edit the character instead (UC-03).</li>
+      <li>The use case ends without a stored preference.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-10-E2 &mdash; The user ignores the question</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user carries on without answering.</p>
+    <ol>
+      <li>The system treats it as just this once and stores nothing.</li>
+      <li>Silence is never read as consent to remember something.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Why it asks.</b> One request for brevity is not a standing preference. Assuming otherwise accumulates into a profile of the user that is wrong and that they never saw being built.</li>
+    <li><b>Related.</b> Anything kept appears in UC-12 under what the companion noticed, with the request that produced it as its reason.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-11">
+  <h3>UC-11 &mdash; Companion asks to change how it behaves</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Could</span>
+    <span><b>Frequency:</b> Rarely &mdash; a few times a month at most</span>
+    <span><b>Requirements:</b> FR-16</span>
+    <span><b>Phase:</b> 3</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The companion notices a pattern in how it is being used and asks whether to change
+  accordingly. It asks; it never simply does it. Over months this extends to the
+  character itself: a companion that has been at the desk for half a year may propose
+  that it has changed, and the user decides whether it has.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Companion</li>
+    <li><b>Secondary actors:</b> User</li>
+    <li><b>Systems involved:</b> AI model</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>The companion has recorded evidence of a repeated pattern, and can show it.</li>
+    <li>It is not quiet hours, no session is open, and the daily allowance is not spent.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the change is applied only if the user approved it, and is recorded in memory with its reason.</li>
+    <li><b>On failure:</b> nothing changes, and a refused proposal is never raised again.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">System</span>Notices a repeated pattern and assembles the evidence for it.</li>
+    <li><span class="who">System</span>Waits for a moment the base rules allow, then asks &mdash; stating the pattern and the evidence.</li>
+    <li><span class="who">User</span>Agrees, or refuses.</li>
+    <li><span class="who">System</span>Applies the change only on agreement, and records it in memory with its reason so it appears in UC-12.</li>
+    <li><span class="who">System</span>On a refusal, drops the proposal and never raises it again.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-11-A1 &mdash; The proposal is a change to its own character</h5>
+    <p class="cond"><b>Branches from step 2.</b> The companion proposes that it has changed over the months it has been at the desk.</p>
+    <ol>
+      <li>The system describes the change to itself it is proposing, and what prompted it.</li>
+      <li>The user approves or refuses. Only the user can apply it.</li>
+      <li>On approval the previous character is kept, exactly as in UC-03, so the change can be undone.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-11-E1 &mdash; There is no evidence to show</h5>
+    <p class="cond"><b>Branches from step 1.</b> The pattern cannot be supported with what was actually observed.</p>
+    <ol>
+      <li>The system does not ask at all. A question it cannot justify is not asked (BR-06).</li>
+      <li>The use case ends with nothing shown.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-11-E2 &mdash; The user does not answer</h5>
+    <p class="cond"><b>Branches from step 3.</b> The proposal is dismissed or left alone.</p>
+    <ol>
+      <li>The system treats it as a refusal and changes nothing.</li>
+      <li>The system does not ask again about the same thing.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Changed in version 2.0.</b> Version 1.0 said flatly that the application never changes the personality the user set. That is now narrowed: the companion may <b>propose</b> a change to its own character, and only the user may apply one.</li>
+    <li><b>Base rules.</b> BR-01, BR-02, BR-03 and BR-05 all govern when this may be asked. BR-06 governs whether it may be asked at all.</li>
+    <li><b>Never.</b> Asking twice about something already refused.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-12">
+  <h3>UC-12 &mdash; Review what the companion remembers</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Occasionally, and whenever something feels wrong</span>
+    <span><b>Requirements:</b> FR-17, NFR-04</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>One page listing everything the companion is holding, in two clearly separated
+  groups: what the user told it, and what it worked out for itself. Everything in the
+  second group carries the reason it is there. Local storage that cannot be read is
+  worth no more than storage on someone else&rsquo;s server.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> None</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Cognia has been used at least once.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has seen everything held about them, with dates and reasons; nothing has changed.</li>
+    <li><b>On failure:</b> the user is told the list could not be read in full, and is never shown a partial list as though it were complete.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens the memory page.</li>
+    <li><span class="who">System</span>Shows two groups: <b>you told me</b> and <b>I noticed</b>.</li>
+    <li><span class="who">System</span>Shows each item with the date it was recorded, and covering all of: things the user said about themselves, past sessions, working patterns it observed, and character changes the user agreed to.</li>
+    <li><span class="who">System</span>Shows the evidence beneath every item in the second group. An item with no reason is not displayed at all.</li>
+    <li><span class="who">User</span>Reads, and moves on &mdash; or corrects an item (UC-13).</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-12-A1 &mdash; Narrowing the list</h5>
+    <p class="cond"><b>Branches from step 3.</b> There is too much to read at once.</p>
+    <ol>
+      <li>The user filters by group, by kind of item, or by date.</li>
+      <li>The system makes clear that a filter is on, so a short list is never mistaken for a complete one.</li>
+      <li>The flow returns to step 3 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-12-E1 &mdash; The stored memory cannot be read</h5>
+    <p class="cond"><b>Branches from step 2.</b> The memory on disk is damaged or unreadable.</p>
+    <ol>
+      <li>The system says plainly that it cannot show the full list, and what it could read.</li>
+      <li>The system does not present what it managed to read as though that were everything.</li>
+      <li>The use case ends without a complete list.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-08 covered mostly tone preferences. The kinds of item are now much wider &mdash; see step 3 and NFR-04.</li>
+    <li><b>Base rule.</b> BR-06 &mdash; no reason, no item. This is enforced at display time, not left to judgement.</li>
+    <li><b>Goal.</b> G-04 &mdash; any item reachable within 2 clicks.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-13">
+  <h3>UC-13 &mdash; Correct or remove a remembered item</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Occasionally</span>
+    <span><b>Requirements:</b> FR-18, NFR-04</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Reading the memory is only half of it. The user must be able to fix what is wrong
+  and remove what should not be there, item by item, and see what else depends on it
+  before doing so.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> None</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>The user is looking at a remembered item (UC-12).</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the item is corrected or gone, and the change takes effect from the next reply.</li>
+    <li><b>On failure:</b> the item is left exactly as it was; it is never left half-changed.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Picks an item.</li>
+    <li><span class="who">System</span>Shows where it came from, and what else depends on it.</li>
+    <li><span class="who">User</span>Edits the wording, or removes the item.</li>
+    <li><span class="who">System</span>Applies the change and confirms it, stating that it takes effect from the next reply.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-13-A1 &mdash; Marking something the companion noticed as wrong</h5>
+    <p class="cond"><b>Branches from step 3.</b> The item is in the <b>I noticed</b> group and the conclusion is wrong.</p>
+    <ol>
+      <li>The user marks it wrong.</li>
+      <li>The system removes it and does not draw the same conclusion again from the same evidence.</li>
+      <li>The flow returns to step 1 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-13-E1 &mdash; The change fails part-way through</h5>
+    <p class="cond"><b>Branches from step 4.</b> The write fails after the change has begun.</p>
+    <ol>
+      <li>The system says plainly what happened and offers to run it again.</li>
+      <li>The system does not leave the memory half-changed and silent about it.</li>
+      <li>The use case ends without the change.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-13-E2 &mdash; The user backs out</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user cancels.</p>
+    <ol>
+      <li>The system leaves the item untouched.</li>
+      <li>The use case ends with nothing changed.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>New in version 2.0.</b> Split out from version 1.0&rsquo;s UC-08, where reading and correcting were one use case. They are separate goals, done at different moments.</li>
+    <li><b>Goal.</b> G-04 &mdash; any item deletable within 2 clicks of being found.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-14">
+  <h3>UC-14 &mdash; Erase everything</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Rarely, but it must always be available</span>
+    <span><b>Requirements:</b> FR-19, NFR-04</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Erasure at two levels above the single item: everything remembered while keeping
+  the character, or everything without exception. The system says exactly what will be
+  lost before it does anything.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> None</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>There is something stored to erase.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> what the user chose is gone from the disk, with no copy kept anywhere.</li>
+    <li><b>On failure:</b> the user is told what was and was not removed, and can run it again.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens erasure and chooses a level: everything remembered but keep the character, or everything without exception.</li>
+    <li><span class="who">System</span>States how many items will go and what depends on them.</li>
+    <li><span class="who">User</span>Confirms.</li>
+    <li><span class="who">System</span>Erases, and confirms what is now gone.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-14-A1 &mdash; Only one item</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user wants a single item gone, not everything.</p>
+    <ol>
+      <li>The flow continues as UC-13.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-14-E1 &mdash; Erasure fails part-way through</h5>
+    <p class="cond"><b>Branches from step 4.</b> Some items are removed and others are not.</p>
+    <ol>
+      <li>The system says exactly what was removed and what was not.</li>
+      <li>The system offers to run it again, and does not report a partial erasure as a complete one.</li>
+      <li>The use case ends with the data partly removed and the user told so.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-14-E2 &mdash; The user backs out at the confirmation</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user cancels.</p>
+    <ol>
+      <li>Nothing is removed.</li>
+      <li>The use case ends with everything intact.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Why it is stated up front.</b> Erasure cannot be undone. The count and the dependencies are shown before the confirmation, not after it.</li>
+    <li><b>Related.</b> NFR-04 &mdash; every category of stored data listed there must be reachable by this use case.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-15">
+  <h3>UC-15 &mdash; Pause the companion</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Whenever the user wants to be left alone</span>
+    <span><b>Requirements:</b> FR-12, NFR-05</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>One click in the system tray stops everything: no messages, no observation, no
+  recording. The user should never have to think about how to make it stop, and the
+  tray icon must show at a glance whether it is paused.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> Session timer; Windows</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Cognia is running.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> nothing is observed and nothing is sent for the chosen period, no data is recorded for it, and the tray icon shows the paused state.</li>
+    <li><b>On failure:</b> the user is told it did not take effect, and the icon does not claim to be paused when it is not.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Clicks the tray icon.</li>
+    <li><span class="who">System</span>Offers three durations: one hour, until the end of today, or until switched back on.</li>
+    <li><span class="who">User</span>Picks one.</li>
+    <li><span class="who">System</span>Stops observing and stops sending, within one second, and changes the tray icon.</li>
+    <li><span class="who">System</span>On resuming, says how long it was paused, and does not backfill the gap.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-15-A1 &mdash; Resuming early</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user wants it back before the time is up.</p>
+    <ol>
+      <li>The user resumes from the tray.</li>
+      <li>The system restores the icon and says how long the pause lasted.</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-15-A2 &mdash; A session is open when the pause starts</h5>
+    <p class="cond"><b>Branches from step 3.</b> The user pauses mid-session.</p>
+    <ol>
+      <li>The system closes the session as of the moment of pausing (UC-07) rather than leaving it running against unrecorded time.</li>
+      <li>The flow continues at step 4 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-15-E1 &mdash; The pause does not take effect</h5>
+    <p class="cond"><b>Branches from step 4.</b> Observation cannot be stopped within one second.</p>
+    <ol>
+      <li>The system says plainly that it is still running.</li>
+      <li>The system leaves the tray icon in the running state. An icon that says paused when it is not would be the worst possible failure here.</li>
+      <li>The use case ends without a pause.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Paused means paused.</b> No observation, no messages, and no data recorded for the period.</li>
+    <li><b>Never.</b> Filling in the gap afterwards. The user switched it off on purpose (BR-04).</li>
+    <li><b>Requirement.</b> NFR-05 &mdash; in effect in under one second.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-16">
+  <h3>UC-16 &mdash; Be greeted when opening the app</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> Every time the application is opened</span>
+    <span><b>Requirements:</b> FR-20</span>
+    <span><b>Phase:</b> 3</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The user opened the application themselves, so the companion may speak more freely
+  than it ever does uninvited. It greets them in character and mentions what they have
+  on &mdash; stated as context, never as an alarm and never as a demand. If there is
+  nothing, it says so.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Companion</li>
+    <li><b>Secondary actors:</b> User</li>
+    <li><b>Systems involved:</b> AI model</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force and the user has just opened the application.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has been greeted in character, with anything notable stated as context. The daily allowance is untouched.</li>
+    <li><b>On failure:</b> the user still gets a plain greeting rather than an empty window.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens the application.</li>
+    <li><span class="who">System</span>Greets them in character.</li>
+    <li><span class="who">System</span>Mentions what they have on today &mdash; an unfinished session, what yesterday ended on &mdash; as context, in the ordinary way a person would.</li>
+    <li><span class="who">User</span>Replies, or gets on with something else.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-16-A1 &mdash; There is nothing to mention</h5>
+    <p class="cond"><b>Branches from step 3.</b> Nothing is outstanding.</p>
+    <ol>
+      <li>The system says plainly that there is nothing needing attention.</li>
+      <li>The system does not manufacture something to say in order to have said something.</li>
+      <li>The flow continues at step 4 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-16-E1 &mdash; The AI model is unavailable</h5>
+    <p class="cond"><b>Branches from step 2.</b> The greeting cannot be generated in character.</p>
+    <ol>
+      <li>The system shows a plain greeting and says the model is unavailable.</li>
+      <li>The flow continues at step 3 of the main flow, with the context stated plainly.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Why this is different.</b> The user came to the companion. That is why the greeting does not count against the three-a-day allowance in BR-01.</li>
+    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-11 listed reminders that had fallen due. There are no reminders now; what is stated is context, and it is never phrased as an alarm.</li>
+    <li><b>Never.</b> Inventing something to say (BR-06). Anything that reads as &ldquo;we missed you&rdquo; (BR-04).</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-17">
+  <h3>UC-17 &mdash; Ask why a message appeared</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> Whenever the user wonders</span>
+    <span><b>Requirements:</b> FR-21, NFR-10</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Every proactive message carries a way to ask why it appeared, answered with the
+  actual figures the decision was made from. This turns &ldquo;the app interrupted
+  me&rdquo; into &ldquo;the app had a reason&rdquo;, and it forces the inside of the
+  product to be clear enough to explain itself: anything that cannot be explained is
+  not sent.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> None</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A proactive message has been shown.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the user has seen the full reason, in real figures.</li>
+    <li><b>On failure:</b> the absence of an explanation is recorded as a defect, because the message should never have been sent.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Asks why, from the message itself.</li>
+    <li><span class="who">System</span>Shows what it observed &mdash; at the machine continuously since 09:15, 2 hours 47 minutes.</li>
+    <li><span class="who">System</span>Shows the threshold that was passed &mdash; the user&rsquo;s break threshold, 90 minutes.</li>
+    <li><span class="who">System</span>Shows how the rules changed the timing &mdash; held for 12 minutes because the user was typing.</li>
+    <li><span class="who">System</span>Shows the allowance used &mdash; 1 of 3 messages today.</li>
+    <li><span class="who">User</span>Closes the explanation, or changes the setting it came from (UC-18).</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-17-A1 &mdash; Acting on the explanation</h5>
+    <p class="cond"><b>Branches from step 6.</b> The user disagrees with the setting behind it.</p>
+    <ol>
+      <li>The user goes straight from the explanation to the setting that produced it.</li>
+      <li>The flow continues as UC-18.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-17-E1 &mdash; The explanation cannot be assembled</h5>
+    <p class="cond"><b>Branches from step 2.</b> The figures behind the decision are not available.</p>
+    <ol>
+      <li>The system records a defect: under NFR-10 a message with no explanation must never have been sent.</li>
+      <li>The system says plainly that it cannot account for the message, rather than composing a plausible reason.</li>
+      <li>The use case ends without an explanation.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Mandatory.</b> No proactive message may exist without this (NFR-10). It is checked automatically in the build, and the check refuses rather than warns.</li>
+    <li><b>Base rule.</b> BR-06 &mdash; this use case is the reason the honest-wording rule can be enforced rather than merely intended.</li>
+    <li><b>Never.</b> An explanation that is written after the fact to sound reasonable. The figures shown are the figures the decision used.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-18">
+  <h3>UC-18 &mdash; Adjust how much the companion speaks up</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> Occasionally</span>
+    <span><b>Requirements:</b> FR-22</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>One settings page governing everything the companion does uninvited: how often,
+  when, and which kinds at all. Plus the shortcut that matters most &mdash; switching
+  a kind of message off from the message itself, in one press, without being asked to
+  reconsider.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> None</li>
+    <li><b>Systems involved:</b> None</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Cognia is running.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the new settings are in force from the next decision to speak.</li>
+    <li><b>On failure:</b> the previous settings remain, and the user is told they were not saved.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Opens the settings for proactivity.</li>
+    <li><span class="who">System</span>Shows how often it may speak &mdash; quiet at 1 a day, moderate at 3, present at 6.</li>
+    <li><span class="who">System</span>Shows the quiet hours, 22:00 to 07:00 by default, and which kinds of message are switched on.</li>
+    <li><span class="who">User</span>Changes what they want.</li>
+    <li><span class="who">System</span>Saves it and applies it to the next decision to speak.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-18-A1 &mdash; Switching a kind off from the message itself</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user is looking at a message they did not want.</p>
+    <ol>
+      <li>The user presses &ldquo;don&rsquo;t send this kind again&rdquo; on the message.</li>
+      <li>The system switches that kind off immediately and does not ask them to confirm or reconsider.</li>
+      <li>The flow ends with the setting changed.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-18-E1 &mdash; The settings cannot be saved</h5>
+    <p class="cond"><b>Branches from step 5.</b> Writing the settings fails.</p>
+    <ol>
+      <li>The system says plainly that the change was not saved.</li>
+      <li>The system keeps the previous settings in force rather than running on settings it could not store.</li>
+      <li>The use case ends with nothing changed.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-18-E2 &mdash; The user leaves without saving</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user cancels.</p>
+    <ol>
+      <li>The system discards the changes and leaves the previous settings in force.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Why the shortcut has no confirmation.</b> A user switching something off in irritation should not be argued with. One press, done.</li>
+    <li><b>Base rules.</b> This page sets the numbers that BR-01 and BR-02 enforce. It cannot switch either rule off entirely.</li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-19">
+  <h3>UC-19 &mdash; Companion notices it is being ignored</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Could</span>
+    <span><b>Frequency:</b> Rarely</span>
+    <span><b>Requirements:</b> FR-23</span>
+    <span><b>Phase:</b> 3</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>If the same kind of message is ignored three times in a row, the companion reduces
+  how often it sends that kind and says that it has done so. Most reminder applications
+  carry on until they are uninstalled; this is where Cognia does the opposite.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> Companion</li>
+    <li><b>Secondary actors:</b> User</li>
+    <li><b>Systems involved:</b> Windows, to establish that the user was actually at the desk</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>Three messages of the same kind have been ignored in a row.</li>
+    <li>The user was at the desk each time, so the messages were genuinely seen and passed over.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> that kind of message is sent less often, and the user has been told and given the choice.</li>
+    <li><b>On failure:</b> nothing changes on its own without the user being told.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">System</span>Counts three ignored messages of one kind in a row, all while the user was at the desk.</li>
+    <li><span class="who">System</span>Reduces how often that kind is sent.</li>
+    <li><span class="who">System</span>Waits for a permitted moment, then says what it has noticed and what it has done.</li>
+    <li><span class="who">User</span>Accepts the reduction, switches that kind off entirely, or asks for it to be left as it was.</li>
+    <li><span class="who">System</span>Applies the choice.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-19-A1 &mdash; Switching that kind off completely</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user never wants it again.</p>
+    <ol>
+      <li>The system switches the kind off and does not raise it again.</li>
+      <li>The flow ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-19-A2 &mdash; The user wants it left alone</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user was busy, not uninterested.</p>
+    <ol>
+      <li>The system restores the previous frequency.</li>
+      <li>The system resets the count and does not treat those three as evidence again.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-19-E1 &mdash; The user was not at the desk</h5>
+    <p class="cond"><b>Branches from step 1.</b> The messages went unanswered because nobody was there.</p>
+    <ol>
+      <li>The system does not count them as ignored.</li>
+      <li>Nothing is reduced and nothing is said. Being away from the machine is not a signal about the message.</li>
+      <li>The use case ends with no change.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>What counts as ignored.</b> Only a message the user was present for and passed over. Shutting the machine and going home is not being ignored.</li>
+    <li><b>Base rules.</b> BR-04 &mdash; the answer to being ignored is to speak less, never to try harder. BR-06 &mdash; the count that triggered this is shown on request (UC-17).</li>
+    <li><b>Goal.</b> This use case is what G-02 measures the need for.</li>
   </ul>
 </section>
 
 <h2 id="traceability">11. Traceability matrix</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  This table answers two questions an auditor or a test lead will ask: is every
-  requirement delivered by some use case, and is every use case there for a
-  reason? A requirement with no use case is unbuilt. A use case covering no
-  requirement is unasked for. Keep the table in step by hand whenever a
-  requirement or use case is added.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -1176,36 +2808,41 @@
     <tr><th>Requirement</th><th>Use case</th><th>Test or acceptance reference</th><th>Status</th></tr>
   </thead>
   <tbody>
-    <tr>
-      <td>FR-01</td>
-      <td><span class="ph">&lt;UC-NN&gt;</span></td>
-      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
-      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
-    </tr>
-    <tr>
-      <td>FR-02</td>
-      <td><span class="ph">&lt;UC-NN&gt;</span></td>
-      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
-      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
-    </tr>
-    <tr>
-      <td>NFR-01</td>
-      <td><span class="ph">&lt;UC-NN_OR_ALL&gt;</span></td>
-      <td><span class="ph">&lt;TEST_ID_OR_ACCEPTANCE_CRITERION&gt;</span></td>
-      <td><span class="ph">&lt;NOT_STARTED / IN_PROGRESS / VERIFIED&gt;</span></td>
-    </tr>
+    <tr><td>FR-01</td><td>UC-01</td><td>Four characters shown with name, role and sample; the chosen one is in force on the next reply</td><td>Not started</td></tr>
+    <tr><td>FR-02</td><td>UC-02</td><td>A plain-words description produces a sample answer in that character within NFR-06</td><td>Not started</td></tr>
+    <tr><td>FR-03</td><td>UC-03</td><td>An edited character takes effect on the next message; the previous version is restorable</td><td>Not started</td></tr>
+    <tr><td>FR-04</td><td>UC-01, UC-02</td><td>A character description asking for a base rule or NFR-13 to be dropped is refused in part, and the rest is kept</td><td>Not started</td></tr>
+    <tr><td>FR-05</td><td>UC-02</td><td>A description naming a specific real person is declined, with the rest of the character offered</td><td>Not started</td></tr>
+    <tr><td>FR-06</td><td>UC-04</td><td>Desk awareness is off until switched on; the reads and does-not-read lists match NFR-03</td><td>Not started</td></tr>
+    <tr><td>FR-07</td><td>UC-05</td><td>A session opens with a start time and a one-line intent, or with no intent if skipped</td><td>Not started</td></tr>
+    <tr><td>FR-08</td><td>UC-05, UC-06</td><td>Across an open session, no message is sent other than the break nudge</td><td>Not started</td></tr>
+    <tr><td>FR-09</td><td>UC-06</td><td>The nudge appears only after the threshold and only at a pause in typing</td><td>Not started</td></tr>
+    <tr><td>FR-10</td><td>UC-07</td><td>Closing a session records intent, start, end, time at the machine and the answer</td><td>Not started</td></tr>
+    <tr><td>FR-11</td><td>UC-08</td><td>Returning after an absence shows the open session&rsquo;s intent and elapsed time</td><td>Not started</td></tr>
+    <tr><td>FR-12</td><td>UC-15</td><td>One click stops observation and messages within NFR-05, and the tray icon changes</td><td>Not started</td></tr>
+    <tr><td>FR-13</td><td>UC-09</td><td>A reply is in character and references an item from an earlier session</td><td>Not started</td></tr>
+    <tr><td>FR-14</td><td>UC-09</td><td>A stated fact is stored and the stored line is shown back verbatim for correction</td><td>Not started</td></tr>
+    <tr><td>FR-15</td><td>UC-10</td><td>&ldquo;Shorter&rdquo; applies to the next reply, and is stored only after the user says to keep it</td><td>Not started</td></tr>
+    <tr><td>FR-16</td><td>UC-11</td><td>A proposed change, including one to the character, is applied only after approval, and is never re-raised after a refusal</td><td>Not started</td></tr>
+    <tr><td>FR-17</td><td>UC-12</td><td>Both groups are shown; every item in &ldquo;I noticed&rdquo; carries its evidence</td><td>Not started</td></tr>
+    <tr><td>FR-18</td><td>UC-13</td><td>An item is corrected or removed and takes effect on the next reply; a failed change leaves it untouched</td><td>Not started</td></tr>
+    <tr><td>FR-19</td><td>UC-14</td><td>Both erasure levels report the count first and leave nothing on disk afterwards</td><td>Not started</td></tr>
+    <tr><td>FR-20</td><td>UC-16</td><td>The greeting is in character, states context, and says plainly when there is nothing</td><td>Not started</td></tr>
+    <tr><td>FR-21</td><td>UC-17</td><td>The explanation shows observation, threshold, delay and allowance, in real figures</td><td>Not started</td></tr>
+    <tr><td>FR-22</td><td>UC-18</td><td>Level, quiet hours and per-kind switches take effect on the next decision to speak</td><td>Not started</td></tr>
+    <tr><td>FR-23</td><td>UC-19</td><td>Three ignored messages at the desk reduce the frequency and produce a message saying so</td><td>Not started</td></tr>
+    <tr><td>FR-24</td><td>&mdash;</td><td>No task, reminder, alarm or acting-on-behalf feature exists in the build. Verified by inspection against section 5</td><td>Not started</td></tr>
+    <tr><td>NFR-01</td><td>All</td><td>G-05 network capture across a trial week</td><td>Not started</td></tr>
+    <tr><td>NFR-03</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used</td><td>Not started</td></tr>
+    <tr><td>NFR-04</td><td>UC-12, UC-13, UC-14</td><td>Every listed data category is visible, correctable and erasable; disk inspection after erasure</td><td>Not started</td></tr>
+    <tr><td>NFR-09</td><td>UC-09</td><td>With the model stopped, session timing, break nudge, memory list and pause still work</td><td>Not started</td></tr>
+    <tr><td>NFR-10</td><td>UC-06, UC-17</td><td>Automated check refuses to send any proactive message lacking a complete explanation</td><td>Not started</td></tr>
+    <tr><td>NFR-13</td><td>UC-02, UC-09</td><td>Scripted mental-health cases produce an honest statement of limits under every character</td><td>Not started</td></tr>
   </tbody>
 </table>
 </div>
 
 <h2 id="glossary">12. Glossary</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  Every business term, abbreviation and status name used in this document,
-  defined once in plain language. If two departments use the same word
-  differently, this is where that gets settled &mdash; say which meaning applies
-  here.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -1224,26 +2861,65 @@
       <td>Also called the &ldquo;happy path&rdquo;.</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;TERM_1&gt;</span></td>
-      <td><span class="ph">&lt;PLAIN_LANGUAGE_DEFINITION&gt;</span></td>
-      <td><span class="ph">&lt;NOTE_OR_DASH&gt;</span></td>
+      <td>Companion</td>
+      <td>Cognia acting on its own initiative, as opposed to answering something the user said.</td>
+      <td>An actor in its own right; see 6.1.</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;TERM_2&gt;</span></td>
-      <td><span class="ph">&lt;PLAIN_LANGUAGE_DEFINITION&gt;</span></td>
-      <td><span class="ph">&lt;NOTE_OR_DASH&gt;</span></td>
+      <td>Character</td>
+      <td>Who the companion is: its name, its role, its manner of speaking, and its history with the user.</td>
+      <td>Not a tone setting. See FR-04 for what a character can never change.</td>
+    </tr>
+    <tr>
+      <td>Continuity</td>
+      <td>The companion remembering the sessions it has shared with the user, so that it is not starting from nothing each day.</td>
+      <td>Serves the relationship, not record-keeping.</td>
+    </tr>
+    <tr>
+      <td>Presence</td>
+      <td>Being there while the user works, rather than sending them notifications.</td>
+      <td>The third pillar; see 3.1.</td>
+    </tr>
+    <tr>
+      <td>Work session</td>
+      <td>A stretch of work the user has opened by saying in one line what it is for, and closed by answering one question about how it went.</td>
+      <td>The core interaction. UC-05 and UC-07.</td>
+    </tr>
+    <tr>
+      <td>Desk awareness</td>
+      <td>The companion knowing whether the user is at the machine, from idle time, lock state and presentation state &mdash; and nothing else.</td>
+      <td>Off until switched on. UC-04.</td>
+    </tr>
+    <tr>
+      <td>Proactive message</td>
+      <td>Anything the companion says that the user did not ask for.</td>
+      <td>Governed by BR-01 to BR-06; always explainable (UC-17).</td>
+    </tr>
+    <tr>
+      <td>Break nudge</td>
+      <td>The message offering a break after continuous time at the machine passes the user&rsquo;s threshold.</td>
+      <td>The only thing sent during a session. UC-06.</td>
+    </tr>
+    <tr>
+      <td>Quiet hours</td>
+      <td>The period in which nothing is sent at all, 22:00 to 07:00 by default.</td>
+      <td>BR-02. Extended to cover a locked machine and full-screen presenting.</td>
+    </tr>
+    <tr>
+      <td>Base rule</td>
+      <td>One of the six rules in 8.1 that binds every use case and that no character can override.</td>
+      <td>Called a &ldquo;law&rdquo; in version 1.0, where there were four.</td>
+    </tr>
+    <tr>
+      <td>Local-only</td>
+      <td>All data held on the user&rsquo;s own disk, with no account, no server and no synchronisation.</td>
+      <td>NFR-01 and C-02.</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <h2 id="references">13. References</h2>
-
-<div class="note" data-marker="GUIDANCE">
-  Documents this one depends on or points to. Give the version, so a reader can
-  tell whether what they are holding is the one this document was written
-  against.
-</div>
 
 <div class="table-wrap">
 <table>
@@ -1252,44 +2928,32 @@
   </thead>
   <tbody>
     <tr>
-      <td><span class="ph">&lt;RELATED_DOCUMENT_1&gt;</span></td>
-      <td><span class="ph">&lt;DOC_ID_AND_VERSION&gt;</span></td>
-      <td><span class="ph">&lt;OWNER&gt;</span></td>
-      <td><span class="ph">&lt;URL_OR_LOCATION&gt;</span></td>
+      <td>Cognia &mdash; Repositioning change log. The decision record behind version 2.0 of this document</td>
+      <td>CHANGE.md, dated 2026-08-14</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>CHANGE.md</code>, repository root</td>
     </tr>
     <tr>
-      <td><span class="ph">&lt;RELATED_DOCUMENT_2&gt;</span></td>
-      <td><span class="ph">&lt;DOC_ID_AND_VERSION&gt;</span></td>
-      <td><span class="ph">&lt;OWNER&gt;</span></td>
-      <td><span class="ph">&lt;URL_OR_LOCATION&gt;</span></td>
+      <td>Cognia &mdash; &#272;&#7863;c t&#7843; use case (MVP Windows). The Vietnamese version 1.0 of this specification, kept as the record of the previous positioning</td>
+      <td>Version 1.0, dated 2026-08-14</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>USECASE_SPECIFICATION.html</code>, repository root</td>
+    </tr>
+    <tr>
+      <td>Architecture decision records</td>
+      <td>ADR 0001 onwards</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>docs/adr/</code></td>
+    </tr>
+    <tr>
+      <td>Project README</td>
+      <td>Not yet written</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>README.md</code>, repository root</td>
     </tr>
   </tbody>
 </table>
 </div>
-
-<hr>
-
-<section class="checklist">
-  <h2>Before you publish</h2>
-  <ul>
-    <li><code>grep -n '&amp;lt;[A-Z][A-Z0-9_]*&amp;gt;' USECASE_SPECIFICATION.html</code> returns nothing.</li>
-    <li>The comment block at the top of the file is deleted.</li>
-    <li>Every GUIDANCE, OPTIONAL and REQUIRED-IF box is deleted, along with any section it told you to remove &mdash; heading, box and body.</li>
-    <li>The worked example UC-01 is deleted, or replaced by a real use case of your own.</li>
-    <li>The overview ends with the positioning statement, and it reads well when quoted on its own.</li>
-    <li>Every goal has a number and a date.</li>
-    <li>Every stakeholder resolves to a real person or team with a working contact.</li>
-    <li>Every non-functional requirement has a measurable target and a stated way of checking it.</li>
-    <li>Every functional requirement appears in the traceability matrix, and every use case covers at least one requirement.</li>
-    <li>Every use case has at least one error flow, and states what happens when the actor cancels.</li>
-    <li>Every open question in a Notes section has an owner and a date.</li>
-    <li>Every term that a reader outside the team would not know is in the glossary.</li>
-    <li>Document control lists the author, the version, the status and the approvers, and the revision history has a row for this version.</li>
-    <li>No password, token, internal hostname or customer name appears anywhere in the document.</li>
-    <li>The document has been read once in a browser and once as a printed PDF.</li>
-    <li>Delete this checklist.</li>
-  </ul>
-</section>
 
 </main>
 </body>
