@@ -2,7 +2,7 @@
   ADR INDEX TEMPLATE
   ==================
   Copy to your project as docs/adr/README.md, alongside the record template
-  0001-record-architecture-decisions.md.
+  0000-record-architecture-decisions.md.
 
   Same conventions as README.template.md: replace every <PLACEHOLDER>, delete
   every GUIDANCE comment and this block.
@@ -36,7 +36,7 @@ a matter of style the linter already settles.
 
 ## How
 
-1. Copy [`0001-record-architecture-decisions.md`](0001-record-architecture-decisions.md)
+1. Copy [`0000-record-architecture-decisions.md`](0000-record-architecture-decisions.md)
    to `NNNN-short-title-in-kebab-case.md`, where `NNNN` is the next unused number.
    Numbers are never reused, even if a record is withdrawn.
 2. Fill it in. Aim for one page. If it needs more, the decision probably contains
@@ -62,4 +62,4 @@ they were written, because they are the historical account.
 
 | # | Title | Status | Date |
 |---|---|---|---|
-| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted | <YYYY-MM-DD> |
+| [0000](0000-record-architecture-decisions.md) | Record architecture decisions | Accepted | <YYYY-MM-DD> |

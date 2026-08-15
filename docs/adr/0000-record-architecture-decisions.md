@@ -2,7 +2,7 @@
   This file is both the record template and, as written, a real first ADR.
 
   To adopt the practice: copy this file into your project as
-  docs/adr/0001-record-architecture-decisions.md, set the date, and it is done —
+  docs/adr/0000-record-architecture-decisions.md, set the date, and it is done —
   the decision it records is the decision to keep ADRs at all.
 
   To write a new record: copy this file to NNNN-short-title-in-kebab-case.md and

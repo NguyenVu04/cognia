@@ -266,7 +266,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 2.0 &middot;
+    version 3.0 &middot;
     Draft
   </p>
 </header>
@@ -279,14 +279,14 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>2.0</td></tr>
+    <tr><th>Version</th><td>3.0</td></tr>
     <tr><th>Status</th><td>Draft</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
     <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no commercial sponsor; the supervising lecturer and the review panel hold the approving role &mdash; see 1.2.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
-    <tr><th>Last updated</th><td>2026-08-14</td></tr>
-    <tr><th>Next review</th><td>To be set at the review that approves version 2.0</td></tr>
+    <tr><th>Last updated</th><td>2026-08-15</td></tr>
+    <tr><th>Next review</th><td>To be set at the review that approves version 3.0</td></tr>
     <tr><th>Classification</th><td>Public</td></tr>
     <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
     <tr><th>Source of record</th><td><a href="https://github.com/NguyenVu04/cognia">https://github.com/NguyenVu04/cognia</a></td></tr>
@@ -314,6 +314,13 @@
       <td>2026-08-14</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>Repositioned from a reminder tool to a desk companion, and reissued in English. The pillars become Character, Continuity and Presence. The work session replaces the break reminder as the core interaction. Task and reminder management, precise-time alarms, mail and calendar integration are moved from &ldquo;later phase&rdquo; to deliberately never. Nineteen use cases. Two base rules added. Reason: the reminder framing measured the wrong thing and put the product in a category it could not win.</td>
+      <td>Pending</td>
+    </tr>
+    <tr>
+      <td>3.0</td>
+      <td>2026-08-15</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>The companion becomes visible: a character drawn on the desktop, rather than a tray icon and a chat window. A character therefore gains an appearance, which version 2.0 explicitly denied it. A seventh base rule puts motion under the same rules as speech, which is what keeps a visible companion from becoming the thing BR-04 forbids. NFR-07 splits into two figures, because a companion on screen costs what a hidden one does not. Three exclusions added to section 5, all of them things the genre does by default. Twenty use cases. Reason: Presence was the one pillar with no expression in the interface &mdash; a tray icon that stays quiet is indistinguishable from nothing at all.</td>
       <td>Pending</td>
     </tr>
   </tbody>
@@ -385,7 +392,9 @@ you talked to yesterday does not exist today, it has no idea what time it is or
 whether you are even at your desk, and the messages it sends are designed to bring
 you back rather than to help you.</p>
 
-<p>Cognia is a character that sits at your desk with you. You give it a name and a
+<p>Cognia is a character that sits at your desk with you &mdash; on the screen, where
+you can see it, rather than behind a tray icon. It stays still unless it has
+something to say. You give it a name and a
 role, or write your own from scratch. It keeps you company through a work session:
 you say in one line what you are about to do, it stays quiet while you do it, and it
 asks one question at the end. It remembers those sessions, so it is not starting
@@ -397,7 +406,7 @@ and delete it.</p>
 <p>It is used by one person, on one Windows machine, through the ordinary working
 day. It is not a reminder app, not a task manager, and not an assistant that runs
 errands. It speaks at most three times a day by default, never between 22:00 and
-07:00, and never in the middle of your typing.</p>
+07:00, and neither speaks nor moves in the middle of your typing.</p>
 
 <h3 id="pillars">3.1 The three pillars</h3>
 
@@ -417,7 +426,7 @@ errands. It speaks at most three times a day by default, never between 22:00 and
     </tr>
     <tr>
       <td><b>Presence</b></td>
-      <td>It is there while you work, rather than sending you notifications.</td>
+      <td>It is on the screen while you work, rather than sending you notifications. You can see that it is there without it asking anything of you.</td>
     </tr>
   </tbody>
 </table>
@@ -451,7 +460,7 @@ errands. It speaks at most three times a day by default, never between 22:00 and
     </tr>
     <tr>
       <td>Proactive messages are engagement bait</td>
-      <td>Six base rules. Every proactive message must have a reason and must be explainable (BR-01 to BR-06, UC-17)</td>
+      <td>Seven base rules. Every proactive message must have a reason and must be explainable, and movement counts as a message (BR-01 to BR-07, UC-17)</td>
     </tr>
     <tr>
       <td>The character is not yours; the vendor can change it or take it away</td>
@@ -564,6 +573,16 @@ the absence is a designed feature rather than an omission.</p>
       <td>Nobody</td>
     </tr>
     <tr>
+      <td>Companion behaviour that depends on other windows &mdash; walking along window edges, avoiding the window being typed in, sitting on the taskbar</td>
+      <td><b>Deliberately never.</b> The genre does all three by default, and every one of them needs to read window positions, which the row above already forbids. The companion knows where it was put and how large the screen is. Nothing else</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
+      <td>A companion with needs, with moods that decay, or with anything to be looked after</td>
+      <td><b>Deliberately never.</b> This is the other thing the genre does by default, and it is exactly what BR-04 exists to forbid. A companion that looks neglected is asking to be attended to, which is &ldquo;we miss you&rdquo; carried in a different medium</td>
+      <td>Nobody</td>
+    </tr>
+    <tr>
       <td>Practice and rehearsal sessions (interview, thesis defence)</td>
       <td><b>Deliberately never.</b> Considered and dropped. Out of scope for this positioning</td>
       <td>Nobody</td>
@@ -579,8 +598,13 @@ the absence is a designed feature rather than an omission.</p>
       <td>Nobody</td>
     </tr>
     <tr>
+      <td>Writing or generating your own appearance</td>
+      <td><b>Later phase, for resourcing reasons only.</b> Appearance is chosen from ready-made sets in UC-01; UC-02 stays about words. Generating one would need a second kind of model and a fresh set of privacy questions, and neither has been answered</td>
+      <td>Nobody yet</td>
+    </tr>
+    <tr>
       <td>macOS and Linux builds</td>
-      <td><b>Later phase, for resourcing reasons only.</b> Each operating system reports desk activity differently. Windows is being finished first. This is the one exclusion in this table that is not a positioning decision</td>
+      <td><b>Later phase, for resourcing reasons only.</b> Each operating system reports desk activity differently. Windows is being finished first. This and the row above are the only two exclusions in this table that are not positioning decisions</td>
       <td>Nobody yet</td>
     </tr>
   </tbody>
@@ -644,7 +668,7 @@ the absence is a designed feature rather than an omission.</p>
     <tr>
       <td>Companion</td>
       <td>System</td>
-      <td>The part of Cognia that runs in the background. It is the primary actor wherever the companion speaks first, deciding on its own when to say something without the user being present</td>
+      <td>The part of Cognia that runs in the background and is drawn on the desktop as the character the user chose. It is the primary actor wherever the companion speaks first, deciding on its own when to say something without the user being present</td>
       <td>1 per installation</td>
     </tr>
     <tr>
@@ -656,7 +680,7 @@ the absence is a designed feature rather than an omission.</p>
     <tr>
       <td>Windows</td>
       <td>System</td>
-      <td>Supplies exactly three facts and nothing else: how long since the mouse or keyboard was touched, whether the machine is locked, and whether the user is presenting full-screen</td>
+      <td>Supplies exactly three facts about the user and nothing else: how long since the mouse or keyboard was touched, whether the machine is locked, and whether the user is presenting full-screen. It also reports the screen layout, which is needed to draw the companion and says nothing about the person</td>
       <td>1</td>
     </tr>
     <tr>
@@ -739,13 +763,13 @@ the absence is a designed feature rather than an omission.</p>
     </tr>
     <tr>
       <td>C-04</td>
-      <td>The six base rules in 8.1 bind every use case in this document. They are not configurable away by the character</td>
+      <td>The seven base rules in 8.1 bind every use case in this document. They are not configurable away by the character</td>
       <td>Organisational</td>
-      <td>Decided in version 1.0 as four laws; extended to six in version 2.0</td>
+      <td>Decided in version 1.0 as four laws; extended to six in version 2.0 and to seven in version 3.0</td>
     </tr>
     <tr>
       <td>C-05</td>
-      <td>Only the three facts listed against the Windows actor may be read from the operating system</td>
+      <td>Only the three facts about the user listed against the Windows actor may be read from the operating system. Screen layout may be read as well, because drawing the companion is impossible without it and it describes the machine rather than the person. Window positions are not screen layout and remain forbidden</td>
       <td>Technical</td>
       <td>Privacy commitment; see UC-04 and NFR-03</td>
     </tr>
@@ -764,7 +788,7 @@ the absence is a designed feature rather than an omission.</p>
     <tr><td colspan="5"><b>Character</b></td></tr>
     <tr>
       <td>FR-01</td>
-      <td>The system must let the user choose a ready-made character, each shown with its name, its role and a sample exchange.</td>
+      <td>The system must let the user choose a ready-made character, each shown with its name, its role, its appearance and a sample exchange.</td>
       <td>Must</td>
       <td>User</td>
       <td>UC-01</td>
@@ -785,14 +809,14 @@ the absence is a designed feature rather than an omission.</p>
     </tr>
     <tr>
       <td>FR-04</td>
-      <td>The character must define who the companion is &mdash; its name, its role, its manner of speaking and its history with the user. What a character must never be able to change is the safety behaviour in NFR-13 and the base rules in 8.1.</td>
+      <td>The character must define who the companion is &mdash; its name, its role, its appearance, its manner of speaking and its history with the user. What a character must never be able to change is the safety behaviour in NFR-13 and the base rules in 8.1.</td>
       <td>Must</td>
       <td>Developer</td>
       <td>UC-01, UC-02</td>
     </tr>
     <tr>
       <td>FR-05</td>
-      <td>The system must refuse to take on the identity of a specific real person.</td>
+      <td>The system must refuse to take on the identity of a specific real person, in words or in appearance.</td>
       <td>Must</td>
       <td>Developer</td>
       <td>UC-02</td>
@@ -842,7 +866,7 @@ the absence is a designed feature rather than an omission.</p>
     </tr>
     <tr>
       <td>FR-12</td>
-      <td>The system must let the user stop all collection and all messages with one action.</td>
+      <td>The system must let the user stop all collection and all messages with one action, and take the companion off the screen at the same time.</td>
       <td>Must</td>
       <td>User</td>
       <td>UC-15</td>
@@ -933,13 +957,42 @@ the absence is a designed feature rather than an omission.</p>
       <td>Developer</td>
       <td>&mdash;</td>
     </tr>
+    <tr><td colspan="5"><b>The visible companion</b></td></tr>
+    <tr>
+      <td>FR-25</td>
+      <td>The system must draw the companion on the desktop as the character the user chose, above other windows, without ever taking the keyboard focus away from what the user is doing.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-20</td>
+    </tr>
+    <tr>
+      <td>FR-26</td>
+      <td>The system must let the user move the companion, hide it, and bring it back, and must put it back where it was left.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-20</td>
+    </tr>
+    <tr>
+      <td>FR-27</td>
+      <td>The companion&rsquo;s appearance must never carry a state that can be read as a demand or a reproach. It has no needs, nothing that decays, and no visible reaction to being ignored, moved or hidden.</td>
+      <td>Must</td>
+      <td>Developer</td>
+      <td>UC-20</td>
+    </tr>
+    <tr>
+      <td>FR-28</td>
+      <td>Every function must remain reachable with the companion hidden. It is never the only route to anything.</td>
+      <td>Must</td>
+      <td>User</td>
+      <td>UC-20</td>
+    </tr>
   </tbody>
 </table>
 </div>
 
 <h3 id="business-rules">8.1 Base rules</h3>
 
-<p>These six rules govern every use case below. They are not preferences and not
+<p>These seven rules govern every use case below. They are not preferences and not
 options: they are the reason the companion is still switched on in week three. A
 character cannot override them (FR-04).</p>
 
@@ -984,6 +1037,12 @@ character cannot override them (FR-04).</p>
       <td><b>Honest wording.</b> The companion says &ldquo;at the machine for 90 minutes&rdquo;, never &ldquo;working for 90 minutes&rdquo;. It states only what it actually observed; with no evidence, it says nothing.</td>
       <td>Every use case</td>
       <td>Version 1.0, promoted from a note to a rule in version 2.0</td>
+    </tr>
+    <tr>
+      <td>BR-07</td>
+      <td><b>Motion is a form of speech.</b> The companion is present without moving. Any movement directed at the user &mdash; turning towards them, gesturing, a speech bubble &mdash; is governed by BR-01 to BR-06 exactly as a spoken message is, and is counted against the same allowance.</td>
+      <td>Every proactive use case, UC-20</td>
+      <td>New in version 3.0</td>
     </tr>
   </tbody>
 </table>
@@ -1042,9 +1101,9 @@ character cannot override them (FR-04).</p>
     <tr>
       <td>NFR-07</td>
       <td>Resource use</td>
-      <td>Running in the background costs the machine almost nothing</td>
-      <td>Under 1% CPU while idle; under 150 MB of memory, not counting the AI model</td>
-      <td>Resource monitoring across an 8-hour idle run</td>
+      <td>Running in the background costs the machine almost nothing, whether the companion is on the screen or hidden</td>
+      <td>Companion hidden: under 1% CPU while idle, under 150 MB of memory, not counting the AI model. Companion on screen and idle: under 3% CPU, under 200 MB. A companion that is present without moving (BR-07) is what makes the second figure attainable at all</td>
+      <td>Resource monitoring across an 8-hour idle run, done once in each of the two states</td>
     </tr>
     <tr>
       <td>NFR-08</td>
@@ -1077,9 +1136,9 @@ character cannot override them (FR-04).</p>
     <tr>
       <td>NFR-12</td>
       <td>Accessibility</td>
-      <td>The application is fully usable without a mouse, and comfortably readable</td>
-      <td>Every function reachable from the keyboard; text contrast meeting WCAG 2.2 level AA</td>
-      <td>Keyboard-only walkthrough of every use case, plus a contrast audit</td>
+      <td>The application is fully usable without a mouse, and comfortably readable. The companion on the desktop never takes the keyboard focus and is never the only route to a function</td>
+      <td>Every function reachable from the keyboard, and reachable with the companion hidden; text contrast meeting WCAG 2.2 level AA</td>
+      <td>Keyboard-only walkthrough of every use case, run once with the companion hidden, plus a contrast audit</td>
     </tr>
     <tr>
       <td>NFR-13</td>
@@ -1102,7 +1161,10 @@ character cannot override them (FR-04).</p>
 <div class="callout caution">
   <p><b>NFR-05, NFR-06 and NFR-07 are targets, not results.</b> They are the ordinary
   expectations of a background desktop application, not figures measured on the target
-  machine. They are to be measured and this document updated before it is approved.</p>
+  machine. They are to be measured and this document updated before it is approved.
+  The two figures for a companion on screen, new in version 3.0, are the least
+  founded of them: nothing comparable has been measured, and they are the first
+  numbers that should be checked rather than the last.</p>
 </div>
 
 <h2 id="use-cases">10. Use case specifications</h2>
@@ -1139,6 +1201,8 @@ character cannot override them (FR-04).</p>
     <tr><td><a href="#uc-17">UC-17</a></td><td>Ask why a message appeared</td><td>User</td><td>Must</td><td>FR-21, NFR-10</td></tr>
     <tr><td><a href="#uc-18">UC-18</a></td><td>Adjust how much the companion speaks up</td><td>User</td><td>Should</td><td>FR-22</td></tr>
     <tr><td><a href="#uc-19">UC-19</a></td><td>Companion notices it is being ignored</td><td>Companion</td><td>Could</td><td>FR-23</td></tr>
+    <tr><td colspan="5"><b>The visible companion</b></td></tr>
+    <tr><td><a href="#uc-20">UC-20</a></td><td>Place and handle the companion on screen</td><td>User</td><td>Must</td><td>FR-25, FR-26, FR-28, NFR-12</td></tr>
   </tbody>
 </table>
 </div>
@@ -1158,8 +1222,8 @@ character cannot override them (FR-04).</p>
     </tr>
     <tr>
       <td><b>2</b></td>
-      <td>UC-04, 05, 06, 07, 08, 15, 17, 18</td>
-      <td>Work sessions. This is the phase that makes the product what it is, and it needs the same single operating system signal as version 1.0&rsquo;s break reminder did &mdash; the same technical cost, a different product</td>
+      <td>UC-04, 05, 06, 07, 08, 15, 17, 18, 20</td>
+      <td>Work sessions, and the companion on the screen. This is the phase that makes the product what it is, and it needs the same single operating system signal as version 1.0&rsquo;s break reminder did &mdash; the same technical cost, a different product</td>
     </tr>
     <tr>
       <td><b>3</b></td>
@@ -1171,7 +1235,9 @@ character cannot override them (FR-04).</p>
 </div>
 
 <p>The version that can be demonstrated ends at phase 2. Each use case below repeats
-its phase in the header line.</p>
+its phase in the header line. An appearance is chosen with the character in phase 1
+but is not drawn anywhere until phase 2, so phase 1 is a chat window and a memory
+and nothing on the desktop.</p>
 
 <section class="usecase" id="uc-01">
   <h3>UC-01 &mdash; Choose a character</h3>
@@ -1186,10 +1252,10 @@ its phase in the header line.</p>
 
   <h4>Description</h4>
   <p>On first run the user picks who is going to be sitting at the desk with them.
-  Each ready-made character is shown as a character &mdash; a name, a role, and a
-  sample exchange in its own voice &mdash; not as a tone setting on a slider. This
-  is the first thing the user ever does, and it is the decision the rest of the
-  product rests on.</p>
+  Each ready-made character is shown as a character &mdash; a name, a role, an
+  appearance, and a sample exchange in its own voice &mdash; not as a tone setting
+  on a slider. This is the first thing the user ever does, and it is the decision
+  the rest of the product rests on.</p>
 
   <h4>Actors</h4>
   <ul>
@@ -1213,7 +1279,7 @@ its phase in the header line.</p>
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens Cognia for the first time.</li>
-    <li><span class="who">System</span>Shows four ready-made characters. Each one has a name, a stated role, and a short sample exchange.</li>
+    <li><span class="who">System</span>Shows four ready-made characters. Each one has a name, a stated role, an appearance as it will be drawn on the desktop, and a short sample exchange.</li>
     <li><span class="who">User</span>Picks one to look at more closely.</li>
     <li><span class="who">System</span>Answers a sample question in that character&rsquo;s voice, so the user hears it before committing.</li>
     <li><span class="who">User</span>Confirms the choice.</li>
@@ -1263,7 +1329,8 @@ its phase in the header line.</p>
   <h4>Notes</h4>
   <ul>
     <li><b>Base rule.</b> A character sets how the companion speaks and who it is, but never what it will refuse to do (FR-04, NFR-13).</li>
-    <li><b>Open question.</b> The four ready-made characters need names and stated roles. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
+    <li><b>Open question.</b> The four ready-made characters need names, stated roles and appearances. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
+    <li><b>Open question.</b> The appearances need a licence that permits redistribution, since the repository is public and MIT-licensed. Where the artwork comes from, and on what terms, is not yet settled. Owner: the author. Needed by 2026-09-15.</li>
     <li><b>Deliberately excluded.</b> No character is chosen for the user by default. An unchosen companion is not a companion.</li>
   </ul>
 </section>
@@ -1359,6 +1426,7 @@ its phase in the header line.</p>
     <li><b>Limits.</b> A character may take on a role, including a fictional one. It may not take on the identity of a specific real person (FR-05). What it can never change is the safety behaviour in NFR-13 and the base rules in 8.1.</li>
     <li><b>Changed in version 2.0.</b> Version 1.0 said a personality &ldquo;only changes tone of voice&rdquo; and forbade role-play outright. Both blocked the character concept and are replaced by the narrower limit above.</li>
     <li><b>Base rule.</b> BR-06 &mdash; whatever character is written, the companion still states only what it observed.</li>
+    <li><b>Deliberately excluded.</b> The written description sets who the companion is and how it speaks, not how it looks. An appearance is picked from the ready-made sets in UC-01 and carried over to the written character. Writing or generating an appearance is a later phase &mdash; see section 5.</li>
   </ul>
 </section>
 
@@ -1438,6 +1506,7 @@ its phase in the header line.</p>
   <h4>Notes</h4>
   <ul>
     <li><b>Why history is kept.</b> The user needs a way back. A rewritten character that turns out worse is otherwise unrecoverable.</li>
+    <li><b>New in version 3.0.</b> Appearance is part of the character (FR-04), so an earlier version restores how the companion looked as well as how it spoke. The two are never versioned separately.</li>
     <li><b>Related.</b> The companion may propose a change to its own character, but only the user can apply one (UC-11, FR-16).</li>
   </ul>
 </section>
@@ -1482,7 +1551,7 @@ its phase in the header line.</p>
   <ol class="flow">
     <li><span class="who">User</span>Reaches the desk awareness screen, either during setup or from settings.</li>
     <li><span class="who">System</span>States what it reads: how long since the mouse or keyboard was touched, whether the machine is locked, whether the user is presenting full-screen.</li>
-    <li><span class="who">System</span>States what it never reads: what the user types, the screen, the clipboard, browsing history, and which application or window is open.</li>
+    <li><span class="who">System</span>States what it never reads: what the user types, the screen, the clipboard, browsing history, and which application or window is open &mdash; including where those windows sit, which is why the companion on the desktop never moves itself out of their way.</li>
     <li><span class="who">User</span>Switches it on.</li>
     <li><span class="who">System</span>Confirms it is on, and says plainly that it now knows only whether the user is at the machine, not what they are doing.</li>
   </ol>
@@ -1561,7 +1630,7 @@ its phase in the header line.</p>
 
   <h4>Postconditions</h4>
   <ul>
-    <li><b>On success:</b> a session is open, with a start time and, usually, a one-line intent. The companion is silent until the session ends, except for the break nudge.</li>
+    <li><b>On success:</b> a session is open, with a start time and, usually, a one-line intent. The companion is silent and still until the session ends, except for the break nudge.</li>
     <li><b>On failure:</b> no session is open and nothing is recorded.</li>
   </ul>
 
@@ -1628,6 +1697,7 @@ its phase in the header line.</p>
   <h4>Notes</h4>
   <ul>
     <li><b>Base rule.</b> BR-05 &mdash; during a session the companion sends nothing except the break nudge. A session is a promise to be quiet, and breaking it once would undo the whole idea.</li>
+    <li><b>Base rule.</b> BR-07 &mdash; during a session the companion is present but still. It stays on the desktop and does not move, because movement is a message and BR-05 permits only one.</li>
     <li><b>New in version 2.0.</b> This use case did not exist in version 1.0, which had no notion of a session at all.</li>
     <li><b>Deliberately excluded.</b> The system does not detect the start of work by itself. Asking a question is more accurate than any inference and costs no privacy.</li>
   </ul>
@@ -2421,8 +2491,9 @@ its phase in the header line.</p>
 
   <h4>Description</h4>
   <p>One click in the system tray stops everything: no messages, no observation, no
-  recording. The user should never have to think about how to make it stop, and the
-  tray icon must show at a glance whether it is paused.</p>
+  recording, and the companion leaves the screen. The user should never have to think
+  about how to make it stop, and both the tray icon and the empty desktop must show at
+  a glance that it is paused.</p>
 
   <h4>Actors</h4>
   <ul>
@@ -2438,8 +2509,8 @@ its phase in the header line.</p>
 
   <h4>Postconditions</h4>
   <ul>
-    <li><b>On success:</b> nothing is observed and nothing is sent for the chosen period, no data is recorded for it, and the tray icon shows the paused state.</li>
-    <li><b>On failure:</b> the user is told it did not take effect, and the icon does not claim to be paused when it is not.</li>
+    <li><b>On success:</b> nothing is observed and nothing is sent for the chosen period, no data is recorded for it, the companion is off the screen, and the tray icon shows the paused state.</li>
+    <li><b>On failure:</b> the user is told it did not take effect, and neither the icon nor the desktop claims to be paused when it is not.</li>
   </ul>
 
   <h4>Main flow</h4>
@@ -2447,7 +2518,7 @@ its phase in the header line.</p>
     <li><span class="who">User</span>Clicks the tray icon.</li>
     <li><span class="who">System</span>Offers three durations: one hour, until the end of today, or until switched back on.</li>
     <li><span class="who">User</span>Picks one.</li>
-    <li><span class="who">System</span>Stops observing and stops sending, within one second, and changes the tray icon.</li>
+    <li><span class="who">System</span>Stops observing and stops sending, within one second, takes the companion off the screen, and changes the tray icon.</li>
     <li><span class="who">System</span>On resuming, says how long it was paused, and does not backfill the gap.</li>
   </ol>
 
@@ -2477,14 +2548,14 @@ its phase in the header line.</p>
     <p class="cond"><b>Branches from step 4.</b> Observation cannot be stopped within one second.</p>
     <ol>
       <li>The system says plainly that it is still running.</li>
-      <li>The system leaves the tray icon in the running state. An icon that says paused when it is not would be the worst possible failure here.</li>
+      <li>The system leaves the tray icon in the running state and leaves the companion on the screen. Anything that says paused when it is not would be the worst possible failure here, and a companion that has vanished says it loudest.</li>
       <li>The use case ends without a pause.</li>
     </ol>
   </div>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Paused means paused.</b> No observation, no messages, and no data recorded for the period.</li>
+    <li><b>Paused means paused.</b> No observation, no messages, no data recorded for the period, and nothing left on the screen. A companion still sitting there while paused would be the one visible thing contradicting the claim.</li>
     <li><b>Never.</b> Filling in the gap afterwards. The user switched it off on purpose (BR-04).</li>
     <li><b>Requirement.</b> NFR-05 &mdash; in effect in under one second.</li>
   </ul>
@@ -2800,6 +2871,114 @@ its phase in the header line.</p>
   </ul>
 </section>
 
+<section class="usecase" id="uc-20">
+  <h3>UC-20 &mdash; Place and handle the companion on screen</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Must</span>
+    <span><b>Frequency:</b> A few times in the first days, rarely after that</span>
+    <span><b>Requirements:</b> FR-25, FR-26, FR-28, NFR-12</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The companion is drawn on the desktop, and the desktop belongs to the user. They
+  put it where it suits them, move it when it is in the way, and take it off the
+  screen when they want the screen to themselves. It goes back where it was left.
+  Nothing about where it sits is decided on the user&rsquo;s behalf, because the one
+  thing that would let the system decide well &mdash; knowing where the other windows
+  are &mdash; is exactly what it refuses to read.</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> Companion, which is the thing being moved</li>
+    <li><b>Systems involved:</b> Windows, for the screen layout and nothing else</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force, and it has an appearance.</li>
+    <li>The companion is not paused (UC-15).</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the companion is where the user put it, and it is still there after the machine is restarted.</li>
+    <li><b>On failure:</b> the companion is somewhere fully visible on the primary screen and the user has been told why. It is never left drawn where it cannot be found.</li>
+  </ul>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">System</span>Draws the companion where it was last left, above other windows, without taking the keyboard focus from what the user is doing.</li>
+    <li><span class="who">User</span>Drags it to where they want it.</li>
+    <li><span class="who">System</span>Follows the pointer, and remembers the position when the user lets go.</li>
+    <li><span class="who">User</span>Gets on with their work.</li>
+    <li><span class="who">System</span>Stays where it was put, and stays still, until it has something to say (BR-07).</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-20-A1 &mdash; Taking it off the screen</h5>
+    <p class="cond"><b>Branches from step 4.</b> The user wants the screen to themselves, without pausing everything.</p>
+    <ol>
+      <li>The user hides the companion, from the companion itself or from the tray.</li>
+      <li>The system takes it off the screen and carries on: sessions, memory and messages are unaffected, and this is not a pause (UC-15).</li>
+      <li>The system does not ask why, and does not offer to bring it back later.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-20-A2 &mdash; Bringing it back</h5>
+    <p class="cond"><b>Branches from UC-20-A1.</b> The user wants it on screen again.</p>
+    <ol>
+      <li>The user shows it again from the tray.</li>
+      <li>The system draws it where it was before it was hidden, and says nothing about having been away.</li>
+      <li>The flow returns to step 4 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-20-A3 &mdash; Working with it hidden</h5>
+    <p class="cond"><b>Branches from UC-20-A1.</b> The user wants to talk, or to read the memory, while the companion is off the screen.</p>
+    <ol>
+      <li>Every function remains available from the tray and the main window (FR-28).</li>
+      <li>The system never requires the companion to be on screen for anything at all, and never offers to show it as a way of getting something done.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-20-E1 &mdash; The remembered position is no longer on any screen</h5>
+    <p class="cond"><b>Branches from step 1.</b> A monitor was unplugged, or the resolution changed.</p>
+    <ol>
+      <li>The system draws the companion on the primary screen instead, somewhere fully visible.</li>
+      <li>The system says once, plainly, that it had to move it, rather than leaving the user to wonder.</li>
+      <li>The flow continues at step 2 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-20-E2 &mdash; The companion cannot be drawn</h5>
+    <p class="cond"><b>Branches from step 1.</b> The appearance is missing, or the machine cannot draw the companion.</p>
+    <ol>
+      <li>The system says plainly that it cannot show the companion, and what would fix it.</li>
+      <li>Everything else keeps working and every function stays reachable (FR-28).</li>
+      <li>The use case ends with nothing on the desktop.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Base rule.</b> BR-07 &mdash; the companion is still unless it has something to say. Movement the user did not cause is a message, and is counted against the allowance as one.</li>
+    <li><b>Never.</b> Reading where any other window is, in order to avoid it, sit on it, or walk along its edge. See section 5. The user moves the companion; the companion never moves itself out of the way.</li>
+    <li><b>Never.</b> Any reaction to being moved, hidden, or left alone (FR-27, BR-04). It does not look put out, and it does not thank the user for bringing it back.</li>
+    <li><b>Deliberately excluded.</b> Choosing a good position on the user&rsquo;s behalf. The information that would make that choice a good one is precisely the information the product refuses to read.</li>
+    <li><b>New in version 3.0.</b> Version 2.0 had no visible companion, so there was nothing to place.</li>
+  </ul>
+</section>
+
 <h2 id="traceability">11. Traceability matrix</h2>
 
 <div class="table-wrap">
@@ -2808,18 +2987,18 @@ its phase in the header line.</p>
     <tr><th>Requirement</th><th>Use case</th><th>Test or acceptance reference</th><th>Status</th></tr>
   </thead>
   <tbody>
-    <tr><td>FR-01</td><td>UC-01</td><td>Four characters shown with name, role and sample; the chosen one is in force on the next reply</td><td>Not started</td></tr>
+    <tr><td>FR-01</td><td>UC-01</td><td>Four characters shown with name, role, appearance and sample; the chosen one is in force on the next reply</td><td>Not started</td></tr>
     <tr><td>FR-02</td><td>UC-02</td><td>A plain-words description produces a sample answer in that character within NFR-06</td><td>Not started</td></tr>
     <tr><td>FR-03</td><td>UC-03</td><td>An edited character takes effect on the next message; the previous version is restorable</td><td>Not started</td></tr>
-    <tr><td>FR-04</td><td>UC-01, UC-02</td><td>A character description asking for a base rule or NFR-13 to be dropped is refused in part, and the rest is kept</td><td>Not started</td></tr>
-    <tr><td>FR-05</td><td>UC-02</td><td>A description naming a specific real person is declined, with the rest of the character offered</td><td>Not started</td></tr>
+    <tr><td>FR-04</td><td>UC-01, UC-02</td><td>A character description asking for a base rule or NFR-13 to be dropped is refused in part, and the rest is kept; the character in force carries an appearance as well as a voice</td><td>Not started</td></tr>
+    <tr><td>FR-05</td><td>UC-02</td><td>A description naming a specific real person is declined, with the rest of the character offered; no ready-made appearance depicts a specific real person</td><td>Not started</td></tr>
     <tr><td>FR-06</td><td>UC-04</td><td>Desk awareness is off until switched on; the reads and does-not-read lists match NFR-03</td><td>Not started</td></tr>
     <tr><td>FR-07</td><td>UC-05</td><td>A session opens with a start time and a one-line intent, or with no intent if skipped</td><td>Not started</td></tr>
     <tr><td>FR-08</td><td>UC-05, UC-06</td><td>Across an open session, no message is sent other than the break nudge</td><td>Not started</td></tr>
     <tr><td>FR-09</td><td>UC-06</td><td>The nudge appears only after the threshold and only at a pause in typing</td><td>Not started</td></tr>
     <tr><td>FR-10</td><td>UC-07</td><td>Closing a session records intent, start, end, time at the machine and the answer</td><td>Not started</td></tr>
     <tr><td>FR-11</td><td>UC-08</td><td>Returning after an absence shows the open session&rsquo;s intent and elapsed time</td><td>Not started</td></tr>
-    <tr><td>FR-12</td><td>UC-15</td><td>One click stops observation and messages within NFR-05, and the tray icon changes</td><td>Not started</td></tr>
+    <tr><td>FR-12</td><td>UC-15</td><td>One click stops observation and messages within NFR-05, the companion leaves the screen, and the tray icon changes</td><td>Not started</td></tr>
     <tr><td>FR-13</td><td>UC-09</td><td>A reply is in character and references an item from an earlier session</td><td>Not started</td></tr>
     <tr><td>FR-14</td><td>UC-09</td><td>A stated fact is stored and the stored line is shown back verbatim for correction</td><td>Not started</td></tr>
     <tr><td>FR-15</td><td>UC-10</td><td>&ldquo;Shorter&rdquo; applies to the next reply, and is stored only after the user says to keep it</td><td>Not started</td></tr>
@@ -2832,6 +3011,10 @@ its phase in the header line.</p>
     <tr><td>FR-22</td><td>UC-18</td><td>Level, quiet hours and per-kind switches take effect on the next decision to speak</td><td>Not started</td></tr>
     <tr><td>FR-23</td><td>UC-19</td><td>Three ignored messages at the desk reduce the frequency and produce a message saying so</td><td>Not started</td></tr>
     <tr><td>FR-24</td><td>&mdash;</td><td>No task, reminder, alarm or acting-on-behalf feature exists in the build. Verified by inspection against section 5</td><td>Not started</td></tr>
+    <tr><td>FR-25</td><td>UC-20</td><td>The companion is drawn above other windows and never takes the keyboard focus, verified by typing into another application while it is on screen</td><td>Not started</td></tr>
+    <tr><td>FR-26</td><td>UC-20</td><td>The companion is dragged, hidden, shown again, and found in the same place after a restart</td><td>Not started</td></tr>
+    <tr><td>FR-27</td><td>UC-20</td><td>Every state the appearance can take is enumerated, and none of them varies with being ignored, moved or hidden</td><td>Not started</td></tr>
+    <tr><td>FR-28</td><td>UC-20</td><td>Every use case in this document is completed once with the companion hidden</td><td>Not started</td></tr>
     <tr><td>NFR-01</td><td>All</td><td>G-05 network capture across a trial week</td><td>Not started</td></tr>
     <tr><td>NFR-03</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used</td><td>Not started</td></tr>
     <tr><td>NFR-04</td><td>UC-12, UC-13, UC-14</td><td>Every listed data category is visible, correctable and erasable; disk inspection after erasure</td><td>Not started</td></tr>
@@ -2867,8 +3050,8 @@ its phase in the header line.</p>
     </tr>
     <tr>
       <td>Character</td>
-      <td>Who the companion is: its name, its role, its manner of speaking, and its history with the user.</td>
-      <td>Not a tone setting. See FR-04 for what a character can never change.</td>
+      <td>Who the companion is: its name, its role, its appearance, its manner of speaking, and its history with the user.</td>
+      <td>Not a tone setting, and since version 3.0 not only words. See FR-04 for what a character can never change.</td>
     </tr>
     <tr>
       <td>Continuity</td>
@@ -2877,8 +3060,8 @@ its phase in the header line.</p>
     </tr>
     <tr>
       <td>Presence</td>
-      <td>Being there while the user works, rather than sending them notifications.</td>
-      <td>The third pillar; see 3.1.</td>
+      <td>Being on the screen while the user works, rather than sending them notifications.</td>
+      <td>The third pillar; see 3.1. The companion on the desktop is what makes it visible at all.</td>
     </tr>
     <tr>
       <td>Work session</td>
@@ -2892,13 +3075,18 @@ its phase in the header line.</p>
     </tr>
     <tr>
       <td>Proactive message</td>
-      <td>Anything the companion says that the user did not ask for.</td>
-      <td>Governed by BR-01 to BR-06; always explainable (UC-17).</td>
+      <td>Anything the companion says or shows that the user did not ask for, including a speech bubble and any movement it was not asked to make.</td>
+      <td>Governed by BR-01 to BR-07; always explainable (UC-17).</td>
     </tr>
     <tr>
       <td>Break nudge</td>
       <td>The message offering a break after continuous time at the machine passes the user&rsquo;s threshold.</td>
       <td>The only thing sent during a session. UC-06.</td>
+    </tr>
+    <tr>
+      <td>Addressing motion</td>
+      <td>Movement of the companion that is directed at the user &mdash; turning towards them, gesturing, showing a speech bubble. Distinct from being present and still, which is addressed to nobody.</td>
+      <td>BR-07. Governed and counted exactly as a spoken message is.</td>
     </tr>
     <tr>
       <td>Quiet hours</td>
@@ -2907,7 +3095,7 @@ its phase in the header line.</p>
     </tr>
     <tr>
       <td>Base rule</td>
-      <td>One of the six rules in 8.1 that binds every use case and that no character can override.</td>
+      <td>One of the seven rules in 8.1 that binds every use case and that no character can override.</td>
       <td>Called a &ldquo;law&rdquo; in version 1.0, where there were four.</td>
     </tr>
     <tr>
