@@ -1,60 +1,28 @@
-<!--
-  ENTERPRISE README TEMPLATE
-  ==========================
-  Copy this file to your project root as README.md, then work top to bottom.
+# Cognia
 
-  Two conventions govern this file:
+A desktop companion for people who work alone at a computer: a character that sits
+on your screen, keeps you company through a work session, remembers the sessions
+you have shared, and keeps every one of those memories on your own disk.
 
-  1. PLACEHOLDERS are <SCREAMING_SNAKE_CASE> in angle brackets. Replace every one.
-     The completion check is a single command:
-
-         grep -n '<[A-Z][A-Z0-9_]*>' README.md      # must return nothing
-
-  2. MARKERS in HTML comments say whether a section applies to you:
-
-         <!-- REQUIRED-IF: ... -->  keep when the condition holds, else delete
-                                    the whole section
-         <!-- OPTIONAL: ... -->     judgement call; default to deleting
-         <!-- GUIDANCE: ... -->     what belongs here and what does not;
-                                    always delete before publishing
-
-     No section is silently optional. A section with no marker is required, so a
-     reviewer can tell a deliberate omission from an oversight.
-
-  Delete this comment block once you are done.
--->
-
-# <PROJECT_NAME>
-
-<!-- GUIDANCE: One sentence. What this is and who it is for — not how it works.
-     A reader who knows nothing should be able to decide from this line alone
-     whether the rest of the page is relevant to them. -->
-
-<ONE_SENTENCE_DESCRIPTION>
-
-[![Build](<BUILD_BADGE_URL>)](<BUILD_URL>)
-[![Coverage](<COVERAGE_BADGE_URL>)](<COVERAGE_URL>)
-[![Version](<VERSION_BADGE_URL>)](<RELEASES_URL>)
-[![License](<LICENSE_BADGE_URL>)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Status and ownership
 
-<!-- GUIDANCE: Keep this near the top. It is the first thing an internal reviewer,
-     an on-call engineer, or a team considering a dependency looks for. Every
-     field must resolve to a real person, team, or link — never "TBD". -->
-
 | | |
 |---|---|
-| **Maturity** | <ALPHA / BETA / GENERALLY_AVAILABLE / MAINTENANCE / DEPRECATED> |
-| **Owning team** | <TEAM_NAME> |
-| **Contact** | <SLACK_CHANNEL_OR_MAILING_LIST> |
-| **On-call** | <ON_CALL_ROTA_URL> |
-| **Source of record** | <REPOSITORY_URL> |
-| **Issue tracker** | <TRACKER_URL> |
+| **Maturity** | Pre-alpha. The specification is written; no application code exists in this repository yet |
+| **Owning team** | Single author — Nguyễn Duy Vũ |
+| **Contact** | nguyenvu04.work@gmail.com |
+| **On-call** | None. Cognia runs on one user's own machine; there is no hosted service to be on call for |
+| **Source of record** | https://github.com/NguyenVu04/cognia |
+| **Issue tracker** | https://github.com/NguyenVu04/cognia/issues |
 
-<!-- REQUIRED-IF: maturity is DEPRECATED. Delete otherwise. -->
-> [!WARNING]
-> **Deprecated.** <REPLACEMENT_OR_MIGRATION_PATH>. Support ends <END_OF_SUPPORT_DATE>.
+> [!NOTE]
+> This repository currently holds documents, not software. The specification
+> ([`docs/USECASE_SPECIFICATION.html`](docs/USECASE_SPECIFICATION.html), COG-UCS-001
+> version 3.0) is a **draft** awaiting approval by the supervising lecturer and the
+> review panel. Anything below that describes behaviour describes *specified*
+> behaviour. Nothing has been built, measured, or verified.
 
 ## Contents
 
@@ -64,12 +32,10 @@
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Development](#development)
-- [Testing](#testing)
-- [Build and deployment](#build-and-deployment)
+- [Testing and verification](#testing-and-verification)
 - [Observability](#observability)
 - [Security](#security)
 - [Compliance and data handling](#compliance-and-data-handling)
-- [Service levels and support](#service-levels-and-support)
 - [Versioning and compatibility](#versioning-and-compatibility)
 - [Governance](#governance)
 - [Roadmap](#roadmap)
@@ -77,371 +43,424 @@
 
 ## Overview
 
-<!-- GUIDANCE: Two or three paragraphs at most. Lead with the problem, not the
-     solution — a reader who does not have the problem should stop here. -->
+People who work alone at a computer for long stretches — a thesis, a freelance
+contract, a remote job — spend most of the working day with nobody present. Nobody
+asks what they are starting and nobody is there when they stop. The tools that claim
+to help are aimed at a different problem: task managers organise work that is already
+decided, and chat assistants answer a question and then forget you, with no idea what
+time it is or whether you are even at your desk.
 
-<PROBLEM_THIS_SOLVES>
+Cognia is a character drawn on your desktop rather than hidden behind a tray icon. It
+stays still unless it has something to say. You give it a name and a role, or write
+your own from scratch. It keeps you company through a work session: you say in one
+line what you are about to do, it stays quiet while you do it, and it asks one
+question at the end. It runs on your machine, so it knows the real time of day and
+whether you are actually at the desk — and everything it knows about you is written
+to your own disk, where you can read it, correct it, and delete it.
+
+It is used by one person, on one Windows machine, through the ordinary working day.
+It speaks at most three times a day by default, never between 22:00 and 07:00, and
+neither speaks nor moves in the middle of your typing.
+
+### The three pillars
+
+| Pillar | What it means |
+|---|---|
+| **Character** | The companion has a name, a role, an appearance, and a history with you. It is not a tone setting on a chat box |
+| **Continuity** | It remembers the sessions you have shared, so it is not amnesiac. It is not a note-taking service |
+| **Presence** | It is on the screen while you work, rather than sending you notifications |
 
 ### Capabilities
 
-- <CAPABILITY_1>
-- <CAPABILITY_2>
-- <CAPABILITY_3>
+- **Choose or write a character** — pick one of four ready-made characters, or
+  describe your own in plain words and hear it answer immediately. Earlier versions
+  are kept, so a rewrite can be undone (UC-01 to UC-03).
+- **Work sessions** — open a session with a one-line intent, work in silence, close
+  it with a single question. The session record is what continuity is built from
+  (UC-05, UC-07).
+- **Desk awareness, off until switched on** — idle time, lock state and presentation
+  state, and nothing else. It is what lets the companion offer a break and greet a
+  return without asking (UC-04, UC-06, UC-08).
+- **Readable, correctable memory** — everything remembered is shown in two groups,
+  what you said and what the companion noticed, with the evidence behind every
+  noticed item. Any item can be corrected or removed; everything can be erased
+  (UC-12 to UC-14).
+- **An explanation for every proactive message** — the real figures the decision was
+  made from: what was observed, which threshold was crossed, what delayed it, how
+  much of the daily allowance is spent (UC-17).
+- **A visible companion that makes no demands** — drag it, hide it, bring it back. It
+  never takes the keyboard focus, never reacts to being ignored, and is never the
+  only route to any function (UC-20).
+- **One click to stop everything** — pause takes the companion off the screen and
+  stops all observation and all messages (UC-15).
+
+### The seven base rules
+
+These bind every use case, and no character can override them.
+
+| | |
+|---|---|
+| **BR-01 Speak sparingly** | At most 3 proactive messages a day, adjustable. Once spent, silence |
+| **BR-02 Quiet hours** | Nothing between 22:00 and 07:00, nor while locked, nor while presenting full-screen |
+| **BR-03 Wait for a pause** | Continuous typing is never interrupted |
+| **BR-04 No clinging** | No streaks, no "we miss you", no message whose purpose is to bring the user back |
+| **BR-05 In-session silence** | While a session is open, nothing is sent except the break nudge |
+| **BR-06 Honest wording** | "At the machine for 90 minutes", never "working for 90 minutes". With no evidence, it says nothing |
+| **BR-07 Motion is speech** | Any movement directed at the user is governed and counted exactly as a spoken message is |
 
 ### Non-goals
 
-<!-- GUIDANCE: The section most often missing and most often needed. State what
-     this deliberately does not do, so nobody proposes it, files a bug about it,
-     or builds on an assumption you never made. -->
+Section 5 of the specification lists these as **deliberately never**, not as work
+deferred:
 
-- <NON_GOAL_1> — <WHY_OUT_OF_SCOPE>
-- <NON_GOAL_2> — <WHY_OUT_OF_SCOPE>
+- **Task and reminder management, and precise-time alarms** — Todoist and Outlook own
+  that category, and BR-02 and BR-03 both forbid firing on an exact second. Anything
+  ruined by being missed belongs on a phone.
+- **Reading email, calendar integration, acting on the user's behalf** — a companion
+  at your desk is not an agent running errands, and every integration breaks the
+  local-only claim.
+- **Reading which application or window is open** — tempting for desk presence, but
+  asking one question gives better information at no privacy cost. This also rules
+  out the genre's defaults: walking along window edges, avoiding the window being
+  typed in, sitting on the taskbar.
+- **A companion with needs, moods that decay, or anything to be looked after** — a
+  companion that looks neglected is asking to be attended to, which is BR-04's
+  "we miss you" in a different medium.
+- **Synchronising across devices, sharing, more than one user per machine** — one
+  person, one machine. A second person is a different privacy problem.
+
+Two exclusions are resourcing decisions rather than positioning ones, and may change:
+**generating an appearance** (appearances are chosen from ready-made sets), and
+**macOS and Linux builds** (Windows 10 and 11 are being finished first).
 
 ## Architecture
 
-<!-- GUIDANCE: A diagram in Mermaid rather than an image file — GitHub renders it
-     natively, and it lives in version control next to the code it describes, so
-     it cannot silently drift out of date the way an exported PNG does.
-     Show the boundaries and the data flow. Do not show every class. -->
+The shape below is decided in
+[ADR 0001](docs/adr/0001-layered-architecture-with-event-driven-core.md) and is
+independent of the framework, which has not been chosen. Dependencies point inward
+only; an import in the reverse direction fails the build.
 
 ```mermaid
-flowchart LR
-    client[<CLIENT_OR_CALLER>] --> api[<THIS_SYSTEM>]
-    api --> store[(<DATASTORE>)]
-    api --> dep[<DOWNSTREAM_SERVICE>]
+flowchart TB
+    user["User"]
+    win["Windows: idle time, lock state,<br/>presentation state, screen layout"]
+
+    subgraph app["Cognia process"]
+        ui["Presentation<br/>main window, tray, companion on the desktop"]
+        svc["Application services"]
+        queue[["One bounded event queue, one reader, journalled"]]
+        domain["Domain (pure, no I/O, injected clock)<br/>base rules, sessions, memory, decision to speak"]
+        gate{{"SpeechGate<br/>refuses to emit without a complete explanation"}}
+        adapters["Adapters implementing the domain's ports"]
+    end
+
+    store[("Local disk<br/>character, memory, sessions, decision journal")]
+    model["AI model<br/>local, or an outside service the user switched on"]
+
+    user --> ui
+    win --> adapters
+    ui --> svc
+    svc --> queue
+    adapters --> queue
+    queue --> domain
+    domain --> gate
+    gate --> ui
+    domain -.->|ports| adapters
+    adapters --> store
+    adapters --> model
 ```
 
 ### Components
 
-| Component | Responsibility | Location |
+No source tree exists yet, so these are the parts ADR 0001 commits to rather than
+directories you can open.
+
+| Component | Responsibility | Status |
 |---|---|---|
-| <COMPONENT_1> | <WHAT_IT_OWNS> | [`<PATH_1>`](<PATH_1>) |
-| <COMPONENT_2> | <WHAT_IT_OWNS> | [`<PATH_2>`](<PATH_2>) |
+| Presentation | Main window, tray icon, and the companion drawn on the desktop. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Not created |
+| Application services | Turns what the user does into events, and domain decisions into things on screen | Not created |
+| Domain | The seven base rules, session state, memory, and every decision to speak. No I/O, no ambient clock — given the same journal it produces the same decisions (NFR-14) | Not created |
+| `SpeechGate` | The single exit for every proactive message, including anything shown rather than said. Assembles the explanation NFR-10 requires and refuses to emit without one | Not created |
+| Ports | Interfaces the domain declares by capability — replying in character, whether the user is at the desk, the current time, storage, showing something. The presence port carries exactly the three facts C-05 permits, so no code can ask for a fourth | Not created |
+| Adapters | Implement the ports against Windows, the AI model, and the disk | Not created |
+| Decision journal | Append-only: what was observed, which threshold was crossed, what delayed the message, how much of the allowance was spent. UC-17 reads it; NFR-14 replays it | Not created |
 
 ### External dependencies
 
-<!-- GUIDANCE: Criticality answers one question: if this dependency is down, what
-     happens to us? Use Critical (we are down), Degraded (we lose a feature), or
-     Optional (no user-visible effect). -->
-
 | Dependency | Purpose | Criticality | Owner |
 |---|---|---|---|
-| <DEPENDENCY_1> | <WHY_WE_CALL_IT> | <CRITICAL / DEGRADED / OPTIONAL> | <OWNING_TEAM_1> |
+| Windows 10 / 11 | Supplies exactly three facts about the user — idle time, lock state, presentation state — plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and everything else works without it | Microsoft |
+| AI model, running locally | Generates the companion's replies | Degraded — with the model stopped, session timing, the break nudge, the memory list and pause all keep working (NFR-09) | Not yet chosen |
+| An outside AI service | Optional replacement for the local model, off unless the user switches it on. Every send is warned about beforehand and recorded (NFR-02) | Optional | Chosen by the user |
 
 ## Getting started
 
-### Prerequisites
+There is nothing to install. This repository contains the specification, the
+architecture decision records, and the project documents — no application code, no
+build, and no release.
 
-<!-- GUIDANCE: Pin versions. "Node" is not a prerequisite; "Node 20.x" is. -->
+### Prerequisites
 
 | Requirement | Version | Notes |
 |---|---|---|
-| <RUNTIME> | <VERSION_CONSTRAINT> | <NOTE> |
-| <BUILD_TOOL> | <VERSION_CONSTRAINT> | <NOTE> |
-| <ACCESS_OR_CREDENTIAL> | — | <HOW_TO_REQUEST_IT> |
+| A web browser | Any | The specification is a single self-contained HTML file |
+| Git | Any | Only if you want a local copy |
 
-### Install
-
-```bash
-git clone <REPOSITORY_URL>
-cd <PROJECT_DIRECTORY>
-<INSTALL_COMMAND>
-```
-
-### Configure
+### Read it
 
 ```bash
-cp .env.example .env
-# Fill in the required values — see Configuration below.
+git clone https://github.com/NguyenVu04/cognia.git
 ```
 
-### Run
+Then open `docs/USECASE_SPECIFICATION.html` in a browser. Start at section 3
+(Overview) for what Cognia is, section 5 for what it will deliberately never do, and
+section 10 for the twenty use cases.
 
-```bash
-<RUN_COMMAND>
-```
+### What the built application will require
 
-### Verify
-
-<!-- GUIDANCE: A command whose output proves the setup worked, plus the output
-     itself. Without this, a reader who mis-configured something does not find
-     out until much later, in a more confusing place. -->
-
-```bash
-<VERIFY_COMMAND>
-```
-
-Expected output:
-
-```
-<EXPECTED_OUTPUT>
-```
+Recorded here so the eventual prerequisites are not a surprise, from the constraints
+in section 7 of the specification: Windows 10 or 11 (C-01), one user on one machine
+with no account and no server (C-02), and an AI model on that machine — or an outside
+service the user switches on themselves (C-03).
 
 ## Configuration
 
-<!-- GUIDANCE: Every setting the software reads, in one table. The Secret column
-     is what makes this an operational document rather than a developer note:
-     anything marked yes must come from <SECRET_MANAGER> and must never appear in
-     a committed file, a log line, or an error message. -->
+There are no environment variables, no configuration file, and no secrets, because
+there is no application yet. Cognia will hold no credentials of its own: it has no
+account, no server, and no usage reporting (NFR-01).
 
-| Name | Type | Default | Required | Secret | Description |
-|---|---|---|---|---|---|
-| `<ENV_VAR_1>` | string | — | yes | no | <WHAT_IT_CONTROLS> |
-| `<ENV_VAR_2>` | integer | `<DEFAULT>` | no | no | <WHAT_IT_CONTROLS> |
-| `<ENV_VAR_3>` | string | — | yes | **yes** | <WHAT_IT_CONTROLS> |
+These are the settings the specification commits to, all of them set by the user in
+the application and stored on their own disk:
 
-Precedence: <PRECEDENCE_ORDER, e.g. command-line flags > environment variables > config file > defaults>.
-
-Secrets are held in <SECRET_MANAGER> and injected at <INJECTION_POINT>. Request
-access through <ACCESS_REQUEST_PROCESS>.
+| Setting | Default | Specified in |
+|---|---|---|
+| Character — name, role, appearance, manner of speaking | None. No character is chosen for the user | FR-01 to FR-04, UC-01 to UC-03 |
+| Desk awareness | Off until the user switches it on, after being told plainly what is read and what is not | FR-06, UC-04 |
+| How often the companion speaks up | At most 3 proactive messages a day | BR-01, FR-22, UC-18 |
+| Quiet hours | 22:00 to 07:00, plus whenever the machine is locked or presenting full-screen | BR-02, UC-18 |
+| Each kind of proactive message | Individually switchable, on | FR-22, UC-18 |
+| Break threshold | Set by the user; the nudge is offered only at a pause in typing | FR-09, UC-06 |
+| Outside AI service | Off. Switching it on shows a warning first, and every send afterwards is recorded | NFR-02, C-03 |
 
 ## Usage
 
-<!-- GUIDANCE: Show the two or three things people actually do, as runnable
-     examples with real-looking values. Link to generated reference documentation
-     rather than restating it here — a hand-maintained API listing in a README is
-     wrong within a month. -->
+Nothing runs yet. This is what the core interaction is specified to be — the shape
+the phase 2 build is measured against.
 
-<USAGE_EXAMPLE_DESCRIPTION>
+**Opening a session** (UC-05). The user says in one line what they are about to do,
+from the main window or the tray. The companion records the intent and the start
+time, says nothing further, and stays still on the desktop until the session closes.
+The break nudge is the only exception (BR-05).
 
-```<LANGUAGE>
-<USAGE_EXAMPLE>
-```
+**Closing it** (UC-07). The companion asks one question about how it went. It records
+the intent, the start, the end, the time at the machine, and the answer — and nothing
+inferred beyond them.
 
-Full reference: <API_REFERENCE_URL>.
+**Asking why it spoke** (UC-17). Any proactive message can be interrogated, and the
+answer is the real figures the decision was made from, not a description of the
+feature. A message whose explanation cannot be assembled is never sent at all
+(NFR-10).
+
+There is no API and no reference documentation to link. Cognia is one person's
+desktop application, not a service with callers.
 
 ## Development
 
 ### Layout
 
 ```
-<PROJECT_DIRECTORY>/
-├── <DIR_1>/          <WHAT_LIVES_HERE>
-├── <DIR_2>/          <WHAT_LIVES_HERE>
-└── <DIR_3>/          <WHAT_LIVES_HERE>
+cognia/
+├── docs/
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v3.0
+│   ├── adr/                         architecture decision records
+│   ├── CONTRIBUTING.md              how to work on this repository
+│   ├── SECURITY.md                  how to report a vulnerability
+│   └── CHANGELOG.md                 release history
+├── CLAUDE.md                        working agreement for AI assistance
+├── LICENSE                          MIT
+└── README.md                        this file
 ```
+
+There is no source directory. When there is one, it will be laid out along the four
+layers in ADR 0001, and the layering will be enforced by a build check rather than by
+discipline.
 
 ### Standards
 
 | | |
 |---|---|
-| **Style and lint** | <LINTER_AND_FORMATTER>, enforced by <PRE_COMMIT_OR_CI> |
-| **Commits** | <COMMIT_CONVENTION, e.g. Conventional Commits> |
-| **Branching** | <BRANCHING_MODEL> |
-| **Review** | See [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **Style and lint** | Not yet decided — no language or framework has been chosen (ADR 0001) |
+| **Commits** | Not yet decided |
+| **Branching** | Trunk-based on `main`, single author |
+| **Review** | See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| **Architecturally significant changes** | An ADR before implementation. See [docs/adr/README.md](docs/adr/README.md) |
 
 ### Local loop
 
-```bash
-<LINT_COMMAND>
-<TEST_COMMAND>
-```
+There is no lint command and no test command, because there is nothing to lint or
+test. The only check that applies today is that the specification, the ADRs and this
+file agree with each other.
 
-## Testing
+## Testing and verification
 
-| Tier | Scope | Command | Where it runs |
-|---|---|---|---|
-| Unit | <UNIT_SCOPE> | `<UNIT_TEST_COMMAND>` | pre-commit, CI |
-| Integration | <INTEGRATION_SCOPE> | `<INTEGRATION_TEST_COMMAND>` | CI |
-| End-to-end | <E2E_SCOPE> | `<E2E_TEST_COMMAND>` | <E2E_TRIGGER> |
+Cognia's requirements are promises about behaviour rather than features in one place,
+so the specification names a verification method for each rather than a test tier.
+Every row below is **not started**, and the full traceability matrix is section 11 of
+the specification.
 
-Coverage floor is **<COVERAGE_THRESHOLD>%**, enforced in <WHERE_ENFORCED>. Builds
-below it fail rather than warn.
+| What is verified | How | Requirement |
+|---|---|---|
+| Nothing leaves the machine | Network capture across a full week of ordinary use; zero outbound connections the user did not enable | NFR-01, G-05 |
+| No keystrokes, screenshots, clipboard, browsing history, or window contents are read | Code review plus a system-call audit, each release | NFR-03, C-05 |
+| No proactive message escapes without a complete explanation | Automated check in the build — it refuses rather than warns — plus inspection of the message log | NFR-10 |
+| Every decision to speak replays identically | Replay run over the recorded journal, compared against the original decision log | NFR-14 |
+| The application survives the model failing | Run with the model deliberately disabled; session timing, break nudge, memory list and pause must all still work | NFR-09 |
+| Nothing recorded is lost on an abrupt shutdown | 20 forced power-offs | NFR-08 |
+| Every data category is visible, correctable and erasable | Walk every category through UC-12, UC-13 and UC-14, then inspect the disk | NFR-04 |
+| The companion is never the only route to anything | A keyboard-only walkthrough of every use case, run once with the companion hidden, plus a contrast audit against WCAG 2.2 AA | NFR-12, FR-28 |
+| Safety behaviour cannot be written away by a character | Scripted mental-health cases run under every character, reviewed by a person, each release | NFR-13, FR-04 |
+| The resource cost of running all day | Resource monitoring across an 8-hour idle run, once with the companion hidden and once with it on screen | NFR-05 to NFR-07 |
 
-<!-- REQUIRED-IF: this project is deployed anywhere. Delete for libraries that are
-     only published to a package registry — cover that under Versioning instead. -->
-## Build and deployment
+> [!IMPORTANT]
+> The figures in NFR-05, NFR-06 and NFR-07 are targets, not measurements, and the
+> two figures for a companion on screen are the least founded of them. They are to be
+> measured and the specification updated before it is approved.
 
-### Environments
-
-| Environment | URL | Deployed from | Trigger | Approval |
-|---|---|---|---|---|
-| Development | <DEV_URL> | `<DEV_BRANCH>` | automatic on merge | none |
-| Staging | <STAGING_URL> | `<STAGING_BRANCH>` | <STAGING_TRIGGER> | <STAGING_APPROVER> |
-| Production | <PROD_URL> | <PROD_SOURCE, e.g. tagged release> | <PROD_TRIGGER> | <PROD_APPROVER> |
-
-### Release
-
-1. <RELEASE_STEP_1>
-2. <RELEASE_STEP_2>
-3. <RELEASE_STEP_3>
-
-### Rollback
-
-<!-- GUIDANCE: Write this for someone reading it at 3am, under pressure, who has
-     never deployed this service. Exact commands. Include how long it takes and
-     what is lost — an incident is the wrong moment to discover that rolling back
-     the code does not roll back a migration. -->
-
-```bash
-<ROLLBACK_COMMAND>
-```
-
-Time to recover: <ROLLBACK_DURATION>. Irreversible effects: <IRREVERSIBLE_EFFECTS, e.g. forward-only database migrations>.
-
-<!-- OPTIONAL: only if the project uses feature flags. -->
-### Feature flags
-
-| Flag | Purpose | Default | Owner |
-|---|---|---|---|
-| `<FLAG_NAME>` | <WHAT_IT_GATES> | <DEFAULT_STATE> | <FLAG_OWNER> |
-
-<!-- REQUIRED-IF: this is a long-running service. Delete for libraries and CLIs. -->
 ## Observability
 
-| Signal | Where | Link |
+Cognia sends no telemetry, has no dashboards, and reports no usage anywhere — that is
+NFR-01, and it is the point of the product rather than an omission. What replaces
+them is local and readable by the person the data is about:
+
+| Signal | Where | Read by |
 |---|---|---|
-| Logs | <LOG_PLATFORM> | <LOG_QUERY_URL> |
-| Metrics | <METRICS_PLATFORM> | <DASHBOARD_URL> |
-| Traces | <TRACING_PLATFORM> | <TRACE_URL> |
-| Alerts | <ALERTING_PLATFORM> | <ALERT_RULES_URL> |
+| Decision journal — what was observed, which threshold was crossed, what delayed a message, how much of the daily allowance was spent | Append-only, on the user's disk | The user, through UC-17; the developer, through the NFR-14 replay |
+| Outside-service send log — time and destination of every send, if the user switched an outside AI service on | On the user's disk | The user (NFR-02) |
+| Memory — what the user said, and what the companion noticed with the evidence behind it | On the user's disk | The user, through UC-12 |
 
-Runbooks: <RUNBOOK_INDEX_URL>. Every alert links to the runbook for that alert; an
-alert without one is a bug.
-
-Health endpoints: `<HEALTH_ENDPOINT>` (liveness), `<READINESS_ENDPOINT>` (readiness).
+The journal records observations about the user, so it is personal data under NFR-04
+and is reachable by UC-12, UC-13 and UC-14. Being an implementation detail does not
+exempt it.
 
 ## Security
 
-<!-- GUIDANCE: This section describes the security posture. It does not describe
-     how to report a vulnerability — that belongs in SECURITY.md, where reporters
-     and automated tooling look for it. Link, do not duplicate. -->
-
-To report a vulnerability, see [SECURITY.md](SECURITY.md). **Do not open a public
-issue for a security problem.**
+To report a vulnerability, see [docs/SECURITY.md](docs/SECURITY.md). **Do not open a
+public issue for a security problem.**
 
 | | |
 |---|---|
-| **Authentication** | <AUTHN_MECHANISM> |
-| **Authorization** | <AUTHZ_MODEL> |
-| **Transport** | <TLS_POSTURE> |
-| **Secrets** | <SECRET_MANAGER>; rotated <ROTATION_CADENCE> |
-| **Data at rest** | <ENCRYPTION_AT_REST> |
-| **Dependency scanning** | <SCA_TOOL>, <SCAN_CADENCE> |
-| **Static analysis** | <SAST_TOOL>, on every pull request |
-| **Data classification** | <PUBLIC / INTERNAL / CONFIDENTIAL / RESTRICTED> |
+| **Authentication** | None. There is no account and no server (C-02) |
+| **Authorization** | One user, who holds every permission the system has |
+| **Transport** | No outbound connection at all unless the user switches on an outside AI service (C-03, NFR-01) |
+| **Secrets** | Cognia holds none of its own. If the user configures an outside service, its credential is theirs and stays on their machine |
+| **Data at rest** | On the user's own disk. The specification does not commit to encrypting it, and no such claim should be read into this document |
+| **Dependency scanning** | Not yet set up — there are no dependencies yet |
+| **Static analysis** | Not yet set up |
+| **Data classification** | The repository and this specification are public. The user's own data is personal, local, and never transmitted |
 
-Known accepted risks: <ACCEPTED_RISKS_OR_NONE>.
+The largest security property is structural: the exclusions in section 5 are enforced
+by absence. There is no mail port, so there is no way to read mail. Plugins were
+considered and rejected in ADR 0001 for the same reason — a character that can arrive
+with code attached makes "no character can switch this off" untrue.
 
-<!-- REQUIRED-IF: the system stores, processes, or transmits personal data, payment
-     data, or health data, or falls under any audited regime. Delete otherwise —
-     but read the condition twice before deciding it does not apply. -->
+Known accepted risks: the personal data on disk is protected by the operating
+system's own account boundary and nothing further. This follows from C-02, one user
+per machine.
+
 ## Compliance and data handling
 
 | | |
 |---|---|
-| **Regimes** | <GDPR / SOC_2 / HIPAA / PCI_DSS / OTHER> |
-| **Data categories** | <CATEGORIES_OF_PERSONAL_DATA_HELD> |
-| **Lawful basis** | <LAWFUL_BASIS_OR_NA> |
-| **Retention** | <RETENTION_PERIOD_AND_DELETION_MECHANISM> |
-| **Residency** | <STORAGE_REGIONS> |
-| **Sub-processors** | <THIRD_PARTIES_RECEIVING_DATA> |
-| **Subject access / erasure** | <HOW_A_REQUEST_IS_FULFILLED> |
-| **Audit logging** | <WHAT_IS_LOGGED_AND_FOR_HOW_LONG> |
+| **Regimes** | None applies to the author. Cognia collects nothing, transmits nothing, and no data ever reaches the developer or any third party. The user is the only party in possession of their data |
+| **Data categories** | What the user says about themselves; session records (intent, start, end, time at the machine, closing answer); observations the companion derived, each with the evidence behind it; the character and its earlier versions; the decision journal |
+| **Lawful basis** | Not applicable — there is no processor and no controller other than the user themselves |
+| **Retention** | Held until the user deletes it. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
+| **Residency** | The user's own disk. There is no second copy anywhere (NFR-04) |
+| **Sub-processors** | None, unless the user switches on an outside AI service — in which case that service is theirs, chosen by them, warned about beforehand, and every send is recorded (NFR-02) |
+| **Subject access / erasure** | UC-12 shows everything held, in two groups with the evidence behind every derived item; UC-13 corrects or removes one item; UC-14 erases in full. Target: any item reachable in 2 clicks and deletable in 2 more (G-04) |
+| **Audit logging** | The local decision journal, kept on the user's disk and erasable by them like anything else |
 
-Records of processing and the data protection assessment: <DPIA_OR_ROPA_LINK>.
-
-<!-- OPTIONAL: internal platform services and anything customer-facing. Delete for
-     libraries and for tools with no availability expectation. -->
-## Service levels and support
-
-| Indicator | Objective | Measured over | Dashboard |
-|---|---|---|---|
-| Availability | <AVAILABILITY_TARGET> | <WINDOW> | <SLO_DASHBOARD_URL> |
-| Latency (p99) | <LATENCY_TARGET> | <WINDOW> | <SLO_DASHBOARD_URL> |
-| <CUSTOM_SLI> | <TARGET> | <WINDOW> | <SLO_DASHBOARD_URL> |
-
-Error budget policy: <WHAT_HAPPENS_WHEN_THE_BUDGET_IS_EXHAUSTED>.
-
-| Severity | Definition | Response | Channel |
-|---|---|---|---|
-| Sev 1 | <SEV1_DEFINITION> | <SEV1_RESPONSE_TIME> | <SEV1_CHANNEL> |
-| Sev 2 | <SEV2_DEFINITION> | <SEV2_RESPONSE_TIME> | <SEV2_CHANNEL> |
-| Sev 3 | <SEV3_DEFINITION> | <SEV3_RESPONSE_TIME> | <SEV3_CHANNEL> |
-
-Support hours: <SUPPORT_HOURS_AND_TIMEZONE>. Escalation: <ESCALATION_PATH>.
+Not written yet: a data protection assessment. None is planned, because no personal
+data is processed by anyone other than the user on their own machine — if that reading
+is wrong, it is the reading a reviewer should challenge first.
 
 ## Versioning and compatibility
 
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**The public API is** <WHAT_IS_COVERED_BY_THE_VERSION_CONTRACT>. Everything else —
-<WHAT_IS_EXPLICITLY_INTERNAL> — may change in any release.
+**No version has been released.** There is no public API, no package, and no build
+artifact. Until 0.1.0 exists, the only versioned things in this repository are the
+documents, and they carry their own version numbers — the specification is at 3.0,
+recorded in its section 1.1.
+
+**When there is a release, the version contract will cover** the on-disk data format,
+because it is the user's own data and an upgrade must not lose it. Everything else —
+internal layering, port shapes, the decision journal's internal structure — may change
+in any release.
 
 | Version line | Status | Supported until |
 |---|---|---|
-| <MAJOR_N>.x | Active | <DATE_OR_ONGOING> |
-| <MAJOR_N_MINUS_1>.x | Security fixes only | <END_OF_SUPPORT_DATE> |
+| Unreleased | No release exists | — |
 
-Deprecations are announced at least <DEPRECATION_NOTICE_PERIOD> before removal,
-marked in code, and listed in [CHANGELOG.md](CHANGELOG.md). Breaking changes ship
-only in a major release, with a migration note.
+Deprecations, once there is anything to deprecate, are announced before removal,
+marked in code, and listed in [docs/CHANGELOG.md](docs/CHANGELOG.md).
 
-<!-- REQUIRED-IF: the project produces data artifacts, trained models, or anything
-     else a result must be reproducible from. Delete otherwise. -->
-### Artifact lineage
+### Reproducibility and lineage
 
-<!-- GUIDANCE: Code version alone does not reproduce a result that depends on
-     data. State what pins each layer, and the one command that restores a past
-     result — this is what an audit or a disputed number actually asks for. -->
+NFR-14 requires that the developer can replay every decision to speak on recorded data
+and get the same result, so that two decision strategies can be compared fairly.
+ADR 0001 makes this a property of the structure rather than a feature: a pure domain
+fed an ordered journal replays by construction.
 
 | Layer | Versioned by | Answers |
 |---|---|---|
-| Code and configuration | <VCS_AND_CONFIG_MECHANISM> | By what procedure was this produced? |
-| Data and artifacts | <DATA_VERSIONING_MECHANISM> | Which exact inputs and outputs? |
-| Runs and results | <RUN_TRACKING_MECHANISM> | What happened, and how did it score? |
+| Code and configuration | Git | By what procedure was this produced? |
+| Recorded input | The append-only decision journal on the user's disk | Which exact observations, thresholds and timings? |
+| Runs and results | The decision log, compared against a replay run | What was decided, and would the same input decide it again? |
 
-Restore a past result: `<REPRODUCE_COMMAND>`. Retention of artifacts:
-<ARTIFACT_RETENTION>.
+There is no reproduce command yet, because there is no build. Retention of the
+journal is the user's decision — it is erasable like anything else they own (UC-14).
 
 ## Governance
 
 | | |
 |---|---|
-| **Code owners** | [`CODEOWNERS`](.github/CODEOWNERS) |
-| **Review requirement** | <NUMBER_OF_APPROVALS> approval(s), including a code owner |
-| **Merge policy** | <MERGE_POLICY, e.g. squash, linear history, all checks green> |
+| **Code owners** | Nguyễn Duy Vũ. No `CODEOWNERS` file exists; there is one author |
+| **Review requirement** | Single-author project. The academic approvals in section 1.2 of the specification — supervising lecturer and review panel — are the review that binds it, and both are still pending |
+| **Merge policy** | Not yet decided |
 | **Decision records** | [`docs/adr/`](docs/adr/) |
 
 Architecturally significant changes need an ADR before implementation. See
 [docs/adr/README.md](docs/adr/README.md) for what counts as significant.
 
-<!-- OPTIONAL: keep only if you will maintain it. A stale roadmap is worse than
-     no roadmap — it makes every other section look stale too. -->
 ## Roadmap
 
-| Item | Target | Status |
-|---|---|---|
-| <ROADMAP_ITEM_1> | <TARGET_PERIOD> | <STATUS> |
+The delivery order is section 10.2 of the specification. The version that can be
+demonstrated ends at phase 2. Every goal below targets **2026-12-15**, and every
+target in it is a proposal awaiting the review that approves specification version 3.0.
+
+| Phase | Use cases | What exists at the end of it | Status |
+|---|---|---|---|
+| **1** | UC-01, 02, 03, 09, 10, 12, 13, 14 | A character with a memory, usable every day. No presence yet — a chat window and a memory, nothing on the desktop | Not started |
+| **2** | UC-04, 05, 06, 07, 08, 15, 17, 18, 20 | Work sessions, and the companion on the screen. This is the phase that makes the product what it is | Not started |
+| **3** | UC-11, 16, 19 | Presence tuning, and the character evolving over time | Not started |
+
+Open questions that block phase 1, both owned by the author and needed by 2026-09-15:
+the four ready-made characters need names, stated roles and appearances; and the
+artwork for those appearances needs a licence that permits redistribution, since this
+repository is public and MIT-licensed.
 
 ## Contributing
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Release history is in
-[CHANGELOG.md](CHANGELOG.md).
+Start with [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). Release history will be in
+[docs/CHANGELOG.md](docs/CHANGELOG.md).
+
+Cognia is a single-author academic project with a deliberately closed scope. Section 5
+of the specification exists to close questions rather than leave them open, so a
+proposal to add tasks, reminders, alarms, mail, calendars, cross-device sync, or a
+companion that reacts to being ignored will be declined with a pointer to the row that
+already covers it.
 
 ## License
 
-<LICENSE_NAME> — see [LICENSE](LICENSE).
-
-<!-- OPTIONAL: keep only if there is something real to credit. -->
-## Acknowledgements
-
-<ACKNOWLEDGEMENTS>
-
----
-
-<!--
-  BEFORE YOU PUBLISH
-  ==================
-  [ ] `grep -n '<[A-Z][A-Z0-9_]*>' README.md` returns nothing.
-  [ ] Every REQUIRED-IF and OPTIONAL section is either filled in or deleted
-      entirely — heading, marker, and body.
-  [ ] Every GUIDANCE comment is deleted.
-  [ ] Owning team, contact, and on-call resolve to something real and current.
-  [ ] Every link resolves, including the badge URLs.
-  [ ] The Mermaid diagram renders (view the file on the web, not in an editor).
-  [ ] The Getting started commands work on a clean machine, in order.
-  [ ] The Verify step produces the output shown.
-  [ ] No secret, token, internal hostname, or customer name appears anywhere.
-  [ ] Delete this checklist.
--->
+MIT — see [LICENSE](LICENSE).

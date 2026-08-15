@@ -1,20 +1,8 @@
-<!--
-  This file is both the record template and, as written, a real first ADR.
-
-  To adopt the practice: copy this file into your project as
-  docs/adr/0000-record-architecture-decisions.md, set the date, and it is done —
-  the decision it records is the decision to keep ADRs at all.
-
-  To write a new record: copy this file to NNNN-short-title-in-kebab-case.md and
-  replace the content. Keep the five headings; they are the whole discipline.
-  Delete this comment block in either case.
--->
-
 # 1. Record architecture decisions
 
 - **Status:** Accepted
-- **Date:** <YYYY-MM-DD>
-- **Deciders:** <WHO_DECIDED>
+- **Date:** 2026-08-15
+- **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
 

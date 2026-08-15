@@ -1,39 +1,30 @@
-<!--
-  SECURITY POLICY TEMPLATE
-  ========================
-  Copy to your project root as SECURITY.md. GitHub discovers this file at the
-  repository root, in .github/, or in docs/, and surfaces it from the Security
-  tab and from the "Report a vulnerability" affordance.
-
-  Same conventions as README.template.md: replace every <PLACEHOLDER>, resolve
-  every marker, delete every GUIDANCE comment and this block.
-
-      grep -n '<[A-Z][A-Z0-9_]*>' SECURITY.md      # must return nothing
--->
-
 # Security policy
+
+Cognia is maintained by one person, Nguyễn Duy Vũ, alongside academic work. This
+document says what is supported, how to report a problem, and what you can realistically
+expect back — written to be accurate rather than reassuring.
 
 ## Supported versions
 
-<!-- GUIDANCE: Only list what you will actually patch. An overstated support
-     window is a commitment you will be held to during an incident. -->
+No version has been released. There is no application to patch yet; this repository
+currently holds the use case specification, the architecture decision records, and the
+project documents.
 
 | Version | Supported | Until |
 |---|---|---|
-| <MAJOR_N>.x | ✅ Security and bug fixes | <DATE_OR_ONGOING> |
-| <MAJOR_N_MINUS_1>.x | ⚠️ Security fixes only | <END_OF_SUPPORT_DATE> |
-| < <MAJOR_N_MINUS_1>.0 | ❌ Unsupported | — |
+| `main` (unreleased) | ✅ Fixes go here | Ongoing |
+| Any release | — | None exists yet |
+
+When there is a first release, this table will name the version lines that get
+security fixes and for how long. Nothing is promised in advance of that.
 
 ## Reporting a vulnerability
 
 **Do not open a public issue, pull request, or discussion for a security problem.**
 Public disclosure before a fix is available puts every user at risk.
 
-Report through <REPORTING_CHANNEL, e.g. GitHub private vulnerability reporting at
-<REPOSITORY_URL>/security/advisories/new>, or by email to <SECURITY_EMAIL>.
-
-<!-- OPTIONAL: only if you publish a key and will actually decrypt what arrives. -->
-For sensitive reports, encrypt to <PGP_KEY_FINGERPRINT> (<PGP_KEY_URL>).
+Report by email to nguyenvu04.work@gmail.com, or through GitHub private vulnerability
+reporting at https://github.com/NguyenVu04/cognia/security/advisories/new.
 
 Please include, as far as you can establish it:
 
@@ -44,49 +35,55 @@ Please include, as far as you can establish it:
 
 ## What to expect
 
+There is one maintainer, so these are honest expectations rather than a service level
+anyone is held to.
+
 | Stage | Target |
 |---|---|
-| Acknowledgement of your report | <ACKNOWLEDGEMENT_SLA, e.g. 2 business days> |
-| Initial assessment and severity | <TRIAGE_SLA, e.g. 5 business days> |
-| Fix or mitigation for critical issues | <CRITICAL_FIX_SLA> |
-| Fix or mitigation for other issues | <STANDARD_FIX_SLA> |
+| Acknowledgement of your report | Within 5 days |
+| Initial assessment and severity | Within 14 days |
+| Fix or mitigation | Once there is a release to fix. Until then, a confirmed report changes the specification or an ADR instead, and the change says what it came from |
 
-We will keep you informed at each stage, tell you plainly if we assess the issue
-as out of scope or as accepted risk, and credit you in the advisory unless you
-ask us not to.
+You will be kept informed at each stage, told plainly if the issue is assessed as out
+of scope or as an accepted risk, and credited in the advisory unless you ask otherwise.
 
 ## Scope
 
 **In scope**
 
-- <IN_SCOPE_ASSET_1>
-- <IN_SCOPE_ASSET_2>
+- The Cognia desktop application, once released — and above all anything that breaks
+  one of the guarantees the product is built on:
+  - data leaving the machine that the user did not switch on (NFR-01);
+  - reading anything from the operating system beyond idle time, lock state,
+    presentation state and screen layout — keystrokes, screenshots, the clipboard,
+    browsing history, or which window is open (NFR-03, C-05);
+  - a proactive message reaching the user without a complete explanation attached,
+    which means something bypassed the `SpeechGate` (NFR-10, ADR 0001);
+  - data surviving an erasure the user asked for (UC-14, NFR-04);
+  - a character description switching off the safety behaviour it must never be able
+    to switch off (FR-04, NFR-13).
+- The contents of this repository — anything here that would execute on a reader's
+  machine, or that would mislead a reader into an unsafe action.
 
 **Out of scope**
 
-<!-- GUIDANCE: Stating this saves both sides time. The entries below are the
-     usual ones; keep what applies and add anything specific to this project. -->
-
-- Findings from automated scanners with no demonstrated exploitability
-- Denial of service through sheer volume of traffic
-- Social engineering of maintainers or users
-- Vulnerabilities in dependencies already covered by a published advisory
-- <PROJECT_SPECIFIC_EXCLUSION>
+- Findings from automated scanners with no demonstrated exploitability.
+- Denial of service through sheer volume of traffic. There is no server to flood:
+  Cognia has no account, no backend, and no network listener (C-02, NFR-01).
+- Social engineering of the maintainer or of users.
+- Vulnerabilities in dependencies already covered by a published advisory.
+- Anything that requires a second account on the machine, or physical access to it
+  while unlocked. Cognia is specified as one user on one machine (C-02), and the data
+  on disk is protected by the operating system's account boundary and nothing further
+  — this is a stated accepted risk, not an oversight.
+- The AI model or outside AI service the user chose to run. Cognia warns before the
+  first send and records every send afterwards (NFR-02); what that service does with
+  what it receives is between the user and that service.
 
 ## Disclosure
 
-We follow coordinated disclosure. We aim to publish an advisory within
-<DISCLOSURE_WINDOW, e.g. 90 days> of a confirmed report, or sooner once a fix has
-shipped. We will agree the timing with you before publishing.
+Coordinated disclosure. The aim is to publish an advisory within 90 days of a confirmed
+report, or sooner once a fix has shipped, and the timing will be agreed with you before
+publishing.
 
-Published advisories: <ADVISORY_URL>.
-
-<!-- REQUIRED-IF: the project runs a paid bug bounty or a formal safe-harbour
-     programme. Delete otherwise — do not imply a bounty you do not fund. -->
-## Safe harbour
-
-We will not pursue legal action for good-faith security research conducted under
-this policy: staying within scope, avoiding privacy violations and service
-degradation, and giving us reasonable time to respond before disclosure.
-
-Bounty details: <BOUNTY_PROGRAMME_URL>.
+Published advisories: https://github.com/NguyenVu04/cognia/security/advisories

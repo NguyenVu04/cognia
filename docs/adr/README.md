@@ -1,13 +1,3 @@
-<!--
-  ADR INDEX TEMPLATE
-  ==================
-  Copy to your project as docs/adr/README.md, alongside the record template
-  0000-record-architecture-decisions.md.
-
-  Same conventions as README.template.md: replace every <PLACEHOLDER>, delete
-  every GUIDANCE comment and this block.
--->
-
 # Architecture decision records
 
 An ADR captures one architecturally significant decision: what we chose, what
@@ -17,7 +7,8 @@ afterwards — a decision that turns out wrong gets a *new* record that supersed
 the old one.
 
 The point is not process. It is that in two years someone will ask why this
-system works the way it does, and the answer will otherwise have left the company.
+system works the way it does — quite possibly the person who built it — and
+without a record the answer is gone.
 
 ## When to write one
 
@@ -33,6 +24,11 @@ code**:
 
 Do not write one for a decision the code states plainly, a reversible choice, or
 a matter of style the linter already settles.
+
+In Cognia the first test is usually simpler: if a decision is what makes one of
+the promises in the specification enforceable rather than merely intended, it is
+significant. ADR 0001 exists because five separate non-functional requirements
+turned out to be one structural question.
 
 ## How
 
@@ -51,7 +47,7 @@ a matter of style the linter already settles.
 |---|---|
 | **Proposed** | Under discussion; not yet binding |
 | **Accepted** | In force. This is how the system works |
-| **Superseded by <NNNN>** | Replaced. Kept as history — never delete or edit the reasoning |
+| **Superseded by NNNN** | Replaced. Kept as history — never delete or edit the reasoning |
 | **Deprecated** | No longer applies, with nothing replacing it |
 
 Superseding a record means editing exactly two lines: the old record's status, and
@@ -62,4 +58,5 @@ they were written, because they are the historical account.
 
 | # | Title | Status | Date |
 |---|---|---|---|
-| [0000](0000-record-architecture-decisions.md) | Record architecture decisions | Accepted | <YYYY-MM-DD> |
+| [0000](0000-record-architecture-decisions.md) | Record architecture decisions | Accepted | 2026-08-15 |
+| [0001](0001-layered-architecture-with-event-driven-core.md) | Layered architecture with an event-driven core | Accepted | 2026-08-15 |
