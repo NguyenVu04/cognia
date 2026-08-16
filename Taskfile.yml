@@ -1,0 +1,37 @@
+version: '3'
+
+# Cognia — task runner.
+#
+# Everything runnable lives in desktop/; the repository root holds documents
+# only. There is deliberately no lint or test task: no linter, formatter or
+# test runner is configured yet, and docs/CONTRIBUTING.md says the same. Add
+# one here when the tooling actually exists, not before.
+
+vars:
+  APP_DIR: desktop
+
+tasks:
+  default:
+    desc: List the available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: Install dependencies into desktop/.venv
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv sync
+
+  run:
+    desc: Run the application, installing dependencies first
+    dir: '{{.APP_DIR}}'
+    deps: [setup]
+    cmds:
+      - uv run python -m src
+
+  run:quick:
+    desc: Run the application without re-checking dependencies
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m src

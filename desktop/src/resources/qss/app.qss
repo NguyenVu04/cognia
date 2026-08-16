@@ -1,0 +1,81 @@
+/* Global surface, selection and scrollbars.
+   Font properties are deliberately absent — see src/ui/theme.py. */
+
+QWidget {
+    color: $TEXT;
+    background: transparent;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QToolTip {
+    color: $TEXT;
+    background: $BG_CARD;
+    border: 1px solid $BORDER;
+    padding: 6px 9px;
+}
+
+/* ::-webkit-scrollbar { width: 8px; height: 8px }
+   thumb #3f424d, radius 8px, track transparent */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: $BORDER;
+    border-radius: 4px;
+    min-height: 28px;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: $BORDER;
+    border-radius: 4px;
+    min-width: 28px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
+}
+
+QScrollArea {
+    background: transparent;
+    border: 0;
+}
+
+/* Text entry. The design gives inputs #141625 on a #3f424d ring, and lifts the
+   ring to the accent on focus in place of the web build's focus outline. */
+
+QLineEdit, QTextEdit, QPlainTextEdit {
+    background: $BG_INSET;
+    border: 1px solid $BORDER;
+    border-radius: 8px;
+    color: $TEXT;
+    padding: 11px 14px;
+    selection-background-color: $WASH_30;
+    selection-color: $TEXT;
+}
+
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
+    border-color: $ACCENT;
+}
+
+QTextEdit, QPlainTextEdit {
+    padding: 10px 12px;
+}
