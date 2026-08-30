@@ -11,12 +11,12 @@ matching radius themselves.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
 
 from src.ui import theme
-from src.ui.views.chat import ChatView
 from src.ui.views.character import CharacterView
+from src.ui.views.chat import ChatView
 from src.ui.views.desk import DeskView
 from src.ui.views.first_run import FirstRunView
 from src.ui.views.memory import MemoryView
@@ -25,7 +25,8 @@ from src.ui.views.sessions import SessionsView
 from src.ui.widgets.paused_overlay import PausedOverlay
 from src.ui.widgets.shadow import ShadowWindow
 from src.ui.widgets.sidebar import Sidebar
-from src.ui.widgets.titlebar import HEIGHT as TITLEBAR_HEIGHT, TitleBar
+from src.ui.widgets.titlebar import HEIGHT as TITLEBAR_HEIGHT
+from src.ui.widgets.titlebar import TitleBar
 
 WIDTH = 1010
 HEIGHT = 748
@@ -111,25 +112,25 @@ class MainWindow(ShadowWindow):
         self.screens.setCurrentWidget(self._by_id[screen_id])
         self.sidebar.setCurrent(screen_id)
 
-    def showFirstRun(self) -> None:  # noqa: N802 - matches Qt naming
+    def showFirstRun(self) -> None:
         self.stack.setCurrentWidget(self.first_run)
 
-    def showApplication(self) -> None:  # noqa: N802 - matches Qt naming
+    def showApplication(self) -> None:
         self.stack.setCurrentIndex(0)
         self.go("chat")
 
     # ── paused state ──────────────────────────────────────────────────────
 
-    def showPaused(self, label: str) -> None:  # noqa: N802 - matches Qt naming
+    def showPaused(self, label: str) -> None:
         self.overlay.setPauseLabel(label)
         self._place_overlay()
         self.overlay.show()
         self.overlay.raise_()
 
-    def hidePaused(self) -> None:  # noqa: N802 - matches Qt naming
+    def hidePaused(self) -> None:
         self.overlay.hide()
 
-    def setHideLabel(self, text: str) -> None:  # noqa: N802 - matches Qt naming
+    def setHideLabel(self, text: str) -> None:
         self.chat.setHideLabel(text)
 
     def _place_overlay(self) -> None:
@@ -138,7 +139,7 @@ class MainWindow(ShadowWindow):
             0, TITLEBAR_HEIGHT, self.body.width(), self.body.height() - TITLEBAR_HEIGHT
         )
 
-    def resizeEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if self.overlay.isVisible():
             self._place_overlay()
