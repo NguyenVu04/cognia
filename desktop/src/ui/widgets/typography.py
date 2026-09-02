@@ -138,3 +138,26 @@ def body(text: str, *, px: float = 13.5, alpha: float = 1.0, weight: int = 400,
         wrap=wrap,
         max_width=max_width,
     )
+
+
+def set_paragraph_text(
+    widget: QLabel,
+    text: str,
+    *,
+    font: QFont,
+    line_height: float = 1.6,
+    max_width: int | None = None,
+) -> None:
+    """Replace the text of a :func:`paragraph`, re-fitting it to the new run.
+
+    :func:`paragraph` measures the text once and pins the label to that width.
+    A bubble that fills in as the model speaks changes length on every piece,
+    so the same measurement has to happen again — otherwise the bubble keeps
+    the width of its first two words and grows into a tall thin column.
+    """
+    widget.setText(
+        f'<div style="line-height: {round(line_height * 100)}%;">'
+        f"{escape(text)}</div>"
+    )
+    if max_width is not None:
+        _fit(widget, text, font, max_width)

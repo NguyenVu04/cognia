@@ -38,6 +38,9 @@ class MainWindow(ShadowWindow):
     hideCompanionRequested = Signal()
     nudgeRequested = Signal()
     resumed = Signal()
+    messageSent = Signal(str)
+    conversationChosen = Signal(str)
+    newConversationRequested = Signal()
 
     def __init__(self) -> None:
         super().__init__(
@@ -88,6 +91,9 @@ class MainWindow(ShadowWindow):
         self.screens = QStackedWidget()
         self.chat = ChatView()
         self.chat.hideCompanionRequested.connect(self.hideCompanionRequested)
+        self.chat.messageSent.connect(self.messageSent)
+        self.chat.conversationChosen.connect(self.conversationChosen)
+        self.chat.newConversationRequested.connect(self.newConversationRequested)
         self.sessions = SessionsView()
         self.sessions.nudgeRequested.connect(self.nudgeRequested)
         self.character = CharacterView()

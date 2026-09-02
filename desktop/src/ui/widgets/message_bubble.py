@@ -10,10 +10,10 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
+from src.core.models import Message
 from src.ui import icons, theme
-from src.ui.views import sample_data
 from src.ui.widgets.surface import Panel
-from src.ui.widgets.typography import paragraph
+from src.ui.widgets.typography import paragraph, set_paragraph_text
 
 MAX_WIDTH = 434  # 60% of the 724px message column
 
@@ -21,11 +21,9 @@ MAX_WIDTH = 434  # 60% of the 724px message column
 class MessageRow(QWidget):
     """One message, aligned to its side of the column."""
 
-    def __init__(
-        self, message: sample_data.Message, parent: QWidget | None = None
-    ) -> None:
+    def __init__(self, message: Message, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        from_user = message.role == "u"
+        from_user = message.from_user
 
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
@@ -50,15 +48,14 @@ class MessageRow(QWidget):
             else "border-bottom-left-radius: 3px;"
         )
         bubble.setMaximumWidth(MAX_WIDTH)
-        bubble.body().addWidget(
-            paragraph(
-                message.text,
-                font=theme.font(14),
-                colour=theme.TEXT,
-                line_height=1.6,
-                max_width=MAX_WIDTH - 32,
-            )
+        self._text = paragraph(
+            message.text,
+            font=theme.font(14),
+            colour=theme.TEXT,
+            line_height=1.6,
+            max_width=MAX_WIDTH - 32,
         )
+        bubble.body().addWidget(self._text)
         stack.addWidget(bubble)
 
         if message.note:
@@ -67,6 +64,16 @@ class MessageRow(QWidget):
         row.addLayout(stack)
         if not from_user:
             row.addStretch(1)
+
+    def setText(self, text: str) -> None:  # noqa: N802 - matches Qt naming
+        """Rewrite the bubble in place, for a reply arriving a piece at a time."""
+        set_paragraph_text(
+            self._text,
+            text,
+            font=theme.font(14),
+            line_height=1.6,
+            max_width=MAX_WIDTH - 32,
+        )
 
 
 class _NoteChip(QWidget):

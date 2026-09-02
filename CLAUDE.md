@@ -112,6 +112,7 @@ to a click changes what is on screen and nothing else.
 | `ui/widgets/` | Custom and reusable `QWidget` components |
 | `ui/views/` | Application screens and pages |
 | `core/models/` | Domain models and data models |
+| `core/ports/` | The interfaces the domain needs, stated without naming a provider |
 | `core/services/` | Business logic and application services |
 | `infrastructure/` | Database, REST APIs, filesystem, and external services |
 | `resources/` | Icons, images, fonts, and QSS stylesheets |

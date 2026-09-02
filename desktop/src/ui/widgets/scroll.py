@@ -53,3 +53,17 @@ class ScrollPane(QScrollArea):
     def showEvent(self, event) -> None:  # noqa: N802 - Qt naming
         self._sync_height()
         super().showEvent(event)
+
+    def refresh(self) -> None:
+        """Re-measure after the content has changed.
+
+        Widgets added after construction do not trigger the resize or show
+        events that keep the minimum height honest, so a pane that grows — a
+        conversation, say — has to say when it has.
+        """
+        self._sync_height()
+
+    def scroll_to_bottom(self) -> None:
+        """Follow the newest content, the way a conversation should."""
+        bar = self.verticalScrollBar()
+        bar.setValue(bar.maximum())
