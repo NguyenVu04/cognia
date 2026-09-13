@@ -1,4 +1,4 @@
-from core.models.document import Document
+from domain.rag.ingestion.loaders.loader import Document
 
 
 class WebLoader:
