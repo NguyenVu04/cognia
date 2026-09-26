@@ -6,6 +6,11 @@ __pycache__/
 # uv virtual environment
 desktop/.venv/
 
+# Cognia's database: the user's conversations, never committed (NFR-04)
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
 # OS
 .DS_Store
 Thumbs.db

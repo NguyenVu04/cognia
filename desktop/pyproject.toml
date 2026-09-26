@@ -9,4 +9,5 @@ dependencies = [
     "langchain-ollama>=1.1.0",
     "langgraph>=1.2.11",
     "pyside6>=6.11.1",
+    "sqlalchemy>=2.1.1",
 ]

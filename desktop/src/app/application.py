@@ -37,11 +37,8 @@ from src.ui.dialogs.tray_menu import TrayMenu
 from src.ui.views import sample_data
 from src.ui.windows.companion_window import CompanionWindow
 from src.ui.windows.main_window import MainWindow
-from src.utils import paths
 
 _PAUSE_LABELS = {option.id: option.paused_label for option in sample_data.PAUSE_OPTIONS}
-
-DATABASE = "cognia.sqlite3"
 
 
 class Cognia(QObject):
@@ -68,7 +65,7 @@ class Cognia(QObject):
         self.character = sample_data.CHARACTERS[0]
         self.prompt = config.system_prompt(self.character.name, self.character.role)
 
-        self.store = SqliteConversationStore(paths.data_file(DATABASE))
+        self.store = SqliteConversationStore(config.database_path())
         self.conversation = self.store.latest() or self.store.create(
             self.character.id, datetime.now()
         )
