@@ -4,6 +4,8 @@
 - **Date:** 2026-09-02
 - **Revised:** 2026-10-24 — the model ships with the application as a llama.cpp
   server instead of a separately installed Ollama (COG-UCS-001 v4.0, NFR-15)
+- **Revised:** 2026-10-25 — English only; the Vietnamese option is removed
+  (COG-UCS-001 v5.0, C-06)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -29,8 +31,9 @@ Version 4.0 of the specification adds two more. NFR-15 requires the model and
 everything needed to run it to ship inside the installer: no separate runtime to
 install, nothing downloaded at first run. NFR-11 counts on that — five minutes
 from a finished installation to a first conversation, with no second program.
-C-06 makes the companion speak English by default and Vietnamese on request,
-including the fixed wording it uses when the model cannot answer.
+C-06 makes the companion speak English, including the fixed wording it uses when
+the model cannot answer. Version 4.0 also offered Vietnamese on request; version
+5.0 removed it.
 
 ADR 0001 already settled the structure — ports belong to the domain, adapters
 implement them, dependencies point inward, and swappable providers run as
@@ -64,7 +67,7 @@ a `config.json` the user may write — ADR 0001's provider-as-configured-process
 with the process now Cognia's to start and stop.
 
 **Which model ships is not decided here.** It is chosen by measurement, not by
-this record: it must hold a character in English and in Vietnamese (A-02, C-06),
+this record: it must hold a character in English (A-02, C-06),
 and its size sets the figures NFR-15 leaves open. `qwen3.5:2b`, the model this
 record first named, is the first candidate to measure. Whether its GGUF weights
 may be redistributed inside an MIT-licensed installer has not been confirmed,
@@ -94,11 +97,10 @@ The typing indicator the design already drew is shown on send and hidden at the
 first token, which is NFR-06 satisfied by a widget that previously had no
 trigger.
 
-**The language is part of the prompt, and the fallback wording exists in both.**
-The system prompt states the language chosen under FR-30. The plain sentences
-the adapter returns when the model cannot answer (UC-09-E1) are kept in English
-and Vietnamese, because C-06 covers them too and no model is available to
-translate them at that moment.
+**The companion speaks English, and so does its fallback wording.** The system
+prompt asks for English (C-06). The plain sentences the adapter returns when the
+model cannot answer (UC-09-E1) are kept in English, because C-06 covers them too.
+There is no language setting to read.
 
 **Tracing is switched off in the program, not left to the environment.**
 `langsmith` is a hard dependency of `langchain-core`, so it is installed

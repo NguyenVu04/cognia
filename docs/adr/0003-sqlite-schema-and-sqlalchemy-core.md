@@ -6,7 +6,9 @@
   setting and the greeting's basis (COG-UCS-001 v4.0)
 - **Revised:** 2026-10-25 — a third migration for the emotion state, the
   temperament, self-adjustments, application totals and the companion's
-  journal, and for no default ceiling or quiet hours (COG-UCS-001 v5.0)
+  journal, and for no default ceiling or quiet hours; the language setting is
+  dropped from the second migration, because the companion speaks English only
+  (COG-UCS-001 v5.0)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -25,12 +27,13 @@ journal and a record of every decision to speak, which UC-17 explains from
 and NFR-14 replays. Settings (UC-18), pause (UC-15) and the companion's
 position (UC-20) have to survive a restart too.
 
-Version 4.0 of the specification adds three things to store. Commitments the
+Version 4.0 of the specification adds two things to store. Commitments the
 user mentions (UC-21, FR-29), each with the day they gave, if any, and held only
-until they say it is done. The language the companion speaks (C-06, FR-30). And
-the greeting at the first opening of the day (UC-16), which must be recorded
+until they say it is done. And the greeting at the first opening of the day (UC-16), which must be recorded
 with the items it mentioned so that it can be explained, and whose existence
-today is what decides whether a later opening greets again.
+today is what decides whether a later opening greets again. Version 4.0 also
+let the user choose Vietnamese, which needed a language setting; version 5.0
+removed the choice (C-06), so nothing about language is stored.
 
 Version 5.0 gives the companion feelings, initiative and a journal of its own,
 and lets it read one more fact from Windows. That adds five things to store. A
@@ -56,8 +59,8 @@ version–trait join; memory items; a one-row settings table and the message
 kinds; sessions; speech decisions; and the journal. Tables for use cases not
 yet built exist empty, and their stores arrive with their use cases.
 
-**Version 4.0 arrives as a second migration, `0002_commitments_language.sql`,
-not as an edit to `0001`.** It makes three changes:
+**Version 4.0 arrives as a second migration, `0002_commitments.sql`,
+not as an edit to `0001`.** It makes two changes:
 
 - A new `commitments` table: the line exactly as shown back to the user, an
   optional `due_on`, the message it came from, when it was recorded and
@@ -67,8 +70,6 @@ not as an edit to `0001`.** It makes three changes:
   `memory_items`, because adding a kind means changing that table's `CHECK`
   constraints, which SQLite can only do by rebuilding the table. UC-12 still
   lists commitments under *you told me*.
-- `settings.language`, `'en'` or `'vi'`, defaulting to `'en'` (C-06), added with
-  `ALTER TABLE … ADD COLUMN`.
 - `speech_decisions.basis`, a JSON list of the session and commitment ids a
   greeting mentioned, so UC-17 can say what it was built from. Whether today has
   had its greeting is read from these rows, not kept as a separate flag: one
@@ -189,9 +190,8 @@ copying it.
 - `conversations.character_id` still holds the mockup id `'wren'` and has no
   foreign key. Linking conversations to real characters is part of UC-01.
 - The schema has fourteen tables once `0002` runs. UC-14's two erasure levels
-  must include `commitments`, and `settings.language` survives "erase everything
-  remembered" because it is a setting, not something remembered.
-- `0002_commitments_language.sql` and its mirror in `schema.py` are described
+  must include `commitments`.
+- `0002_commitments.sql` and its mirror in `schema.py` are described
   here but not yet written.
 - After `0003` the schema has twenty tables. UC-14's "erase everything
   remembered" must include `emotion_state`, `self_adjustments`, `app_usage`,
