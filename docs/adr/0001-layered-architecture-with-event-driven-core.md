@@ -2,6 +2,10 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-15
+- **Revised:** 2026-10-25 — COG-UCS-001 v5.0: four facts from the operating
+  system instead of three, ambient motion outside the gate, and interpreted
+  events in the journal. A one-time exception to the rule that an accepted
+  record is never edited, at the author's decision
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -13,18 +17,20 @@ machine. Its use case specification (COG-UCS-001) does not read like a list of
 features. It reads like a list of promises, and almost all of them cut across
 every use case at once:
 
-- Seven base rules bind every use case, and no character may override them
+- Eight base rules bind every use case, and no character may override them
   (C-04, FR-04).
 - No proactive message may be sent without a complete explanation, and the check
   refuses rather than warns, in the build (NFR-10, UC-17).
-- Every decision to speak must replay to an identical result over the same
-  recorded input, so that two strategies can be compared fairly (NFR-14).
+- Every decision to speak, and every change in the companion's feelings, must
+  replay to an identical result over the same recorded input, so that two
+  strategies can be compared fairly (NFR-14).
 - If the AI model fails, everything that does not need it keeps working (NFR-09).
-- Exactly three facts about the user may be read from the operating system
-  (C-05, NFR-03).
+- Exactly four facts about the user may be read from the operating system:
+  idle time, lock state, presentation state, and the name of the application in
+  the foreground — never its window title (C-05, NFR-03).
 
 None of these is a feature that can live in one place. Each is a property that
-has to hold across all twenty use cases, including ones not yet written, and each
+has to hold across every use case, including ones not yet written, and each
 has to be **verifiable** rather than merely intended — the specification commits
 to proving them by build check, system-call audit, and replay comparison.
 
@@ -46,19 +52,28 @@ enforce the layering mechanically rather than by discipline.
   capability — replying in character, whether the user is at the desk, the
   current time, storage, showing something — and adapters implement them. The
   data types on those ports are where the constraints live: the presence port
-  carries exactly the three facts C-05 permits, so no code can ask for a fourth.
-- **One ordered queue.** Events from outside — idle ticks, lock and unlock, the
-  user opening or closing a session — enter a single bounded queue with one
-  reader, are appended to a journal, and are handed to the domain in order.
+  carries exactly the four facts C-05 permits, so no code can ask for a fifth.
+  The fourth is an application's name and nothing else — the type has no field
+  for a window title or a position.
+- **One ordered queue.** Events from outside — idle ticks, lock and unlock, a
+  change of foreground application, the user opening or closing a session, a
+  message the user sent as the AI model interpreted it — enter a single bounded
+  queue with one reader, are appended to a journal, and are handed to the domain
+  in order. The model's interpretation is made once, before the event is
+  journalled, so the domain never waits on the model and a replay never calls it.
 - **One way out.** Every proactive message, including anything the companion
-  shows rather than says, leaves through a single `SpeechGate`. It assembles the
-  explanation NFR-10 requires and refuses to emit without one. No other component
-  may reference the outbound port.
+  shows rather than says to the user — a speech bubble, a gesture — leaves
+  through a single `SpeechGate`. It assembles the explanation NFR-10 requires and
+  refuses to emit without one. No other component may reference the outbound
+  port. Ambient motion, which is addressed to nobody (BR-07), does not pass the
+  gate: it is drawn from the emotion state on a path of its own that can take
+  neither the keyboard focus nor the companion's position.
 - **A pure domain.** No I/O and no ambient clock; time is injected. Given the same
   journal, the domain produces the same decisions.
 - **An append-only decision journal.** What was observed, which threshold was
-  crossed, what delayed the message, how much of the allowance was spent. UC-17
-  reads from it and NFR-14 replays it.
+  crossed, what delayed the message, any ceiling the user set and how much of it
+  was spent, and every event that moved the companion's feelings. UC-17 reads
+  from it and NFR-14 replays it. How feelings are computed from it is ADR 0004.
 
 This shape is independent of the framework, which has not been chosen.
 
@@ -72,7 +87,8 @@ This shape is independent of the framework, which has not been chosen.
   instead of policing an ever-growing list of call sites.
 - NFR-09 becomes a table. Each use case names the ports it needs, and the
   degradation test is to disable an adapter and check the table still holds.
-- C-05 is carried by a data type rather than by a rule someone has to remember,
+- C-05 is carried by a data type rather than by a rule someone has to remember
+  — four facts now, as it was three —
   which reduces the code review NFR-03 asks for to reading one adapter.
 - The exclusions in section 5 are enforced by absence. There is no mail port, so
   there is no way to read mail.
@@ -89,7 +105,9 @@ This shape is independent of the framework, which has not been chosen.
   break by accident and is caught only because a test goes looking for it.
 - The journal records observations about the user, so it is personal data under
   NFR-04 and must be reachable by UC-12, UC-13 and UC-14. Being an implementation
-  detail does not exempt it.
+  detail does not exempt it. Since version 5.0 it also holds what the user said
+  as the model interpreted it, and the companion's feelings about them, which
+  makes it the most personal thing Cognia stores.
 
 **Neutral**
 

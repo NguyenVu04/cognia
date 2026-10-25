@@ -4,6 +4,9 @@
 - **Date:** 2026-09-26
 - **Revised:** 2026-10-24 — a second migration for commitments, the language
   setting and the greeting's basis (COG-UCS-001 v4.0)
+- **Revised:** 2026-10-25 — a third migration for the emotion state, the
+  temperament, self-adjustments, application totals and the companion's
+  journal, and for no default ceiling or quiet hours (COG-UCS-001 v5.0)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -28,6 +31,16 @@ until they say it is done. The language the companion speaks (C-06, FR-30). And
 the greeting at the first opening of the day (UC-16), which must be recorded
 with the items it mentioned so that it can be explained, and whose existence
 today is what decides whether a later opening greets again.
+
+Version 5.0 gives the companion feelings, initiative and a journal of its own,
+and lets it read one more fact from Windows. That adds five things to store. A
+temperament on each character version (UC-02, BR-08). The companion's current
+emotion state (UC-23), which ADR 0004 computes from journalled events. The
+adjustments it makes to itself, each undoable (UC-24, FR-16). Minutes per
+application per hour of the day, and the applications the user excluded (C-05,
+UC-04-A3). And its journal entries, each with the memories it drew on (UC-25).
+It also removes two defaults: there is no daily ceiling and there are no quiet
+hours unless the user sets them (BR-01, BR-02).
 
 Two things change when the table count reaches a dozen. First, the schema
 will change while users already have a file on disk, and
@@ -60,6 +73,43 @@ not as an edit to `0001`.** It makes three changes:
   greeting mentioned, so UC-17 can say what it was built from. Whether today has
   had its greeting is read from these rows, not kept as a separate flag: one
   fact, one place.
+
+**Version 5.0 arrives as a third migration, `0003_emotion_learning.sql`.** It
+makes these changes:
+
+- `settings` is rebuilt by hand, because SQLite cannot drop a `NOT NULL` or
+  change a default with `ALTER`. `daily_allowance`, `quiet_start` and
+  `quiet_end` become nullable with no default, and `NULL` means none (BR-01,
+  BR-02). A new `moods_on`, `0` or `1`, defaults to `1` (UC-18-A2). The rebuild
+  copies the existing row as it is; nothing has been released, so no user holds
+  the old defaults by choice.
+- `character_versions.temperament`, a JSON object of the values UC-02 derives
+  and the user may adjust — how far events move the companion, how fast a
+  feeling fades, and the resting point in pleasure, arousal and dominance —
+  added with `ALTER TABLE … ADD COLUMN`. It belongs to the version, so
+  restoring a version restores it (UC-03).
+- New rows in `message_kinds` for the kinds the companion may now start
+  (UC-22): `remark`, `question`, `commitment`, `checkin` and `adjustment`.
+  `break`, `return`, `greeting` and `propose` stay.
+- A one-row `emotion_state`: the current point in PAD and the journal `seq` it
+  was computed up to. It is a cache. The truth is the journal, from which ADR
+  0004 recomputes it, so the row may be rebuilt at any time and is never
+  written from anywhere but the domain's output.
+- `self_adjustments`: what the companion changed about itself — timing,
+  frequency, length or tone — the value before and after, the noticed memory
+  item it rests on, and when it was applied and undone. Learned patterns
+  themselves are `memory_items` of kind `noticed`, whose `CHECK` already
+  refuses one without evidence (FR-34).
+- `app_usage`: a local calendar day, an hour from 0 to 23, an application name,
+  and minutes, keyed on the first three. There is no column for a window title
+  and none finer than an hour, so NFR-03 is enforced by the shape of the table.
+  `app_exclusions` holds the names the user excluded; excluding one also deletes
+  its rows.
+- `companion_journal`: each entry's text, when it was written, and the journal
+  `seq`s it drew on. Deleting an entry (UC-25-A2) leaves only those `seq`s
+  behind, in `reflection_tombstones`, so it is not written again from the same
+  memories. Importance is part of each journalled event's payload, so it needs
+  no column.
 
 **A commitment's day is a calendar date, not an instant.** `due_on` is
 `YYYY-MM-DD` in the user's local calendar, because the user said "Friday", not a
@@ -143,6 +193,19 @@ copying it.
   remembered" because it is a setting, not something remembered.
 - `0002_commitments_language.sql` and its mirror in `schema.py` are described
   here but not yet written.
+- After `0003` the schema has twenty tables. UC-14's "erase everything
+  remembered" must include `emotion_state`, `self_adjustments`, `app_usage`,
+  `companion_journal` and `reflection_tombstones`, and keep `app_exclusions`
+  and `moods_on`, which are settings.
+- The emotion state is a cache over the journal, so removing a past feeling
+  (UC-13-A2) means removing the journal rows behind it and recomputing. Removal
+  and replay pull against each other here: a replay after a removal is a replay
+  of what is left, not of what happened.
+- `app_usage.day` is the second local calendar date in the schema, after
+  `commitments.due_on`, for the same reason: an hour of the user's day is a
+  local hour.
+- `0003_emotion_learning.sql` and its mirror in `schema.py` are described here
+  but not yet written.
 
 ## Alternatives considered
 

@@ -136,19 +136,24 @@ Three commitments from ADR 0001 bind any work that reaches past presentation: th
 domain is pure with no ambient clock, so decisions replay identically (NFR-14);
 every proactive message leaves through a single `SpeechGate` that refuses to emit
 without a complete explanation (NFR-10); and events enter through one ordered,
-journalled queue with one reader.
+journalled queue with one reader. How the companion's feelings are computed from
+that journal — rules over a PAD state, the AI model only interpreting what the
+user said — is ADR 0004, still Proposed.
 
 ## Conventions
 
 - **Scope is closed.** Section 5 of the specification, restated as FR-24, lists
-  exclusions as *deliberately never*: task and reminder management, precise-time
-  alarms, mail and calendar, acting on the user's behalf, cross-device sync,
-  reading which application or window is open, and a companion with moods or
-  needs. Adding one is a specification violation, not an improvement.
-- **C-05 — three facts, no more.** The only things that may ever be read from the
-  operating system are idle time, lock state, and presentation state. Never
-  keystrokes, the screen, the clipboard, browsing history, or window identity.
-  The port's data type is what enforces this; do not widen it.
+  exclusions as *deliberately never*: task lists and reminders the user
+  schedules, precise-time alarms, mail and calendar, acting on the user's behalf,
+  cross-device sync, reading window titles, contents or positions, and a
+  companion with needs or anything to be looked after. Adding one is a
+  specification violation, not an improvement.
+- **C-05 — four facts, no more.** The only things that may ever be read from the
+  operating system are idle time, lock state, presentation state, and the name
+  of the application in the foreground, kept only as minutes per application per
+  hour of the day. Never keystrokes, the screen, the clipboard, browsing history,
+  window titles, window contents, or window positions. The port's data type is
+  what enforces this; do not widen it.
 - **Font sizes never appear in QSS.** Qt style sheets take whole pixels only and
   the design is built on fractional sizes (9.5, 12.5, 13.8, 14.5 …). Every size
   goes through `theme.font()`, which carries the fraction via `setPointSizeF`.
@@ -178,7 +183,7 @@ journalled queue with one reader.
 |---|---|
 | `desktop/src/resources/fonts/*` | Vendored Inter (OFL-1.1) and Phosphor Icons (MIT). Replace by re-downloading the release and its licence file together |
 | `desktop/uv.lock` | `uv add` / `uv sync`, never by hand |
-| `docs/USECASE_SPECIFICATION.html` | COG-UCS-001 v3.0, the source of record. Changing it needs a version bump in its section 1.1 and the approvals in 1.2 |
+| `docs/USECASE_SPECIFICATION.html` | COG-UCS-001 v5.0, the source of record. Changing it needs a version bump in its section 1.1 and the approvals in 1.2 |
 | `docs/adr/*.md` (accepted) | Write a new ADR that supersedes it; never edit an accepted one |
 
 **There are no secrets and no `.env`.** Cognia has no account, no server, and holds
