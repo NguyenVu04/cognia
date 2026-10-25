@@ -334,7 +334,7 @@
       <td>5.0</td>
       <td>2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td>Repositioned from a product to a design project: an AI companion that behaves as though it has feelings and a will of its own, built from the character the user describes and from what it learns of how the user works. The pillars become Character, Emotion, Agency and Continuity; the positioning statement becomes an aim statement, section 3.2 becomes related work, and two user stories are added to the overview. The goals in section 4 become evaluation goals. The companion now decides for itself when to speak (BR-01), has no default quiet hours (BR-02), moves freely when the movement is addressed to nobody (BR-07), and has moods, including sadness at being ignored (BR-08, FR-32, UC-23); BR-04 and FR-27 are narrowed accordingly. The name of the application in the foreground becomes a fourth fact that may be read from Windows, stored only as daily totals (C-05, NFR-03). The companion learns patterns and adjusts its own timing, length and tone, saying so and offering an undo (UC-24), and keeps a journal of its own reflections (UC-25). NFR-13 is narrowed: in a crisis the companion says it is a fictional character and cannot replace a real person. UC-06, UC-08, UC-11 and UC-19 are withdrawn and merged; UC-22 to UC-25 are added. Section 1.2, Approvals, is removed. The Vietnamese option is removed and the companion speaks English only (C-06); FR-30 and UC-01-A3 are withdrawn. Twenty-one use cases. Reason: a companion that was quiet and without feeling by design could not be the thing this project now sets out to build &mdash; one that feels, to the person at the desk, as though it has a mind of its own.</td>
+      <td>Repositioned from a product to a design project: an AI companion that behaves as though it has feelings and a will of its own, built from the character the user describes and from what it learns of how the user works. The pillars become Character, Emotion, Agency and Continuity; the positioning statement becomes an aim statement, section 3.2 becomes related work, and two user stories are added to the overview. The goals in section 4 become evaluation goals. The companion now decides for itself when to speak (BR-01), has no default quiet hours (BR-02), moves freely when the movement is addressed to nobody (BR-07), and has moods, including sadness at being ignored (BR-08, FR-32, UC-23); BR-04 and FR-27 are narrowed accordingly. The name of the application in the foreground becomes a fourth fact that may be read from Windows, stored only as daily totals (C-05, NFR-03). The companion learns patterns and adjusts its own timing, length and tone, saying so and offering an undo (UC-24), and keeps a journal of its own reflections (UC-25). NFR-13 is narrowed: in a crisis the companion says it is a fictional character and cannot replace a real person. UC-22 to UC-25 are added. Section 1.2, Approvals, is removed. The Vietnamese option is removed and the companion speaks English only (C-06). Twenty-one use cases. Reason: a companion that was quiet and without feeling by design could not be the thing this project now sets out to build &mdash; one that feels, to the person at the desk, as though it has a mind of its own.</td>
       <td>Pending</td>
     </tr>
   </tbody>
@@ -753,20 +753,13 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>A-05</td>
-      <td><b>Withdrawn in version 5.0.</b> The body-doubling ritual is no longer the claim the project rests on (3.2)</td>
-      <td>&mdash;</td>
-      <td>&mdash;</td>
-      <td>&mdash;</td>
-    </tr>
-    <tr>
-      <td>A-06</td>
       <td>A companion that shows feelings &mdash; including sadness at being ignored &mdash; and speaks on its own initiative is felt as having a mind of its own rather than as nagging</td>
       <td>G-01 and G-02 pull against each other: the more it seems to feel, the more it is muted. Moods would be turned down by default rather than removed, since UC-18 already lets the user switch them off</td>
       <td>Users, by trial use</td>
       <td>Pending</td>
     </tr>
     <tr>
-      <td>A-07</td>
+      <td>A-06</td>
       <td>The name of the application in the foreground, kept only as minutes per hour of the day, is enough to learn how the user works</td>
       <td>G-07 fails. UC-24 would need a richer signal, and every richer one &mdash; window titles, contents &mdash; is ruled out in section 5</td>
       <td>Developer, by trial use</td>
@@ -1313,11 +1306,6 @@ that nags. A character cannot override them (FR-04).</p>
     <tr><td><a href="#uc-18">UC-18</a></td><td>Adjust how the companion speaks up and feels</td><td>User</td><td>Should</td><td>FR-22</td></tr>
     <tr><td colspan="5"><b>The visible companion</b></td></tr>
     <tr><td><a href="#uc-20">UC-20</a></td><td>Place and handle the companion on screen</td><td>User</td><td>Must</td><td>FR-25, FR-26, FR-27, FR-28, NFR-12</td></tr>
-    <tr><td colspan="5"><b>Withdrawn in version 5.0</b> &mdash; numbers are not reused</td></tr>
-    <tr><td>UC-06</td><td>Be nudged to take a break</td><td colspan="3">Merged into UC-22: a break is one of the things the companion chooses to suggest</td></tr>
-    <tr><td>UC-08</td><td>Return to the desk</td><td colspan="3">Merged into UC-16: arriving after an absence is greeted as arriving in the morning is</td></tr>
-    <tr><td>UC-11</td><td>Companion asks to change how it behaves</td><td colspan="3">Merged into UC-24: the companion now adjusts itself and asks only about its character</td></tr>
-    <tr><td>UC-19</td><td>Companion notices it is being ignored</td><td colspan="3">Merged into UC-23 and UC-24: being ignored is an event the companion feels and learns from</td></tr>
   </tbody>
 </table>
 </div>
@@ -1349,8 +1337,7 @@ its phase in the header line. An appearance is chosen with the character in phas
 but is not drawn anywhere until phase 2, so in phase 1 the companion&rsquo;s mood is
 carried by its words alone (UC-23). Initiative (UC-22) needs desk awareness, because
 it must know when the user stops typing (BR-03), so in phase 1 the greeting is the
-only moment at which the companion speaks first; the others join it in phase 2.
-The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
+only moment at which the companion speaks first; the others join it in phase 2.</p>
 
 <section class="usecase" id="uc-01">
   <h3>UC-01 &mdash; Choose a character</h3>
@@ -1445,7 +1432,7 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
     <li><b>Open question.</b> The four ready-made characters need names, stated roles and appearances. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
     <li><b>Open question.</b> The appearances need a licence that permits redistribution, since the repository is public and MIT-licensed. Where the artwork comes from, and on what terms, is not yet settled. Owner: the author. Needed by 2026-09-15.</li>
     <li><b>Deliberately excluded.</b> No character is chosen for the user by default. An unchosen companion is not a companion.</li>
-    <li><b>Changed in version 4.0.</b> UC-01-E1 no longer covers a model that was never installed: the model ships with the application (NFR-15), so the remaining failures are a damaged installation and a machine that is too small. Version 4.0 also added a choice of Vietnamese as UC-01-A3; it was removed in version 5.0, and the companion speaks English only (C-06).</li>
+    <li><b>Changed in version 4.0.</b> UC-01-E1 no longer covers a model that was never installed: the model ships with the application (NFR-15), so the remaining failures are a damaged installation and a machine that is too small. Version 4.0 also offered Vietnamese; version 5.0 removed it, and the companion speaks English only (C-06).</li>
     <li><b>Changed in version 5.0.</b> Each ready-made character carries a temperament designed by hand &mdash; how quickly it is moved, how long a feeling lasts, where its mood comes to rest &mdash; which sets how it feels (BR-08, UC-23).</li>
   </ul>
 </section>
@@ -1942,7 +1929,6 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>New in version 2.0.</b> This use case absorbs version 1.0&rsquo;s UC-14, which acknowledged completed work as a feature of its own.</li>
     <li><b>Never.</b> &ldquo;You&rsquo;re amazing&rdquo;, &ldquo;I&rsquo;m proud of you&rdquo;, or any praise not tied to something specific. &ldquo;Two hours on the positioning chapter&rdquo; is the register.</li>
     <li><b>Base rule.</b> BR-06 &mdash; the record says how long the user was at the machine, not how long they worked.</li>
     <li><b>New in version 4.0.</b> UC-07-A3. A session never closes a commitment on its own: time spent on something is not evidence that it is finished (BR-06). Only the user&rsquo;s word does.</li>
@@ -2050,7 +2036,6 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-06, telling the companion something about yourself, is folded in here at steps 4 to 6. It was never a separate task the user set out to do.</li>
     <li><b>Base rule.</b> BR-06 &mdash; if the companion has no basis for something, it does not say it.</li>
     <li><b>Related.</b> Everything stored here appears in UC-12 and can be corrected in UC-13.</li>
     <li><b>Changed in version 5.0.</b> Replies carry the companion&rsquo;s mood. Each message the user sends is interpreted once by the AI model as an event for the emotion model &mdash; praise, a complaint, good news, bad news &mdash; and that interpretation is recorded, so the feeling it causes can be explained and replayed (UC-23, NFR-14). UC-09-E3 is narrowed to a crisis (NFR-13).</li>
@@ -2210,7 +2195,6 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-08 covered mostly tone preferences. The kinds of item are now much wider &mdash; see step 3 and NFR-04.</li>
     <li><b>Base rule.</b> BR-06 &mdash; no reason, no item. This is enforced at display time, not left to judgement.</li>
     <li><b>Goal.</b> G-04 &mdash; any item reachable within 2 clicks.</li>
     <li><b>Changed in version 5.0.</b> The third group, <b>about me</b>, is new. What the companion thinks of the user is the user&rsquo;s data too, so it is shown in full, not summarised.</li>
@@ -2302,7 +2286,6 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>New in version 2.0.</b> Split out from version 1.0&rsquo;s UC-08, where reading and correcting were one use case. They are separate goals, done at different moments.</li>
     <li><b>Goal.</b> G-04 &mdash; any item deletable within 2 clicks of being found.</li>
   </ul>
 </section>
@@ -2498,7 +2481,7 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
   window that day. The 04:00 boundary is a proposal, like the figures in section 4.</p>
   <p><b>Returning after an absence</b> means activity at the desk after it has been
   empty long enough to count as an absence, with desk awareness on (UC-04). It is
-  covered by UC-16-A3, which absorbs the withdrawn UC-08.</p>
+  covered by UC-16-A3.</p>
   <p>What it may mention is fixed, not left to the model, so that the greeting can be
   explained in the same terms as any other message (UC-17, NFR-10). It takes the
   items below in order, and stops after two.</p>
@@ -2591,10 +2574,9 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
   <h4>Notes</h4>
   <ul>
     <li><b>Why this is different.</b> The user came to the companion. That is why the greeting does not count against any ceiling the user set in BR-01.</li>
-    <li><b>Changed in version 2.0.</b> Version 1.0&rsquo;s UC-11 listed reminders that had fallen due. There are no reminders now; what is stated is context, and it is never phrased as an alarm.</li>
     <li><b>Changed in version 4.0.</b> Moved from phase 3 to phase 1, because it needs only the model and the memory, not desk awareness. &ldquo;Opening&rdquo; is defined as the first of the day, because a greeting repeated at every opening stops being a greeting. What it may mention is fixed in the table above, and commitments (UC-21) are added to it. In phase 1 there are no sessions yet, so rows 1 and 3 are empty until phase 2.</li>
     <li><b>Never.</b> Inventing something to say (BR-06). Any reproach for an absence, and &ldquo;where have you been?&rdquo; (BR-04). Saying it missed them, when its mood says so, is a feeling and is allowed (BR-08).</li>
-    <li><b>Changed in version 5.0.</b> Renamed from &ldquo;Be greeted when opening the app&rdquo;. The greeting carries the companion&rsquo;s mood. UC-16-A3 absorbs the withdrawn UC-08, Return to the desk, and is available from phase 2, when desk awareness arrives.</li>
+    <li><b>Changed in version 5.0.</b> Renamed from &ldquo;Be greeted when opening the app&rdquo;. The greeting carries the companion&rsquo;s mood. UC-16-A3, returning after an absence, is available from phase 2, when desk awareness arrives.</li>
   </ul>
 </section>
 
@@ -3134,7 +3116,7 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
     <li><b>Base rules.</b> BR-01 to BR-07 all apply here at once, and BR-08 decides how readily the companion speaks. This is the use case where the rules do the most work.</li>
     <li><b>Never.</b> Interrupting continuous typing (BR-03). Sending anything while the user is away, or any notification outside the application, to bring them back (BR-04).</li>
     <li><b>Never.</b> A message with no reason behind it. &ldquo;I just felt like saying hello&rdquo; is allowed only if the feeling it names is real and recorded (BR-06, BR-08).</li>
-    <li><b>New in version 5.0.</b> Absorbs the withdrawn UC-06, Be nudged to take a break, as UC-22-A1. Version 4.0 allowed only the break nudge to be sent uninvited.</li>
+    <li><b>New in version 5.0.</b> Version 4.0 allowed only the break nudge to be sent uninvited.</li>
   </ul>
 </section>
 
@@ -3239,7 +3221,7 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
     <li><b>Basis.</b> The three time scales, appraisal following OCC, and the PAD space are taken from ALMA (Gebhard, 2005), cited in 3.2. The temperament is read from the user&rsquo;s description once and stored (UC-02).</li>
     <li><b>Replay.</b> The model&rsquo;s interpretation of each message is recorded as the event itself, so a replay never calls the model and always produces the same feelings (NFR-14, ADR 0004).</li>
     <li><b>Never.</b> A need, or anything the user must do for the companion (section 5). Wording meant to make the user feel guilty &mdash; &ldquo;you never talk to me any more&rdquo; (BR-04).</li>
-    <li><b>New in version 5.0.</b> Version 4.0 and earlier forbade moods outright (FR-27 as it was). Being ignored, which the withdrawn UC-19 handled as a frequency question, is now also something the companion feels (UC-23-A1).</li>
+    <li><b>New in version 5.0.</b> Version 4.0 and earlier forbade moods outright (FR-27 as it was). Being ignored is now something the companion feels (UC-23-A1).</li>
   </ul>
 </section>
 
@@ -3344,7 +3326,7 @@ The phase 3 of earlier versions is gone: its two use cases were withdrawn.</p>
     <li><b>What it may change by itself.</b> When it speaks, how often, how long its replies are, and its tone &mdash; formality and humour. Its description and its temperament are the character, and change only by UC-24-A2 or UC-03.</li>
     <li><b>Signals.</b> Only what is already recorded: sessions, presence, application totals (never titles, C-05), and responses to its messages. An excluded application (UC-04-A3) contributes nothing.</li>
     <li><b>Goal.</b> G-07 measures how often what it learns is right.</li>
-    <li><b>New in version 5.0.</b> Absorbs the withdrawn UC-11, Companion asks to change how it behaves, and the frequency part of the withdrawn UC-19. Version 4.0 required approval for every change; the companion now asks only about its character.</li>
+    <li><b>New in version 5.0.</b> Version 4.0 required approval for every change; the companion now asks only about its character.</li>
   </ul>
 </section>
 

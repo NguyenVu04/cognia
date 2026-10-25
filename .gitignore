@@ -18,3 +18,9 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# AI assistant artifacts (Claude Code, Codex)
+.claude/
+CLAUDE.md
+AGENTS.md
+.codex/
