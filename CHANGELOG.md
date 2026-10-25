@@ -19,6 +19,11 @@ about what happened, that section is the record.
 
 ### Added
 
+- **The database design** in [`docs/ERD.md`](docs/ERD.md): 31 SQLite tables, drawn as
+  Mermaid entity-relationship diagrams, with the reason for each table and each
+  constraint. State tables hold what the user owns, and the event log holds
+  references and figures only, so deleting an item leaves no copy of the user's
+  words behind (NFR-04, NFR-14, G-06).
 - **The companion answers.** The Companion screen holds a real conversation: what the
   user types goes to a model running on their own machine through Ollama, and the reply
   streams back into the bubble a word at a time. The "writing…" indicator the design
@@ -49,6 +54,14 @@ about what happened, that section is the record.
 
 ### Changed
 
+- **ADR 0003 rewritten in place for the new schema.** It adopts `docs/ERD.md` in
+  place of the three-migration design, and moves the current file there through a
+  new `0002_redesign.sql`, not yet written. The record is still Proposed.
+- **Specification 5.0 approved**, with all twenty-one use cases, by Nguyễn Duy Vũ.
+  The figures still to be measured in NFR-05 to NFR-07 and NFR-15 are now due before
+  the first release rather than before approval.
+- **README rewritten** from the approved specification and the code as it stands:
+  four pillars, eight base rules, phases 1 and 2, and how to run the application.
 - **The companion became visible** (specification 3.0). It is drawn on the desktop as
   a character rather than living behind a tray icon, which gave it an appearance that
   version 2.0 had explicitly denied it. A seventh base rule, BR-07, puts movement
