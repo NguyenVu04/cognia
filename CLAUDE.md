@@ -183,7 +183,7 @@ user said — is ADR 0004, still Proposed.
 |---|---|
 | `desktop/src/resources/fonts/*` | Vendored Inter (OFL-1.1) and Phosphor Icons (MIT). Replace by re-downloading the release and its licence file together |
 | `desktop/uv.lock` | `uv add` / `uv sync`, never by hand |
-| `docs/USECASE_SPECIFICATION.html` | COG-UCS-001 v5.0, the source of record. Changing it needs a version bump in its section 1.1 and the approvals in 1.2 |
+| `docs/USECASE_SPECIFICATION.html` | COG-UCS-001 v5.0, the source of record. Changing it needs a version bump in its section 1.1 |
 | `docs/adr/*.md` (accepted) | Write a new ADR that supersedes it; never edit an accepted one |
 
 **There are no secrets and no `.env`.** Cognia has no account, no server, and holds

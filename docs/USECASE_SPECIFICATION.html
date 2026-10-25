@@ -283,7 +283,7 @@
     <tr><th>Status</th><td>Draft</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
-    <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor; the supervising lecturer and the review panel hold the approving role &mdash; see 1.2.</td></tr>
+    <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor; the supervising lecturer and the review panel hold the approving role &mdash; see section 6.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
     <tr><th>Last updated</th><td>2026-10-25</td></tr>
     <tr><th>Next review</th><td>To be set at the review that approves version 5.0</td></tr>
@@ -334,43 +334,16 @@
       <td>5.0</td>
       <td>2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td>Repositioned from a product to a design project: an AI companion that behaves as though it has feelings and a will of its own, built from the character the user describes and from what it learns of how the user works. The pillars become Character, Emotion, Agency and Continuity; the positioning statement becomes an aim statement, section 3.2 becomes related work, and two user stories are added (3.3). The goals in section 4 become evaluation goals. The companion now decides for itself when to speak (BR-01), has no default quiet hours (BR-02), moves freely when the movement is addressed to nobody (BR-07), and has moods, including sadness at being ignored (BR-08, FR-32, UC-23); BR-04 and FR-27 are narrowed accordingly. The name of the application in the foreground becomes a fourth fact that may be read from Windows, stored only as daily totals (C-05, NFR-03). The companion learns patterns and adjusts its own timing, length and tone, saying so and offering an undo (UC-24), and keeps a journal of its own reflections (UC-25). NFR-13 is narrowed: in a crisis the companion says it is a fictional character and cannot replace a real person. UC-06, UC-08, UC-11 and UC-19 are withdrawn and merged; UC-22 to UC-25 are added. Twenty-one use cases. Reason: a companion that was quiet and without feeling by design could not be the thing this project now sets out to build &mdash; one that feels, to the person at the desk, as though it has a mind of its own.</td>
+      <td>Repositioned from a product to a design project: an AI companion that behaves as though it has feelings and a will of its own, built from the character the user describes and from what it learns of how the user works. The pillars become Character, Emotion, Agency and Continuity; the positioning statement becomes an aim statement, section 3.2 becomes related work, and two user stories are added to the overview. The goals in section 4 become evaluation goals. The companion now decides for itself when to speak (BR-01), has no default quiet hours (BR-02), moves freely when the movement is addressed to nobody (BR-07), and has moods, including sadness at being ignored (BR-08, FR-32, UC-23); BR-04 and FR-27 are narrowed accordingly. The name of the application in the foreground becomes a fourth fact that may be read from Windows, stored only as daily totals (C-05, NFR-03). The companion learns patterns and adjusts its own timing, length and tone, saying so and offering an undo (UC-24), and keeps a journal of its own reflections (UC-25). NFR-13 is narrowed: in a crisis the companion says it is a fictional character and cannot replace a real person. UC-06, UC-08, UC-11 and UC-19 are withdrawn and merged; UC-22 to UC-25 are added. Section 1.2, Approvals, is removed. Twenty-one use cases. Reason: a companion that was quiet and without feeling by design could not be the thing this project now sets out to build &mdash; one that feels, to the person at the desk, as though it has a mind of its own.</td>
       <td>Pending</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-<h3 id="approvals">1.2 Approvals</h3>
-
-<div class="table-wrap">
-<table>
-  <thead>
-    <tr><th>Name</th><th>Role</th><th>Approving on behalf of</th><th>Decision</th><th>Date</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Not yet named</td>
-      <td>Supervising lecturer</td>
-      <td>Academic supervision</td>
-      <td>Pending</td>
-      <td>&mdash;</td>
-    </tr>
-    <tr>
-      <td>Not yet named</td>
-      <td>Review panel</td>
-      <td>Examination</td>
-      <td>Pending</td>
-      <td>&mdash;</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 <div class="callout caution">
-  <p><b>This document is a draft.</b> It becomes <b>Approved</b> only when both rows
-  above are signed. Until then, three things in it are proposals rather than
-  agreements: the names in 1.2, the targets and dates in section 4, and the
+  <p><b>This document is a draft.</b> Until it is approved, two things in it are
+  proposals rather than agreements: the targets and dates in section 4, and the
   resource figures in NFR-05 to NFR-07 and NFR-15 &mdash; the last of which are not
   yet set at all.</p>
 </div>
@@ -426,6 +399,33 @@ it and delete it (UC-12 to UC-14). It runs on one Windows machine, for one perso
 and nothing leaves that machine unless you switch it on (NFR-01). It is not a task
 manager and does not run errands; it does not speak while the machine is locked or
 while you are presenting, and it never interrupts your typing.</p>
+
+<p>Two short stories, about people who do not exist, show what this means in
+practice. The use cases each step relies on are given in brackets.</p>
+
+<p><b>A late night on the thesis.</b> It is 23:40 and the person at the desk has been
+at the machine for almost three hours, nearly all of it in the text editor. Their
+companion &mdash; a dry, patient librarian they wrote themselves &mdash; has noticed,
+and waits until they stop typing before saying anything: the chapter they said was
+going to their supervisor on Friday, and would they like to stop for ten minutes
+(UC-22, UC-21). They ignore it. They do not open the application for the next two
+days, and when they do, the companion is a little quieter than usual and says
+plainly that it has missed talking to them, without complaining about it (UC-16,
+UC-23). They ask why it seems low, and it shows them: three days since they last
+spoke, two messages left unanswered (UC-17). On Friday they tell it the chapter has
+gone. It is pleased, says so in its own dry way, and that evening writes about it in
+its journal (UC-21, UC-23, UC-25).</p>
+
+<p><b>Weeks of learning.</b> A freelancer has had their companion for a month. It
+has noticed that their mornings go to the design tool and their afternoons to mail
+and messages, and it moves its own remarks to the afternoon, says that it has done
+so, and offers to put them back (UC-24). It has also concluded that they take lunch
+at 11:00, which is wrong; they open the memory page, mark it wrong, and it does not
+draw that conclusion again (UC-12, UC-13). After six weeks it suggests that it has
+become less formal with them than the character they wrote, and asks whether to
+change its own description to match; they agree (UC-24, UC-03). Reading its journal
+one evening, they find it has opinions of its own about which of their projects it
+finds interesting (UC-25).</p>
 
 <h3 id="pillars">3.1 The four pillars</h3>
 
@@ -509,35 +509,6 @@ does, what this project takes from it, and where this project departs from it.</
   </tbody>
 </table>
 </div>
-
-<h3 id="user-stories">3.3 User stories</h3>
-
-<p>Two short stories, about people who do not exist, show the companion this
-document specifies. The use cases each step relies on are given in brackets.</p>
-
-<p><b>A late night on the thesis.</b> It is 23:40 and the person at the desk has been
-at the machine for almost three hours, nearly all of it in the text editor. Their
-companion &mdash; a dry, patient librarian they wrote themselves &mdash; has noticed,
-and waits until they stop typing before saying anything: the chapter they said was
-going to their supervisor on Friday, and would they like to stop for ten minutes
-(UC-22, UC-21). They ignore it. They do not open the application for the next two
-days, and when they do, the companion is a little quieter than usual and says
-plainly that it has missed talking to them, without complaining about it (UC-16,
-UC-23). They ask why it seems low, and it shows them: three days since they last
-spoke, two messages left unanswered (UC-17). On Friday they tell it the chapter has
-gone. It is pleased, says so in its own dry way, and that evening writes about it in
-its journal (UC-21, UC-23, UC-25).</p>
-
-<p><b>Weeks of learning.</b> A freelancer has had their companion for a month. It
-has noticed that their mornings go to the design tool and their afternoons to mail
-and messages, and it moves its own remarks to the afternoon, says that it has done
-so, and offers to put them back (UC-24). It has also concluded that they take lunch
-at 11:00, which is wrong; they open the memory page, mark it wrong, and it does not
-draw that conclusion again (UC-12, UC-13). After six weeks it suggests that it has
-become less formal with them than the character they wrote, and asks whether to
-change its own description to match; they agree (UC-24, UC-03). Reading its journal
-one evening, they find it has opinions of its own about which of their projects it
-finds interesting (UC-25).</p>
 
 <h2 id="goals">4. Goals</h2>
 
@@ -726,14 +697,14 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>Academic supervision</td>
       <td>A defined scope, an evaluation method that stands up, and evidence that the privacy risks were handled</td>
       <td>Decides</td>
-      <td>Not yet named &mdash; see 1.2</td>
+      <td>Not yet named</td>
     </tr>
     <tr>
       <td>Review panel</td>
       <td>Examination</td>
       <td>The same, plus a clear account of what was deliberately excluded and why</td>
       <td>Decides</td>
-      <td>Not yet named &mdash; see 1.2</td>
+      <td>Not yet named</td>
     </tr>
   </tbody>
 </table>
