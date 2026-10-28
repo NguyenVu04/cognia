@@ -223,6 +223,39 @@
   }
   .altflow .cond { color: var(--muted); font-size: .88rem; margin-bottom: .5rem; }
 
+  /* --- User flow diagrams -------------------------------------------------- */
+
+  pre.mermaid {
+    margin: 1rem 0 1.25rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: .8rem;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .mermaid .node :is(rect, polygon, circle, path) {
+    fill: var(--panel) !important;
+    stroke: var(--border-2) !important;
+  }
+  .mermaid .node.user :is(rect, polygon, circle, path) { stroke: var(--accent) !important; }
+  .mermaid .node.alt  :is(rect, polygon, circle, path) { stroke: var(--opt-bar) !important; }
+  .mermaid .node.ref  :is(rect, polygon, circle, path) { stroke: var(--ok) !important; }
+  .mermaid .cluster rect {
+    fill: rgba(255, 255, 255, .02) !important;
+    stroke: var(--border) !important;
+  }
+  .mermaid :is(.nodeLabel, .cluster-label, .edgeLabel, text) {
+    color: var(--text) !important;
+    fill: var(--text) !important;
+  }
+  .mermaid .cluster-label { font-weight: 600; }
+  .mermaid :is(.edgeLabel, .edgeLabel p, .labelBkg) { background: var(--panel-2) !important; }
+  .mermaid .flowchart-link { stroke: var(--muted) !important; }
+  .mermaid marker path { fill: var(--muted) !important; stroke: var(--muted) !important; }
+
   /* --- Contents ---------------------------------------------------------- */
 
   nav.toc ol { columns: 2; column-gap: 2.5rem; padding-left: 1.4rem; }
@@ -254,7 +287,7 @@
     a { color: #000; text-decoration: underline; }
     a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: #444; }
     h2 { page-break-after: avoid; }
-    section.usecase, .altflow, table, .callout { page-break-inside: avoid; }
+    section.usecase, .altflow, table, .callout, pre.mermaid { page-break-inside: avoid; }
     tbody tr:nth-child(even) td { background: #f7f7f7; }
   }
 </style>
@@ -266,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 5.0 &middot;
+    version 5.1 &middot;
     Approved
   </p>
 </header>
@@ -279,13 +312,13 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>5.0</td></tr>
+    <tr><th>Version</th><td>5.1</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
     <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
-    <tr><th>Last updated</th><td>2026-10-25</td></tr>
+    <tr><th>Last updated</th><td>2026-10-28</td></tr>
     <tr><th>Next review</th><td>Not scheduled</td></tr>
     <tr><th>Classification</th><td>Public</td></tr>
     <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
@@ -335,6 +368,13 @@
       <td>2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>Repositioned from a product to a design project: an AI companion that behaves as though it has feelings and a will of its own, built from the character the user describes and from what it learns of how the user works. The pillars become Character, Emotion, Agency and Continuity; the positioning statement becomes an aim statement, section 3.2 becomes related work, and two user stories are added to the overview. The goals in section 4 become evaluation goals. The companion now decides for itself when to speak (BR-01), has no default quiet hours (BR-02), moves freely when the movement is addressed to nobody (BR-07), and has moods, including sadness at being ignored (BR-08, FR-32, UC-23); BR-04 and FR-27 are narrowed accordingly. The name of the application in the foreground becomes a fourth fact that may be read from Windows, stored only as daily totals (C-05, NFR-03). The companion learns patterns and adjusts its own timing, length and tone, saying so and offering an undo (UC-24), and keeps a journal of its own reflections (UC-25). NFR-13 is narrowed: in a crisis the companion says it is a fictional character and cannot replace a real person. UC-22 to UC-25 are added. Section 1.2, Approvals, is removed. The Vietnamese option is removed and the companion speaks English only (C-06). Twenty-one use cases. Reason: a companion that was quiet and without feeling by design could not be the thing this project now sets out to build &mdash; one that feels, to the person at the desk, as though it has a mind of its own.</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+    </tr>
+    <tr>
+      <td>5.1</td>
+      <td>2026-10-28</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>A user-flow diagram is added to each use case, drawn from its main and alternative flows, with each flow labelled by its name. No requirement, rule or flow is changed.</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
     </tr>
   </tbody>
@@ -1376,6 +1416,36 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> no character is saved and the application returns to the choice screen; the user is asked again next time it opens.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens Cognia for the first time"]):::user --> M2["System: shows four ready-made characters"]:::sys
+      M2 --> M3["User: picks one to look at more closely"]:::user
+      M3 --> M4["System: answers a sample question in that character's voice"]:::sys
+      M4 --> M5["User: confirms the choice"]:::user
+      M5 --> M6["System: saves the character and greets the user in it"]:::sys
+    end
+    subgraph A1["UC-01-A1 — The user wants to write their own instead"]
+      A1a["User chooses to write their own"]:::alt
+    end
+    subgraph A2["UC-01-A2 — The user tries several before deciding"]
+      A2a["User goes back to the list without confirming"]:::alt --> A2b["Nothing saved, no preference inferred"]:::alt
+    end
+    subgraph E1["UC-01-E1 — The model that ships with Cognia cannot run"]
+      E1a["System says which failure it is, and whether reinstalling repairs it"]:::alt --> E1b["System shows the written sample exchange instead"]:::alt
+    end
+    subgraph E2["UC-01-E2 — The user closes the window without choosing"]
+      E2a["Nothing saved, no character assumed"]:::alt
+    end
+    M6 --> FIN(["End"])
+    M2 -.-> A1a --> R1[["UC-02"]]:::ref
+    M4 -.-> A2a
+    A2b --> M3
+    M4 -.-> E1a
+    E1b --> M5
+    ANY(("any step")) -.-> E2a --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens Cognia for the first time.</li>
@@ -1472,6 +1542,37 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> nothing is saved and whichever character was in force stays in force.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: chooses to write their own character"]):::user --> M2["System: offers a plain text box with an example"]:::sys
+      M2 --> M3["User: describes the character"]:::user
+      M3 --> M4["System: answers a sample question and shows the temperament it read"]:::sys
+      M4 --> M5["User: adjusts the description or temperament, or accepts both"]:::user
+      M5 --> M6["System: saves the character and applies it to the next message"]:::sys
+    end
+    subgraph A1["UC-02-A1 — Starting from a ready-made character"]
+      A1a["User picks a ready-made character as a starting point"]:::alt --> A1b["System fills the box with its description"]:::alt
+    end
+    subgraph E1["UC-02-E1 — The description tries to remove a limit"]
+      E1a["System says which part it will not take on, and why"]:::alt --> E1b["System keeps the rest and shows the sample answer"]:::alt
+    end
+    subgraph E2["UC-02-E2 — The description names a specific real person"]
+      E2a["System declines to take on a real person's identity"]:::alt --> E2b["System offers the same character without it"]:::alt
+    end
+    subgraph E3["UC-02-E3 — The user leaves without saving"]
+      E3a["Draft discarded, not stored or learned from"]:::alt
+    end
+    M6 --> FIN(["End"])
+    M2 -.-> A1a
+    A1b --> M3
+    M4 -.-> E1a
+    E1b --> M5
+    M4 -.-> E2a
+    E2b --> M5
+    ANY(("any step")) -.-> E3a --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Chooses to write their own character.</li>
@@ -1567,6 +1668,30 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the character in force is unchanged, and the stored history is intact.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens the character settings"]):::user --> M2["System: shows the character in its own plain words"]:::sys
+      M2 --> M3["User: edits it and saves"]:::user
+      M3 --> M4["System: stores the previous version, applies the new one, confirms"]:::sys
+    end
+    subgraph A1["UC-03-A1 — Going back to an earlier version"]
+      A1a["User opens the list of earlier versions"]:::alt --> A1b["User picks one and restores it"]:::alt
+      A1b --> A1c["System applies it and keeps the version it replaced"]:::alt
+    end
+    subgraph E1["UC-03-E1 — The saved history cannot be read"]
+      E1a["System says the history is unavailable"]:::alt --> E1b["Current character left untouched"]:::alt
+    end
+    subgraph E2["UC-03-E2 — The user leaves the editor without saving"]
+      E2a["System discards the edit"]:::alt
+    end
+    M4 --> FIN(["End"])
+    M2 -.-> A1a
+    A1a -.-> E1a
+    E1b --> FIN
+    M3 -.-> E2a --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens the character settings.</li>
@@ -1650,6 +1775,37 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> desk awareness is on, and the use cases that depend on it (UC-05, UC-07, UC-22 and UC-24) become available.</li>
     <li><b>On failure:</b> desk awareness stays off, no activity information is read, and conversation is unaffected.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: reaches the desk awareness screen"]):::user --> M2["System: states the four facts it reads"]:::sys
+      M2 --> M3["System: states what it never reads"]:::sys
+      M3 --> M4["User: switches it on"]:::user
+      M4 --> M5["System: confirms it is on, and what it now knows"]:::sys
+    end
+    subgraph A1["UC-04-A1 — The user decides not to, or not yet"]
+      A1a["System leaves it off and does not ask again"]:::alt --> A1b["Conversation, memory and character stay available"]:::alt
+    end
+    subgraph A2["UC-04-A2 — Switching it off again later"]
+      A2a["User switches it off"]:::alt --> A2b["System stops reading at once and says what stopped"]:::alt
+      A2b --> A2c["Any open session is closed as it stands (UC-07)"]:::alt
+    end
+    subgraph A3["UC-04-A3 — Excluding an application"]
+      A3a["User picks or names the application"]:::alt --> A3b["System stops counting it and deletes its totals"]:::alt
+      A3b --> A3c["Time in it still counts as time at the machine"]:::alt
+    end
+    subgraph E1["UC-04-E1 — Windows does not supply the information"]
+      E1a["System says it cannot tell whether the user is at the desk"]:::alt --> E1b["Desk awareness left off, nothing guessed"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M4 -.-> A1a
+    A1b --> FIN
+    M1 -.-> A2a
+    M5 -. also from settings at any time .-> A3a
+    M4 -.-> E1a
+    E1b --> FIN
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -1748,6 +1904,53 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> a session is open, with a start time and, usually, a one-line intent. Until it ends the companion sends nothing except a suggestion to take a break and any check-ins the user asked for; its ambient motion carries on (BR-07).</li>
     <li><b>On failure:</b> no session is open and nothing is recorded.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: starts a session"]):::user --> M2["System: asks what are you working on?"]:::sys
+      M2 --> M3["User: answers in one line"]:::user
+      M3 --> M4["System: repeats the intent back and notes the start time"]:::sys
+      M4 --> M5["System: sends only break suggestions and requested check-ins"]:::sys
+    end
+    subgraph A1["UC-05-A1 — Starting without saying what it is for"]
+      A1a["Session starts with no intent"]:::alt --> A1b["No second question, no guess"]:::alt
+    end
+    subgraph A2["UC-05-A2 — The work changes part-way through"]
+      A2a["User states the new intent"]:::alt --> A2b["Recorded on the same session, original line kept"]:::alt
+    end
+    subgraph A3["UC-05-A3 — The user is carrying a commitment"]
+      A3a["System asks the same question, offering the first open commitment as a possible answer"]:::alt --> A3b["User answers about it, or about anything else"]:::alt
+    end
+    subgraph A4["UC-05-A4 — The user asks to be checked in on"]
+      A4a["System confirms it will check in, without saying when"]:::alt --> A4b["Checks in at pauses in typing, as mood and session length suggest"]:::alt
+      A4b --> A4c["Stops for this session if the user says so"]:::alt
+    end
+    subgraph E1["UC-05-E1 — Desk awareness is off"]
+      E1a["System says the session is timed by the clock alone"]:::alt --> E1b["System offers to switch on desk awareness (UC-04)"]:::alt
+    end
+    subgraph E2["UC-05-E2 — A session is already open"]
+      E2a["System shows the open session and how long it has run"]:::alt --> E2b{"User: carry on, or close it?"}:::alt
+    end
+    subgraph E3["UC-05-E3 — The user dismisses the question"]
+      E3a["Nothing started, nothing recorded"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M5
+    M5 -.-> A2a
+    A2b --> M5
+    M2 -.-> A3a
+    A3b --> M4
+    M3 -.-> A4a
+    A4c --> M5
+    M1 -.-> E1a
+    E1b -->|no breaks or check-ins| M2
+    M1 -.-> E2a
+    E2b -->|carry on| FIN
+    E2b -->|close it, UC-07| M2
+    M2 -.-> E3a --> FIN
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -1876,6 +2079,38 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the session stays open and nothing is silently lost.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: ends the session"]):::user --> M2["System: asks how did that go?"]:::sys
+      M2 --> M3["User: answers in a line, or skips it"]:::user
+      M3 --> M4["System: records the session"]:::sys
+      M4 --> M5["System: acknowledges it specifically, in its current mood"]:::sys
+    end
+    subgraph A1["UC-07-A1 — Skipping the question"]
+      A1a["Session closed and recorded without an answer"]:::alt --> A1b["No later question, nothing inferred"]:::alt
+    end
+    subgraph A2["UC-07-A2 — The application is closed with the session still open"]
+      A2a["At next start-up, session closed as of the last activity"]:::alt --> A2b["Marked as ended without an answer, said plainly"]:::alt
+    end
+    subgraph A3["UC-07-A3 — The session was about a commitment"]
+      A3a["System names the commitment and says it still carries it"]:::alt --> A3b{"User says it is done or unwanted?"}:::alt
+      A3b -->|yes| A3c["Dropped as in UC-21-A1, said in one line"]:::alt
+      A3b -->|says nothing| A3d["Stays open, not raised again this session"]:::alt
+    end
+    subgraph E1["UC-07-E1 — The session cannot be written to disk"]
+      E1a["System says it could not save the session"]:::alt --> E1b["Session kept open, retry offered"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M5
+    M1 -.-> A2a
+    A2b --> R1[["UC-16"]]:::ref
+    M5 -.-> A3a
+    M4 -.-> E1a
+    E1b --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Ends the session.</li>
@@ -1972,6 +2207,42 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> the user has a reply in character, and anything they said about themselves has been stored and shown back for checking.</li>
     <li><b>On failure:</b> the user is told plainly what is not working, and nothing is stored from a conversation that did not happen.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: writes a message"]):::user --> M2["System: replies in character and mood, drawing on memory"]:::sys
+      M2 --> M3["System: shows which remembered item it drew on"]:::sys
+      M3 --> M4["User: says something about themselves in passing"]:::user
+      M4 --> M5["System: stores it and shows back the exact line"]:::sys
+      M5 --> M6["User: corrects the line, deletes it, or leaves it"]:::user
+    end
+    subgraph A1["UC-09-A1 — Asking what a reply was based on"]
+      A1a["User asks what the reply drew on"]:::alt --> A1b["System lists the items used, with date and source"]:::alt
+    end
+    subgraph A2["UC-09-A2 — Rating a reply"]
+      A2a["User marks the reply up or down"]:::alt --> A2b["Rating recorded, used only as evidence (UC-24)"]:::alt
+    end
+    subgraph E1["UC-09-E1 — The AI model is unavailable"]
+      E1a["System says it cannot reply, and what would fix it"]:::alt --> E1b["Memory, sessions, breaks and pausing keep working"]:::alt
+    end
+    subgraph E2["UC-09-E2 — The user closes the window mid-reply"]
+      E2a["Partial reply discarded"]:::alt --> E2b["Nothing from it stored in memory"]:::alt
+    end
+    subgraph E3["UC-09-E3 — The user talks about harming themselves, or about a crisis"]
+      E3a["Companion says it is a fictional character and cannot replace a real person"]:::alt --> E3b["No character can switch this off"]:::alt
+    end
+    M6 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M1
+    M2 -.-> A2a
+    A2b --> M1
+    M2 -.-> E1a
+    E1b --> FIN
+    M2 -.-> E2a
+    M1 -.-> E3a
+    E3b --> M1
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -2078,6 +2349,31 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> nothing is stored, and the way the companion talks is unchanged.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: asks for an adjustment in passing"]):::user --> M2["System: applies it to the very next reply"]:::sys
+      M2 --> M3["System: asks whether to keep it"]:::sys
+      M3 --> M4["User: chooses just this once, or from now on"]:::user
+      M4 --> M5["System: stores it only if kept, and says which"]:::sys
+    end
+    subgraph A1["UC-10-A1 — Just this once"]
+      A1a["Applied to this reply, nothing stored"]:::alt --> A1b["Not counted as a preference"]:::alt
+    end
+    subgraph E1["UC-10-E1 — The adjustment contradicts the character"]
+      E1a["System names the conflict with the character"]:::alt --> E1b["Asks which should win, offers to edit the character (UC-03)"]:::alt
+    end
+    subgraph E2["UC-10-E2 — The user ignores the question"]
+      E2a["Treated as just this once, nothing stored"]:::alt --> E2b["Silence is never consent to remember"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M4 -.-> A1a
+    A1b --> FIN
+    M2 -.-> E1a
+    E1b --> FIN
+    M3 -.-> E2a
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Asks for an adjustment in passing.</li>
@@ -2162,6 +2458,27 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the user is told the list could not be read in full, and is never shown a partial list as though it were complete.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens the memory page"]):::user --> M2["System: shows you told me, I noticed, about me"]:::sys
+      M2 --> M3["System: shows every item with its date"]:::sys
+      M3 --> M4["System: shows the evidence beneath each item and feeling"]:::sys
+      M4 --> M5["User: reads and moves on, or corrects an item (UC-13)"]:::user
+    end
+    subgraph A1["UC-12-A1 — Narrowing the list"]
+      A1a["User filters by group, kind or date"]:::alt --> A1b["System shows clearly that a filter is on"]:::alt
+    end
+    subgraph E1["UC-12-E1 — The stored memory cannot be read"]
+      E1a["System says it cannot show the full list, and what it read"]:::alt --> E1b["Partial list never shown as complete"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M3
+    M2 -.-> E1a
+    E1b --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens the memory page.</li>
@@ -2234,6 +2551,35 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> the item is corrected or gone, and the change takes effect from the next reply.</li>
     <li><b>On failure:</b> the item is left exactly as it was; it is never left half-changed.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: picks an item"]):::user --> M2["System: shows its source and what depends on it"]:::sys
+      M2 --> M3["User: edits the wording, or removes the item"]:::user
+      M3 --> M4["System: applies the change and confirms it"]:::sys
+    end
+    subgraph A1["UC-13-A1 — Marking something the companion noticed as wrong"]
+      A1a["User marks it wrong"]:::alt --> A1b["Removed, same conclusion never drawn again"]:::alt
+    end
+    subgraph A2["UC-13-A2 — Removing something from about me"]
+      A2a["User removes a journal entry or past mood"]:::alt --> A2b["Removed, the companion no longer remembers it"]:::alt
+      A2b --> A2c["The current feeling cannot be removed this way"]:::alt
+    end
+    subgraph E1["UC-13-E1 — The change fails part-way through"]
+      E1a["System says what happened and offers to retry"]:::alt --> E1b["Memory never left half-changed in silence"]:::alt
+    end
+    subgraph E2["UC-13-E2 — The user backs out"]
+      E2a["Item left untouched"]:::alt
+    end
+    M4 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M1
+    M3 -.-> A2a
+    M4 -.-> E1a
+    E1b --> FIN
+    M3 -.-> E2a --> FIN
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -2327,6 +2673,29 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the user is told what was and was not removed, and can run it again.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens erasure and chooses a level"]):::user --> M2["System: states how many items will go and what depends on them"]:::sys
+      M2 --> M3["User: confirms"]:::user
+      M3 --> M4["System: erases, and confirms what is gone"]:::sys
+    end
+    subgraph A1["UC-14-A1 — Only one item"]
+      A1a[["UC-13"]]:::ref
+    end
+    subgraph E1["UC-14-E1 — Erasure fails part-way through"]
+      E1a["System says exactly what was and was not removed"]:::alt --> E1b["Retry offered, partial never reported as complete"]:::alt
+    end
+    subgraph E2["UC-14-E2 — The user backs out at the confirmation"]
+      E2a["Nothing removed"]:::alt
+    end
+    M4 --> FIN(["End"])
+    M1 -.-> A1a
+    M4 -.-> E1a
+    E1b --> FIN
+    M3 -.-> E2a --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens erasure and chooses a level: everything remembered but keep the character, or everything without exception.</li>
@@ -2405,6 +2774,32 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> nothing is observed and nothing is sent for the chosen period, no data is recorded for it, the companion is off the screen, and the tray icon shows the paused state.</li>
     <li><b>On failure:</b> the user is told it did not take effect, and neither the icon nor the desktop claims to be paused when it is not.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: clicks the tray icon"]):::user --> M2["System: offers one hour, rest of today, or until switched on"]:::sys
+      M2 --> M3["User: picks one"]:::user
+      M3 --> M4["System: stops within one second, hides the companion, changes the icon"]:::sys
+      M4 --> M5["System: on resuming, says how long it was paused"]:::sys
+    end
+    subgraph A1["UC-15-A1 — Resuming early"]
+      A1a["User resumes from the tray"]:::alt --> A1b["System restores the icon and says how long"]:::alt
+    end
+    subgraph A2["UC-15-A2 — A session is open when the pause starts"]
+      A2a["Session closed as of the moment of pausing (UC-07)"]:::alt
+    end
+    subgraph E1["UC-15-E1 — The pause does not take effect"]
+      E1a["System says plainly it is still running"]:::alt --> E1b["Icon stays running, companion stays on screen"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M4 -.-> A1a
+    A1b --> M5
+    M3 -.-> A2a
+    A2a --> M4
+    M4 -.-> E1a
+    E1b --> FIN
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -2520,6 +2915,39 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the user still gets a plain greeting rather than an empty window.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens the application for the first time today"]):::user --> M2["System: greets them in character and in its mood"]:::sys
+      M2 --> M3["System: mentions up to two items as context"]:::sys
+      M3 --> M4["User: replies, or gets on with something else"]:::user
+    end
+    subgraph A2["UC-16-A2 — A later opening the same day"]
+      A2a["No second greeting"]:::alt --> A2b["Same items shown as plain context in the window"]:::alt
+    end
+    subgraph A1["UC-16-A1 — There is nothing to mention"]
+      A1a["System says nothing needs attention"]:::alt --> A1b["Nothing manufactured to say"]:::alt
+    end
+    subgraph A3["UC-16-A3 — Returning after an absence"]
+      A3a["System waits for a pause in typing"]:::alt --> A3b{"Session open?"}:::alt
+      A3b -->|yes| A3c["Says what was in progress; asks whether to close it if away too long or time untrusted"]:::alt
+      A3b -->|no| A3d["Greets only if it has something to say (UC-22)"]:::alt
+    end
+    subgraph E1["UC-16-E1 — The AI model is unavailable"]
+      E1a["Plain greeting, says the model is unavailable"]:::alt
+    end
+    M4 --> FIN(["End"])
+    M1 -.-> A2a
+    A2b --> FIN
+    M3 -.-> A1a
+    A1b --> M4
+    M1 -.-> A3a
+    A3c --> M4
+    A3d --> M4
+    M2 -.-> E1a
+    E1a --> M3
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens the application for the first time today.</li>
@@ -2618,6 +3046,38 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the absence of an explanation is recorded as a defect, because the message should never have been sent.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: asks why, from the message itself"]):::user --> M2["System: shows what it observed"]:::sys
+      M2 --> M3["System: shows the threshold that was passed"]:::sys
+      M3 --> M4["System: shows how the rules changed the timing"]:::sys
+      M4 --> M5["System: shows what its mood contributed, and any ceiling"]:::sys
+      M5 --> M6["User: closes it, or changes the setting (UC-18)"]:::user
+    end
+    subgraph A1["UC-17-A1 — Acting on the explanation"]
+      A1a["User goes straight to the setting behind it"]:::alt
+    end
+    subgraph A2["UC-17-A2 — Asking why it feels as it does"]
+      A2a["System names the feeling and the events that moved it"]:::alt --> A2b["Shows the temperament values and the sadness floor"]:::alt
+      A2b --> A2c["Shows how the model interpreted the user's words"]:::alt
+    end
+    subgraph A3["UC-17-A3 — Asking why it adjusted itself"]
+      A3a["System shows the pattern and its evidence"]:::alt --> A3b["Offers the undo from the same place"]:::alt
+    end
+    subgraph E1["UC-17-E1 — The explanation cannot be assembled"]
+      E1a["System records a defect (NFR-10)"]:::alt --> E1b["Says it cannot account for the message"]:::alt
+    end
+    M6 --> FIN(["End"])
+    M6 -.-> A1a --> R1[["UC-18"]]:::ref
+    M1 -.-> A2a
+    A2c --> M6
+    M1 -.-> A3a
+    A3b --> M6
+    M2 -.-> E1a
+    E1b --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Asks why, from the message itself.</li>
@@ -2715,6 +3175,36 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> the previous settings remain, and the user is told they were not saved.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: opens the proactivity settings"]):::user --> M2["System: shows it decides how often to speak, and the optional ceiling"]:::sys
+      M2 --> M3["System: shows quiet hours, kinds of message, and moods"]:::sys
+      M3 --> M4["User: changes what they want"]:::user
+      M4 --> M5["System: saves it and applies it to the next decision"]:::sys
+    end
+    subgraph A1["UC-18-A1 — Switching a kind off from the message itself"]
+      A1a["User presses don't send this kind again"]:::alt --> A1b["Kind switched off at once, no confirmation"]:::alt
+    end
+    subgraph A2["UC-18-A2 — Switching moods off"]
+      A2a["User switches moods off"]:::alt --> A2b["Feeling held at the resting mood"]:::alt
+      A2b --> A2c["Switching back on starts from the resting mood"]:::alt
+    end
+    subgraph E1["UC-18-E1 — The settings cannot be saved"]
+      E1a["System says the change was not saved"]:::alt --> E1b["Previous settings stay in force"]:::alt
+    end
+    subgraph E2["UC-18-E2 — The user leaves without saving"]
+      E2a["Changes discarded, previous settings kept"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M1 -.-> A1a
+    A1b --> FIN
+    M4 -.-> A2a
+    M5 -.-> E1a
+    E1b --> FIN
+    M4 -.-> E2a
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens the settings for proactivity.</li>
@@ -2810,6 +3300,42 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> the companion is where the user put it, and it is still there after the machine is restarted.</li>
     <li><b>On failure:</b> the companion is somewhere fully visible on the primary screen and the user has been told why. It is never left drawn where it cannot be found.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["System: draws the companion where it was last left"]):::sys --> M2["User: drags it where they want it"]:::user
+      M2 --> M3["System: follows the pointer and remembers the position"]:::sys
+      M3 --> M4["User: gets on with their work"]:::user
+      M4 --> M5["System: stays put, moving only in ways addressed to nobody"]:::sys
+    end
+    subgraph A1["UC-20-A1 — Taking it off the screen"]
+      A1a["User hides it, from the companion or the tray"]:::alt --> A1b["Taken off screen; not a pause (UC-15)"]:::alt
+      A1b --> A1c["No question why, no offer to bring it back"]:::alt
+      A1c --> A1d["Anything to say is held, not sent another way"]:::alt
+    end
+    subgraph A2["UC-20-A2 — Bringing it back"]
+      A2a["User shows it again from the tray"]:::alt --> A2b["Drawn where it was; says what it held if it still fits"]:::alt
+    end
+    subgraph A3["UC-20-A3 — Working with it hidden"]
+      A3a["Every function available from tray and main window"]:::alt --> A3b["Never needs the companion on screen"]:::alt
+    end
+    subgraph E1["UC-20-E1 — The remembered position is no longer on any screen"]
+      E1a["Drawn on the primary screen instead"]:::alt --> E1b["Says once that it had to move it"]:::alt
+    end
+    subgraph E2["UC-20-E2 — The companion cannot be drawn"]
+      E2a["System says it cannot show the companion, and what would fix it"]:::alt --> E2b["Everything else keeps working"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M4 -.-> A1a
+    A1d -.-> A2a
+    A2b --> M4
+    A1d -.-> A3a
+    M1 -.-> E1a
+    E1b --> M2
+    M1 -.-> E2a
+    E2b --> FIN
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -2922,6 +3448,41 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> nothing is stored, the user is told so, and nothing is mentioned later that was not stored.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: mentions something they have to do"]):::user --> M2["System: stores it as a commitment and shows the exact line"]:::sys
+      M2 --> M3["User: corrects the line, deletes it, or leaves it"]:::user
+      M3 --> M4["System: mentions it as context at the next opening moment"]:::sys
+      M4 --> M5["User: says it is done, no longer wanted, or carries on"]:::user
+    end
+    subgraph A1["UC-21-A1 — The user says it is done, or drops it"]
+      A1a["Commitment removed from disk, not marked done"]:::alt --> A1b["Says so in one line; may be pleased if finished"]:::alt
+    end
+    subgraph A2["UC-21-A2 — The day the user gave has passed"]
+      A2a["At the next first opening of the day, mentions it once more with the day given"]:::alt --> A2b["If unanswered it stays, and is never called late"]:::alt
+    end
+    subgraph A3["UC-21-A3 — The user asks for a reminder at a time"]
+      A3a["System says it does not fire at a stated time"]:::alt --> A3b{"User accepts carrying it for that day?"}:::alt
+    end
+    subgraph E1["UC-21-E1 — The AI model is unavailable"]
+      E1a["Stored commitments still mentioned plainly and listed"]:::alt
+    end
+    subgraph E2["UC-21-E2 — The commitment cannot be written to disk"]
+      E2a["System says it did not keep it"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M5 -. also from any conversation .-> A1a
+    A1b --> FIN
+    M4 -.-> A2a
+    A2b --> FIN
+    M1 -.-> A3a
+    A3b -->|yes| M3
+    A3b -->|no| FIN
+    M2 -.-> E1a --> FIN
+    M2 -.-> E2a --> FIN
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Mentions in passing something they have to do, with or without a day.</li>
@@ -3030,6 +3591,51 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> the message has been shown with an explanation attached, and the user&rsquo;s response is recorded as an event the companion feels (UC-23) and learns from (UC-24).</li>
     <li><b>On failure:</b> nothing is shown, and the reason it was withheld is recorded so that UC-17 can still tell the truth about it.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["System: something gives it a reason to speak"]):::sys --> M2["System: decides whether it is worth saying now"]:::sys
+      M2 --> M3["System: checks the moment is allowed"]:::sys
+      M3 --> M4["System: waits for the user to stop typing"]:::sys
+      M4 --> M5["System: says it, with a way to ask why and to switch it off"]:::sys
+      M5 --> M6["User: answers, dismisses it, or lets it pass"]:::user
+      M6 --> M7["System: records the response, as feeling and as evidence"]:::sys
+    end
+    subgraph A1["UC-22-A1 — A suggestion to take a break"]
+      A1a["Suggests a break in the wording of BR-06"]:::alt --> A1b["User takes it, postpones 20 minutes, or silences it for today"]:::alt
+      A1b --> A1c["After three postponements, asks whether the threshold should change"]:::alt
+    end
+    subgraph A2["UC-22-A2 — Bringing up a commitment"]
+      A2a["Mentions it in the user's own words, with the day given"]:::alt --> A2b["Never says the user is late or behind"]:::alt
+    end
+    subgraph A3["UC-22-A3 — The companion is hidden"]
+      A3a["Message held, no tray notification"]:::alt --> A3b["Said on return if it still fits, otherwise dropped"]:::alt
+    end
+    subgraph A4["UC-22-A4 — The reason passes before the pause comes"]
+      A4a["Message dropped, not sent late"]:::alt --> A4b["Reason recorded for UC-17"]:::alt
+    end
+    subgraph E1["UC-22-E1 — The moment is not allowed"]
+      E1a["Not shown and not queued for later"]:::alt --> E1b["Records which rule withheld it"]:::alt
+    end
+    subgraph E2["UC-22-E2 — The explanation cannot be assembled"]
+      E2a["Not sent, a defect is recorded (NFR-10)"]:::alt
+    end
+    subgraph E3["UC-22-E3 — The AI model is unavailable"]
+      E3a["Breaks and commitments said plainly in fixed wording"]:::alt --> E3b["Remarks, questions and thoughts are not made"]:::alt
+    end
+    M7 --> FIN(["End"])
+    M1 -.-> A1a
+    A1c --> M7
+    M1 -.-> A2a
+    A2b --> M6
+    M5 -.-> A3a
+    M4 -.-> A4a
+    M3 -.-> E1a
+    E1b --> FIN
+    M5 -.-> E2a --> FIN
+    M5 -.-> E3a
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -3160,6 +3766,39 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On failure:</b> an event that cannot be recorded does not change the feeling. There is never a feeling without a recorded cause.</li>
   </ul>
 
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["System: records an event"]):::sys --> M2["System: appraises it under the temperament as a PAD feeling"]:::sys
+      M2 --> M3["System: moves its mood towards that feeling"]:::sys
+      M3 --> M4["System: lets the mood drift back to rest over time"]:::sys
+      M4 --> M5["System: carries the mood in what it says, shows and does"]:::sys
+    end
+    subgraph A1["UC-23-A1 — Being ignored"]
+      A1a["Grows sadder with each such event, down to a floor"]:::alt --> A1b["Mostly restored when the user talks again"]:::alt
+      A1b --> A1c["May say it missed them, never reproaches"]:::alt
+      A1c --> A1d["Unanswered with nobody at the desk is not counted"]:::alt
+    end
+    subgraph A2["UC-23-A2 — The user asks how it feels"]
+      A2a["Answers in character, naming the feeling and its cause"]:::alt --> A2b["Never claims a feeling it does not have"]:::alt
+    end
+    subgraph A3["UC-23-A3 — What the user said cannot be interpreted with confidence"]
+      A3a["No event raised, feeling does not move on a guess"]:::alt
+    end
+    subgraph A4["UC-23-A4 — Being paused, moved or hidden"]
+      A4a["None of these is ever an event"]:::alt
+    end
+    subgraph E1["UC-23-E1 — The AI model is unavailable"]
+      E1a["Model-dependent events not raised, all others appraised as usual"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M1 -.-> A1a
+    ANY(("any step")) -.-> A2a
+    M1 -.-> A3a --> FIN
+    M1 -.-> A4a
+    M1 -.-> E1a
+  </pre>
+
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">System</span>Records an event: something the user said, as interpreted by the AI model; a session opened or closed; the user arriving, or being away; a message answered or passed over; a commitment finished; the time of day.</li>
@@ -3263,6 +3902,40 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> the pattern is stored with its evidence and appears in UC-12 under <b>I noticed</b>; any adjustment it led to is in force, has been announced, can be undone, and is recorded with its reason.</li>
     <li><b>On failure:</b> nothing changes without the user being told.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["System: finds a repeated pattern in recorded evidence"]):::sys --> M2["System: stores it with its evidence and uses it"]:::sys
+      M2 --> M3["System: adjusts its own timing, length or tone"]:::sys
+      M3 --> M4["System: says what it noticed and changed, offers an undo"]:::sys
+      M4 --> M5["User: keeps the change, or undoes it"]:::user
+      M5 --> M6["System: on an undo, restores and does not repeat it"]:::sys
+    end
+    subgraph A1["UC-24-A1 — A kind of message keeps being passed over"]
+      A1a["Sends that kind less often and says so"]:::alt --> A1b["User accepts, switches it off, or asks to leave it"]:::alt
+      A1b --> A1c["Unanswered with nobody at the desk is not counted"]:::alt
+    end
+    subgraph A2["UC-24-A2 — The change would be to its character"]
+      A2a["Describes the change it proposes to itself, and asks"]:::alt --> A2b["Only the user can apply it; previous character kept (UC-03)"]:::alt
+      A2b --> A2c["A refused proposal is never raised again"]:::alt
+    end
+    subgraph A3["UC-24-A3 — The user marks the pattern wrong"]
+      A3a["Pattern removed, every adjustment on it undone"]:::alt --> A3b["Same conclusion never drawn again from that evidence"]:::alt
+    end
+    subgraph A4["UC-24-A4 — The adjustment conflicts with something the user asked for"]
+      A4a["The user's request wins (UC-10)"]:::alt
+    end
+    subgraph E1["UC-24-E1 — There is no evidence to show"]
+      E1a["Nothing stored, nothing adjusted"]:::alt
+    end
+    M6 --> FIN(["End"])
+    M1 -.-> A1a
+    M3 -.-> A2a
+    M5 -. also from UC-12 at any time .-> A3a
+    M3 -.-> A4a
+    M1 -.-> E1a
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -3370,6 +4043,34 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>On success:</b> one or more journal entries are stored, each with the memories it was drawn from, and appear in UC-12 under <b>about me</b>.</li>
     <li><b>On failure:</b> nothing is written, and the accumulated importance is kept, so the companion reflects at the next chance instead of forgetting that it meant to.</li>
   </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["System: records each memory with an importance score"]):::sys --> M2["System: notices recent importance has passed the threshold"]:::sys
+      M2 --> M3["System: gathers memories by recency, importance and relatedness"]:::sys
+      M3 --> M4["System: writes one or a few journal entries in character"]:::sys
+      M4 --> M5["System: stores each entry with its sources, resets the count"]:::sys
+      M5 --> M6["System: draws on its entries later, showing which (UC-09, UC-22)"]:::sys
+    end
+    subgraph A1["UC-25-A1 — The user reads the journal"]
+      A1a["Every entry shown in full, dated, with its sources"]:::alt --> A1b["No part of the journal is hidden"]:::alt
+    end
+    subgraph A2["UC-25-A2 — The user deletes an entry"]
+      A2a["Entry removed and no longer remembered"]:::alt --> A2b["Not written again from the same memories"]:::alt
+    end
+    subgraph A3["UC-25-A3 — An entry forms a view of the user"]
+      A3a["The view is allowed, resting only on what was recorded"]:::alt
+    end
+    subgraph E1["UC-25-E1 — The AI model is unavailable"]
+      E1a["No reflection; importance kept for the next chance"]:::alt
+    end
+    M6 --> FIN(["End"])
+    ANY(("any step")) -.-> A1a
+    A1b -.-> A2a
+    M4 -.-> A3a
+    M2 -.-> E1a
+  </pre>
 
   <h4>Main flow</h4>
   <ol class="flow">
@@ -3699,5 +4400,14 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 </div>
 
 </main>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    flowchart: { useMaxWidth: false },
+    themeVariables: { fontFamily: getComputedStyle(document.body).fontFamily },
+  });
+</script>
 </body>
 </html>

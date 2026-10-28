@@ -66,9 +66,8 @@ docs(spec): correct the storage location in the references table
 
 Accepted types: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`.
 
-The type is load-bearing rather than decorative: it decides which
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) group the entry lands in, and
-once there are releases it drives the version bump. A change that adds behaviour is
+The type is load-bearing rather than decorative: once there are releases it drives the
+version bump. A change that adds behaviour is
 `feat` even if it is three lines; a change that only moves code is `refactor` even if
 it is three hundred.
 
@@ -99,7 +98,6 @@ A pull request is ready for review when:
 
 - [ ] it does one thing, and the description says what and why;
 - [ ] user-facing changes are documented — README, the specification, or both;
-- [ ] `docs/CHANGELOG.md` has an entry under `Unreleased`;
 - [ ] breaking changes are labelled as such and explain the migration;
 - [ ] no secret, credential, or personal data appears in the diff.
 

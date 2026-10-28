@@ -360,10 +360,9 @@ cognia/
 │       ├── resources/               vendored fonts and the QSS style sheet
 │       └── utils/                   paths
 ├── docs/
-│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.0, approved
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.1, approved
 │   ├── ERD.md                       the database design
 │   └── adr/                         architecture decision records
-├── CHANGELOG.md                     what changed, unreleased
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability
 ├── CLAUDE.md                        working agreement for AI assistance
@@ -377,9 +376,8 @@ cognia/
 | | |
 |---|---|
 | **Style and lint** | No linter or formatter is configured |
-| **Commits** | [Conventional Commits](https://www.conventionalcommits.org/); the type decides the changelog group |
+| **Commits** | [Conventional Commits](https://www.conventionalcommits.org/) |
 | **Branching** | Branch from `main` as `type/short-description` |
-| **Changelog** | Every pull request adds an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) |
 | **Review** | See [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **Architecturally significant changes** | An ADR before implementation. See [docs/adr/README.md](docs/adr/README.md) |
 
@@ -520,8 +518,7 @@ were needed by 2026-09-15 and are still open.
 
 ## Contributing
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Release history is in
-[CHANGELOG.md](CHANGELOG.md).
+Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Section 5 of the specification exists to close questions rather than leave them open,
 so a proposal to add tasks, reminders, alarms, mail, calendars, cross-device sync,
