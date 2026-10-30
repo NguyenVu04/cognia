@@ -4,7 +4,7 @@ version: '3'
 #
 # Everything runnable lives in desktop/; the repository root holds documents
 # only. There is deliberately no lint or test task: no linter, formatter or
-# test runner is configured yet, and docs/CONTRIBUTING.md says the same. Add
+# test runner is configured yet, and CONTRIBUTING.md says the same. Add
 # one here when the tooling actually exists, not before.
 
 vars:

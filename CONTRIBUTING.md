@@ -87,7 +87,7 @@ checked by reading, and what a reviewer will check:
 - no template placeholder was reintroduced:
 
 ```bash
-grep -rn '<[A-Z][A-Z0-9_]*>' README.md docs/*.md docs/adr/*.md
+grep -rn '<[A-Z][A-Z0-9_]*>' README.md docs/*.md docs/architecture/*.md docs/architecture/adr/*.md
 ```
 
 That command must print nothing.

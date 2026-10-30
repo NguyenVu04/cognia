@@ -2,6 +2,8 @@
 
 - **Status:** Proposed
 - **Date:** 2026-10-25
+- **Revised:** 2026-10-30 — the interpretation runs before the reply
+  ([`ARCHITECTURE.md`](../ARCHITECTURE.md), D-04), and the domain's path follows D-02
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -42,7 +44,7 @@ We compute feelings with rules over a numeric state, and let the AI model only
 interpret what the user said.
 
 - **State.** The emotion state is a point in PAD, each axis in [-1, 1], held by
-  the domain in `core/`. The mood is that point; a feeling caused by an event is
+  the domain in `domain/emotion/`. The mood is that point; a feeling caused by an event is
   a displacement of it. A fixed table maps regions of PAD to the names the user
   sees — pleased, low, restless — so the name is derived, never stored.
 - **Temperament.** Each character version carries a temperament (UC-02): how far
@@ -60,7 +62,8 @@ interpret what the user said.
   with an importance. That classification is the event that is journalled. The
   domain never calls the model, and a replay reads the recorded classification
   instead of asking again. An answer outside the closed set, or one the model is
-  not confident in, raises no event (UC-23-A3).
+  not confident in, raises no event (UC-23-A3). The reply waits for this
+  interpretation, so the reply carries the feeling that the message caused.
 - **Decay and floor.** Between events the mood moves towards the resting point
   at the temperament's rate, computed from the injected clock (ADR 0001). Sadness
   from being ignored accumulates with a floor below which pleasure does not fall,
@@ -104,8 +107,10 @@ interpret what the user said.
   and a poorly tuned rule is felt by the user as a character flaw.
 - Removing a past feeling (UC-13-A2) means removing journal rows and
   recomputing, so a replay after a removal replays what is left (ADR 0003).
-- One more model call per user message, made before the event is queued. On a
-  slow machine it delays the feeling, not the reply, but it is still load.
+- One more model call per user message, made before the event is queued and before
+  the reply. On a slow machine it delays the first word of the reply. The typing
+  indicator covers the wait, as NFR-06 allows. The alternative is a reply that claims
+  a feeling the state does not yet hold, which BR-06 and BR-08 forbid.
 
 **Neutral**
 

@@ -21,9 +21,9 @@ your own disk, where you can read it and delete it.
 
 > [!NOTE]
 > The specification ([`docs/USECASE_SPECIFICATION.html`](docs/USECASE_SPECIFICATION.html),
-> COG-UCS-001 version 5.0) is **approved**, together with all twenty-one of its use
-> cases. Anything below that describes behaviour describes *specified* behaviour
-> unless it says it is built. The figures in NFR-05 to NFR-07 and NFR-15 are still
+> COG-UCS-001) is **approved** at version 5.1, together with all twenty-one of its use
+> cases. Version 5.2 awaits the author's approval. Anything below that describes
+> behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-05 to NFR-07 and NFR-15 are still
 > unmeasured, and are to be measured before the first release.
 
 ## Contents
@@ -98,7 +98,8 @@ The twenty-one use cases of section 10, grouped as the specification groups them
   be undone (UC-01 to UC-03).
 - **Desk awareness, off until switched on** — four facts and nothing else: idle time,
   lock state, presentation state, and the name of the application in the foreground,
-  kept only as minutes per application per hour of the day. Any application can be
+  kept as minutes per application per hour of the day and as changes in the event
+  log. Any application can be
   excluded (UC-04).
 - **Feelings with causes** — an emotion state in pleasure, arousal and dominance
   (PAD), moved only by appraisal of recorded events under the character's temperament,
@@ -166,7 +167,8 @@ deferred:
 - **Reading email, calendar integration, acting on the user's behalf** — the
   companion's agency is over its own behaviour, not over the user's machine.
 - **Reading window titles, window contents, or which document or page is open** — only
-  the name of the foreground application, kept as minutes per hour. This also rules out
+  the name of the foreground application, kept as minutes per hour and as changes in
+  the event log. This also rules out
   behaviour that depends on other windows: walking along window edges, avoiding the
   window being typed in, sitting on the taskbar.
 - **A companion with needs, or with anything to be looked after** — it has moods, but
@@ -183,9 +185,12 @@ and **macOS and Linux builds** (Windows 10 and 11 are being finished first).
 ## Architecture
 
 The shape below is decided in
-[ADR 0001](docs/adr/0001-layered-architecture-with-event-driven-core.md), and the
-emotion model in [ADR 0004](docs/adr/0004-hybrid-emotion-model.md). Dependencies point
-inward only.
+[ADR 0001](docs/architecture/adr/0001-layered-architecture-with-event-driven-core.md),
+and the emotion model in
+[ADR 0004](docs/architecture/adr/0004-hybrid-emotion-model.md). Dependencies point
+inward only. [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) is
+the full design: the module, runtime and deployment views, and the options and
+trade-offs behind each decision.
 
 ```mermaid
 flowchart TB
@@ -223,7 +228,7 @@ flowchart TB
 |---|---|---|
 | Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. Every screen except the Companion conversation still shows mockup copy from `ui/views/sample_data.py` |
 | Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; streams replies on a worker thread (`ChatWorker`) | Built for conversation only |
-| Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia, which is not yet done |
+| Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia and removes LangChain and LangGraph, which is not yet done |
 | Storage (`desktop/src/infrastructure/storage/`) | One SQLite file, schema created by numbered SQL migrations and queried through SQLAlchemy Core (ADR 0003). See [docs/ERD.md](docs/ERD.md) | Migration `0001` exists; conversations and messages are written. ADR 0003 replaces it with the design in `docs/ERD.md` through `0002_redesign.sql`, which is not written |
 | Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-14) | Not created. `desktop/src/domain/` holds empty service stubs |
 | `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-10 requires and refuses to emit without one | Not created |
@@ -233,8 +238,9 @@ flowchart TB
 
 | Dependency | Purpose | Criticality | Owner |
 |---|---|---|---|
+| QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
-| AI model, running locally | Words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. It never sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-09) | Which model ships is decided by measurement (ADR 0002); `qwen3.5:2b` is the first candidate |
+| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-09) | Which models ship is decided by measurement (ADR 0002, ADR 0007); `qwen3.5:2b` is the first candidate for chat |
 | An outside AI service | Optional replacement for the local model, off unless the user switches it on. Every send is warned about beforehand and recorded (NFR-02) | Optional | Chosen by the user |
 
 ## Getting started
@@ -306,7 +312,7 @@ All set by the user in the application and stored on their own disk:
 |---|---|---|
 | Character — name, role, temperament, appearance, manner of speaking | None. No character is chosen for the user | FR-01 to FR-04, UC-01 to UC-03 |
 | Desk awareness | Off until the user switches it on, after being told plainly what is read and what is not | FR-06, UC-04 |
-| Excluded applications | None. Excluding one also deletes its totals | C-05, UC-04-A3 |
+| Excluded applications | None. Excluding one also deletes its totals and its recorded changes | C-05, UC-04-A3 |
 | Daily ceiling on proactive messages | None — the companion decides for itself | BR-01, FR-22, UC-18 |
 | Quiet hours | None. A locked machine and full-screen presenting are always quiet | BR-02, FR-22, UC-18 |
 | Each kind of proactive message | On, each switchable — also from the message itself, in one press | FR-22, UC-18-A1 |
@@ -354,15 +360,15 @@ cognia/
 │       ├── __main__.py              entry point: python -m src
 │       ├── app/                     wiring: QApplication, surfaces, worker thread, config
 │       ├── ui/                      windows, dialogs, widgets, views, theme
-│       ├── core/                    models and ports (pure)
-│       ├── domain/                  service stubs, not yet implemented
+│       ├── core/                    models and ports (pure), moving to domain/
+│       ├── domain/                  feature packages, service stubs today
 │       ├── infrastructure/          SQLite storage and the model adapter
 │       ├── resources/               vendored fonts and the QSS style sheet
 │       └── utils/                   paths
 ├── docs/
-│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.1, approved
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.2
 │   ├── ERD.md                       the database design
-│   └── adr/                         architecture decision records
+│   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability
 ├── CLAUDE.md                        working agreement for AI assistance
@@ -379,7 +385,7 @@ cognia/
 | **Commits** | [Conventional Commits](https://www.conventionalcommits.org/) |
 | **Branching** | Branch from `main` as `type/short-description` |
 | **Review** | See [CONTRIBUTING.md](CONTRIBUTING.md) |
-| **Architecturally significant changes** | An ADR before implementation. See [docs/adr/README.md](docs/adr/README.md) |
+| **Architecturally significant changes** | An ADR before implementation. See [docs/architecture/adr/README.md](docs/architecture/adr/README.md) |
 
 ### Local loop
 
@@ -400,7 +406,7 @@ of the specification.
 | What is verified | How | Requirement |
 |---|---|---|
 | Nothing leaves the machine | Network capture across a full week of ordinary use, child processes included; zero outbound connections the user did not enable | NFR-01, G-05 |
-| No keystrokes, screenshots, clipboard, browsing history, window titles, contents or positions are read | Code review plus a system-call audit each release; no stored application field finer than an hour | NFR-03, C-05 |
+| No keystrokes, screenshots, clipboard, browsing history, window titles, contents or positions are read | Code review plus a system-call audit each release; the stored application data holds only names, minutes per hour and the time of each change | NFR-03, C-05 |
 | No proactive message escapes without a complete explanation | Automated check in the build — it refuses rather than warns — plus inspection of the message log | NFR-10 |
 | Every decision, feeling and learned pattern replays identically | Replay over a recorded week with the model switched off, compared against the original | NFR-14 |
 | Every feeling and pattern can be explained | Share of emotion states, patterns and self-adjustments in a trial week that UC-17 can trace to recorded events: 100% | G-06 |
@@ -444,7 +450,7 @@ issue for a security problem.**
 | **Transport** | No outbound connection unless the user switches on an outside AI service (C-03, NFR-01). The local model is reached on the user's own machine only (`localhost`) |
 | **Secrets** | Cognia holds none of its own. If the user configures an outside service, its credential is theirs and stays on their machine |
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
-| **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`, ADR 0002) |
+| **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`). ADR 0002 removes LangChain, and this line goes with it |
 | **Dependency scanning** | Not set up |
 | **Static analysis** | Not set up |
 
@@ -461,7 +467,7 @@ own account boundary and nothing further. This follows from C-02.
 | | |
 |---|---|
 | **Regimes** | None applies to the author. Cognia collects nothing, transmits nothing, and no data reaches the developer or any third party |
-| **Data categories** | From NFR-04: what the user says about themselves, including open commitments; session records; observations and learned patterns, each with its evidence; minutes per application per hour of the day; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
+| **Data categories** | From NFR-04: what the user says about themselves, including open commitments; session records; observations and learned patterns, each with its evidence; minutes per application per hour of the day, and each change of foreground application with its time; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
 | **Retention** | Held until the user deletes it. A closed commitment is deleted, not kept as history. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
 | **Residency** | The user's own disk. No second copy anywhere (NFR-04) |
 | **Sub-processors** | None, unless the user switches on an outside AI service — warned about beforehand, every send recorded (NFR-02) |
@@ -473,7 +479,7 @@ own account boundary and nothing further. This follows from C-02.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **No version has been released.** The first release will be 0.1.0, at the end of
-phase 1. The specification carries its own version, 5.0, recorded in its section 1.1.
+phase 1. The specification carries its own version, 5.2, recorded in its section 1.1.
 
 **When there is a release, the version contract will cover** the on-disk data format,
 because it is the user's own data and an upgrade must not lose it. Schema changes
@@ -495,11 +501,11 @@ of each message recorded as the event itself, so a replay never calls the model.
 | | |
 |---|---|
 | **Code owners** | Nguyễn Duy Vũ. No `CODEOWNERS` file exists; there is one author |
-| **Specification approval** | COG-UCS-001 version 5.0, approved by Nguyễn Duy Vũ |
-| **Decision records** | [`docs/adr/`](docs/adr/) — ADR 0000 and 0001 accepted; ADR 0002, 0003 and 0004 proposed |
+| **Specification approval** | COG-UCS-001 version 5.1, approved by Nguyễn Duy Vũ. Version 5.2 is pending |
+| **Decision records** | [`docs/architecture/adr/`](docs/architecture/adr/) — ADR 0000 and 0001 accepted; ADR 0002 to 0008 proposed |
 
 Architecturally significant changes need an ADR before implementation. See
-[docs/adr/README.md](docs/adr/README.md).
+[docs/architecture/adr/README.md](docs/architecture/adr/README.md).
 
 ## Roadmap
 
@@ -512,9 +518,9 @@ demonstrated ends at phase 2.
 | **2** | UC-04, 05, 07, 15, 20, 22, 24 | Desk awareness, the companion on the screen, its own initiative, shared work sessions, and learning how the user works | Not started |
 
 Open questions recorded against UC-01, owned by the author: the four ready-made
-characters need names, stated roles and appearances; and their artwork needs a licence
-that permits redistribution, since this repository is public and MIT-licensed. Both
-were needed by 2026-09-15 and are still open.
+characters need names, stated roles and appearances. The author makes the appearances
+in VRoid Studio, and whether its terms allow redistribution from a public MIT-licensed
+repository is not yet confirmed (D-26 in `docs/architecture/ARCHITECTURE.md`).
 
 ## Contributing
 

@@ -3,10 +3,12 @@
 - **Status:** Proposed
 - **Date:** 2026-09-26
 - **Revised:** 2026-10-25 — rewritten in place for COG-UCS-001 v5.0, approved.
-  The schema of [`docs/ERD.md`](../ERD.md) replaces the earlier design of three
+  The schema of [`docs/ERD.md`](../../ERD.md) replaces the earlier design of three
   migrations (`0001` as shipped, `0002` and `0003` described but never written).
   The record stayed Proposed throughout, so it is rewritten rather than superseded,
   at the author's decision
+- **Revised:** 2026-10-30 — the connection moves to the core thread (ADR 0005), and
+  the schema gains retrieval columns and a UTC offset on events (ADR 0007)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -38,7 +40,7 @@ and no messages.
 
 ## Decision
 
-**We adopt the schema in [`docs/ERD.md`](../ERD.md).** It has 31 tables. Its section
+**We adopt the schema in [`docs/ERD.md`](../../ERD.md).** It has 31 tables. Its section
 3 lists fourteen decisions, D-01 to D-14, with their reasons. The decisions that shape
 everything else are these:
 
@@ -60,6 +62,8 @@ everything else are these:
 - **Keys are UUID text, and time is UTC ISO-8601 text.** `events.seq` is the one
   integer key, because the order of events is part of the data. `commitments.due_on`
   and `app_usage.day` are local calendar days, because the user said "Friday".
+  `events.utc_offset_min` keeps the local offset, so a replay finds the same local
+  day and hour on any machine.
 - **The event log is `events`. The companion's journal is `journal_entries`.** Each
   word has one meaning.
 
@@ -71,7 +75,9 @@ everything else are these:
 - SQLAlchemy Core builds the queries. There is no ORM and no Alembic. `schema.py`
   mirrors the migrations, and `python -m src.infrastructure.storage.migrate` checks the
   mirror against a freshly migrated file. SQLAlchemy stays in `src/infrastructure/`.
-- One connection on one thread: `StaticPool` with `check_same_thread=True`.
+- One connection on one thread: `StaticPool` with `check_same_thread=True`. That
+  thread is the core thread, not the GUI thread (ADR 0005). `synchronous=FULL` makes
+  each commit wait for the disk, and that wait must not stop the drawing.
 - `PRAGMA secure_delete=ON`, so a deleted row is gone from the disk (NFR-04). UC-14
   adds a WAL checkpoint and a `VACUUM`.
 - Ready-made characters ship as a resource file, not as rows. Choosing one copies it
@@ -119,6 +125,7 @@ written under `0001` came from the mockup character, which has no row to point t
   and nothing checks the ERD.
 - `0002_redesign.sql` and its mirror in `schema.py` are described here and not yet
   written.
+- The current code still opens the connection on the GUI thread.
 
 **Neutral**
 

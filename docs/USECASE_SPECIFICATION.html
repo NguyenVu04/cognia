@@ -299,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 5.1 &middot;
+    version 5.2 &middot;
     Approved
   </p>
 </header>
@@ -312,13 +312,13 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>5.1</td></tr>
+    <tr><th>Version</th><td>5.2</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
     <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
-    <tr><th>Last updated</th><td>2026-10-28</td></tr>
+    <tr><th>Last updated</th><td>2026-10-30</td></tr>
     <tr><th>Next review</th><td>Not scheduled</td></tr>
     <tr><th>Classification</th><td>Public</td></tr>
     <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
@@ -376,6 +376,13 @@
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>A user-flow diagram is added to each use case, drawn from its main and alternative flows, with each flow labelled by its name. No requirement, rule or flow is changed.</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
+    </tr>
+    <tr>
+      <td>5.2</td>
+      <td>2026-10-30</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>The name of the application in the foreground is now kept in the event log as well as in the hourly totals, with the exact time of each change, so that a decision that uses it can be replayed (C-05, NFR-03, NFR-04, NFR-14). An excluded application loses its recorded changes as well as its totals (UC-04-A3), and UC-12 lists them. UC-01 names the source of the appearances. Section 13 follows the move of the decision records to <code>docs/architecture/adr/</code> and lists the architecture document. Reason: C-05 allowed only hourly totals, but UC-22 decides from the application in use and NFR-14 needs every input to a decision in the log. Both could not hold.</td>
+      <td>Pending</td>
     </tr>
   </tbody>
 </table>
@@ -643,7 +650,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>Reading window titles, window contents, or which document or page is open</td>
-      <td><b>Deliberately never.</b> <b>Narrowed in version 5.0:</b> the name of the application in the foreground may be read, and is kept only as minutes per application per hour of the day (C-05, NFR-03). A window title is a different thing &mdash; it carries document names, mail subjects and page titles &mdash; and stays forbidden</td>
+      <td><b>Deliberately never.</b> <b>Narrowed in version 5.0 and again in 5.2:</b> the name of the application in the foreground may be read. It is kept as minutes per application per hour of the day, and each change of application is kept in the event log with its exact time, where the user can see and delete it (C-05, NFR-03). A window title is a different thing &mdash; it carries document names, mail subjects and page titles &mdash; and stays forbidden</td>
       <td>Nobody</td>
     </tr>
     <tr>
@@ -800,7 +807,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>A-06</td>
-      <td>The name of the application in the foreground, kept only as minutes per hour of the day, is enough to learn how the user works</td>
+      <td>The name of the application in the foreground, kept as minutes per hour of the day and as changes in the event log, is enough to learn how the user works</td>
       <td>G-07 fails. UC-24 would need a richer signal, and every richer one &mdash; window titles, contents &mdash; is ruled out in section 5</td>
       <td>Developer, by trial use</td>
       <td>Pending</td>
@@ -843,9 +850,9 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>C-05</td>
-      <td>Only the four facts about the user listed against the Windows actor may be read from the operating system. The fourth, the name of the application in the foreground, is kept only as minutes per application per hour of the day, and the user may exclude any application from it (UC-04). Screen layout may be read as well, because drawing the companion is impossible without it and it describes the machine rather than the person. Window titles, window contents and window positions remain forbidden</td>
+      <td>Only the four facts about the user listed against the Windows actor may be read from the operating system. The fourth, the name of the application in the foreground, is kept as minutes per application per hour of the day and, for each change of application, as an entry in the event log with its exact time, so that a decision that uses it can be replayed (NFR-14). The user may exclude any application from both (UC-04). Screen layout may be read as well, because drawing the companion is impossible without it and it describes the machine rather than the person. Window titles, window contents and window positions remain forbidden</td>
       <td>Technical</td>
-      <td>Privacy commitment, widened from three facts to four in version 5.0; see UC-04 and NFR-03</td>
+      <td>Privacy commitment, widened from three facts to four in version 5.0, and its stored form widened in version 5.2; see UC-04 and NFR-03</td>
     </tr>
     <tr>
       <td>C-06</td>
@@ -1202,14 +1209,14 @@ that nags. A character cannot override them (FR-04).</p>
     <tr>
       <td>NFR-03</td>
       <td>Privacy</td>
-      <td>The application never records keystrokes, screenshots or the clipboard, never reads browsing history, and never reads window titles, window contents or window positions. The one thing it reads about other applications is the name of the one in the foreground, kept only as minutes per application per hour of the day</td>
-      <td>Zero calls to any operating system interface that would supply the forbidden items; no stored field about applications finer than an hour</td>
+      <td>The application never records keystrokes, screenshots or the clipboard, never reads browsing history, and never reads window titles, window contents or window positions. The one thing it reads about other applications is the name of the one in the foreground, kept as minutes per application per hour of the day and as changes in the event log</td>
+      <td>Zero calls to any operating system interface that would supply the forbidden items; no stored field about applications except its name, the minutes per hour, and the time of each change</td>
       <td>Code review plus an audit of system calls, each release</td>
     </tr>
     <tr>
       <td>NFR-04</td>
       <td>Data handling</td>
-      <td>Personal data held: what the user says about themselves, including the commitments they mention until each is closed (UC-21); session records (intent, start, end, time at the machine, closing answer); observations and learned patterns the companion derived, each with the evidence behind it (UC-24); minutes per application per hour of the day; the companion&rsquo;s emotion state and its history, and its journal (UC-23, UC-25); the character, its temperament and its earlier versions</td>
+      <td>Personal data held: what the user says about themselves, including the commitments they mention until each is closed (UC-21); session records (intent, start, end, time at the machine, closing answer); observations and learned patterns the companion derived, each with the evidence behind it (UC-24); minutes per application per hour of the day, and each change of foreground application with its time; the companion&rsquo;s emotion state and its history, and its journal (UC-23, UC-25); the character, its temperament and its earlier versions</td>
       <td>Kept on the user&rsquo;s disk until the user deletes it, with no second copy anywhere. Visible only to the person at that machine. Every category above is listed in UC-12 and removable through UC-13 and UC-14</td>
       <td>Walk every category through UC-12, UC-13 and UC-14; inspect the disk afterwards</td>
     </tr>
@@ -1500,7 +1507,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Base rule.</b> A character sets how the companion speaks and who it is, but never what it will refuse to do (FR-04, NFR-13).</li>
     <li><b>Open question.</b> The four ready-made characters need names, stated roles and appearances. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
-    <li><b>Open question.</b> The appearances need a licence that permits redistribution, since the repository is public and MIT-licensed. Where the artwork comes from, and on what terms, is not yet settled. Owner: the author. Needed by 2026-09-15.</li>
+    <li><b>Open question.</b> The author makes the four appearances in VRoid Studio, as VRM files (<code>docs/architecture/ARCHITECTURE.md</code>, D-26). They need a licence that permits redistribution, since the repository is public and MIT-licensed. Whether the terms of VRoid Studio allow that is not yet confirmed. Owner: the author. Needed before the first release.</li>
     <li><b>Deliberately excluded.</b> No character is chosen for the user by default. An unchosen companion is not a companion.</li>
     <li><b>Changed in version 4.0.</b> UC-01-E1 no longer covers a model that was never installed: the model ships with the application (NFR-15), so the remaining failures are a damaged installation and a machine that is too small. Version 4.0 also offered Vietnamese; version 5.0 removed it, and the companion speaks English only (C-06).</li>
     <li><b>Changed in version 5.0.</b> Each ready-made character carries a temperament designed by hand &mdash; how quickly it is moved, how long a feeling lasts, where its mood comes to rest &mdash; which sets how it feels (BR-08, UC-23).</li>
@@ -1810,7 +1817,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Reaches the desk awareness screen, either during setup or from settings.</li>
-    <li><span class="who">System</span>States what it reads: how long since the mouse or keyboard was touched, whether the machine is locked, whether the user is presenting full-screen, and the name of the application in the foreground &mdash; which it keeps only as minutes per application per hour of the day.</li>
+    <li><span class="who">System</span>States what it reads: how long since the mouse or keyboard was touched, whether the machine is locked, whether the user is presenting full-screen, and the name of the application in the foreground &mdash; which it keeps as minutes per application per hour of the day, and as a record of when it changed.</li>
     <li><span class="who">System</span>States what it never reads: what the user types, the screen, the clipboard, browsing history, window titles and what is inside any window &mdash; nor where windows sit, which is why the companion on the desktop never moves itself out of their way.</li>
     <li><span class="who">User</span>Switches it on.</li>
     <li><span class="who">System</span>Confirms it is on, and says plainly that it now knows whether the user is at the machine and which application they are in, not what they are doing in it.</li>
@@ -1843,7 +1850,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <p class="cond"><b>Branches from step 5, or from settings at any time.</b> The user does not want one application counted.</p>
     <ol>
       <li>The user picks the application from the list of those counted so far, or names it.</li>
-      <li>The system stops counting it from that moment and deletes the totals already kept for it.</li>
+      <li>The system stops counting it from that moment and deletes the totals and the recorded changes already kept for it.</li>
       <li>Time in it is still time at the machine; only the application&rsquo;s name is no longer kept.</li>
     </ol>
   </div>
@@ -1862,6 +1869,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Base rule.</b> BR-06 &mdash; the companion says &ldquo;at the machine&rdquo;, never &ldquo;working&rdquo;. This screen is where that distinction is first explained to the user.</li>
     <li><b>Changed in version 5.0.</b> The name of the application in the foreground becomes the fourth fact, so that the companion can learn how the user works (UC-24). Only daily totals by hour are kept. A window title stays forbidden, because it carries document names, mail subjects and page titles (section 5).</li>
+    <li><b>Changed in version 5.2.</b> Each change of the application in the foreground is also kept in the event log with its exact time, because UC-22 decides from it and a replay needs every input to a decision (NFR-14). The name is still all that is kept about the application. A window title stays forbidden.</li>
     <li><b>Constraint.</b> C-05 &mdash; only the four facts listed in step 2 may ever be read.</li>
   </ul>
 </section>
@@ -2483,7 +2491,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ol class="flow">
     <li><span class="who">User</span>Opens the memory page.</li>
     <li><span class="who">System</span>Shows three groups: <b>you told me</b>, <b>I noticed</b> and <b>about me</b>.</li>
-    <li><span class="who">System</span>Shows each item with the date it was recorded, and covering all of: things the user said about themselves, the commitments they are carrying (UC-21), past sessions, patterns it learned (UC-24), minutes per application by hour of the day, and character changes the user agreed to; and, under <b>about me</b>, its current feeling, the history of its moods and its journal (UC-23, UC-25). Commitments sit in <b>you told me</b>, because the user said them.</li>
+    <li><span class="who">System</span>Shows each item with the date it was recorded, and covering all of: things the user said about themselves, the commitments they are carrying (UC-21), past sessions, patterns it learned (UC-24), minutes per application by hour of the day, the recorded changes of application, and character changes the user agreed to; and, under <b>about me</b>, its current feeling, the history of its moods and its journal (UC-23, UC-25). Commitments sit in <b>you told me</b>, because the user said them.</li>
     <li><span class="who">System</span>Shows the evidence beneath every item in <b>I noticed</b>, and the events beneath every feeling in <b>about me</b>. An item with no reason is not displayed at all.</li>
     <li><span class="who">User</span>Reads, and moves on &mdash; or corrects an item (UC-13).</li>
   </ol>
@@ -4170,7 +4178,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr><td>FR-34</td><td>UC-24</td><td>Each learned pattern appears in &ldquo;I noticed&rdquo; with its evidence; marking it wrong removes it and undoes what was built on it</td><td>Not started</td></tr>
     <tr><td>FR-35</td><td>UC-25</td><td>Reflection happens when accumulated importance passes the threshold; each entry lists the memories it drew on; an entry can be read and deleted but not edited</td><td>Not started</td></tr>
     <tr><td>NFR-01</td><td>All</td><td>G-05 network capture across a trial week</td><td>Not started</td></tr>
-    <tr><td>NFR-03</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used; the stored application data holds nothing finer than an hour and no window title</td><td>Not started</td></tr>
+    <tr><td>NFR-03</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used; the stored application data holds only names, minutes per hour and the time of each change, and no window title</td><td>Not started</td></tr>
     <tr><td>NFR-04</td><td>UC-12, UC-13, UC-14</td><td>Every listed data category is visible, correctable or removable, and erasable; disk inspection after erasure</td><td>Not started</td></tr>
     <tr><td>NFR-09</td><td>UC-09, UC-23</td><td>With the model stopped, session timing, break suggestions, memory list, pause and the emotion state still work</td><td>Not started</td></tr>
     <tr><td>NFR-10</td><td>UC-17, UC-22</td><td>Automated check refuses to send any proactive message lacking a complete explanation</td><td>Not started</td></tr>
@@ -4321,31 +4329,37 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       <td>Architecture decision records</td>
       <td>ADR 0001 onwards</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/adr/</code></td>
+      <td><code>docs/architecture/adr/</code></td>
+    </tr>
+    <tr>
+      <td>Software architecture</td>
+      <td>Proposed, 2026-10-30</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>docs/architecture/ARCHITECTURE.md</code>. The three views of the system, and the options and trade-offs behind each decision</td>
     </tr>
     <tr>
       <td>Layered architecture with an event-driven core</td>
       <td>ADR 0001, Accepted, revised 2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/adr/0001-layered-architecture-with-event-driven-core.md</code>. Revised in place for version 5.0: four facts from Windows (C-05), ambient motion, and interpreted events in the journal</td>
+      <td><code>docs/architecture/adr/0001-layered-architecture-with-event-driven-core.md</code>. Revised in place for version 5.0: four facts from Windows (C-05), ambient motion, and interpreted events in the journal</td>
     </tr>
     <tr>
       <td>A local model behind a port, and conversations in readable SQLite</td>
       <td>ADR 0002, Proposed, revised 2026-10-24</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md</code>. Ships the model as a llama.cpp server started by Cognia, as NFR-15 requires; which model ships is left to measurement</td>
+      <td><code>docs/architecture/adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md</code>. Ships the model as a llama.cpp server started by Cognia, as NFR-15 requires; which model ships is left to measurement</td>
     </tr>
     <tr>
       <td>The whole schema in SQLite, queried through SQLAlchemy Core</td>
       <td>ADR 0003, Proposed, revised 2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/adr/0003-sqlite-schema-and-sqlalchemy-core.md</code>. Stores commitments (UC-21) and the greeting&rsquo;s basis (UC-16) through a second migration; revised for version 5.0 to store the emotion state, temperament, learned patterns, application totals and the journal</td>
+      <td><code>docs/architecture/adr/0003-sqlite-schema-and-sqlalchemy-core.md</code>. Stores commitments (UC-21) and the greeting&rsquo;s basis (UC-16) through a second migration; revised for version 5.0 to store the emotion state, temperament, learned patterns, application totals and the journal</td>
     </tr>
     <tr>
       <td>A hybrid emotion model</td>
       <td>ADR 0004, Proposed, 2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/adr/0004-hybrid-emotion-model.md</code>. PAD state, rule-based appraisal, the AI model only interpreting what the user said; BR-08, UC-23 to UC-25</td>
+      <td><code>docs/architecture/adr/0004-hybrid-emotion-model.md</code>. PAD state, rule-based appraisal, the AI model only interpreting what the user said; BR-08, UC-23 to UC-25</td>
     </tr>
     <tr>
       <td>Related work in 3.2 &mdash; ChatGPT Pulse</td>

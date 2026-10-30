@@ -6,6 +6,9 @@
   server instead of a separately installed Ollama (COG-UCS-001 v4.0, NFR-15)
 - **Revised:** 2026-10-25 — English only; the Vietnamese option is removed
   (COG-UCS-001 v5.0, C-06)
+- **Revised:** 2026-10-30 — LangChain and LangGraph are removed, the server ships in
+  two builds, and ports move to `src/domain/ports/`
+  ([`ARCHITECTURE.md`](../ARCHITECTURE.md), D-02, D-06, D-13)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -35,7 +38,7 @@ C-06 makes the companion speak English, including the fixed wording it uses when
 the model cannot answer. Version 4.0 also offered Vietnamese on request; version
 5.0 removed it.
 
-ADR 0001 already settled the structure — ports belong to the domain, adapters
+ADR 0001 already settled the structure: ports belong to the domain, adapters
 implement them, dependencies point inward, and swappable providers run as
 separate processes named in configuration, never as loaded code. What it did not
 settle is which libraries are allowed to exist, where they may live, how the
@@ -43,23 +46,22 @@ model is run, and what the conversation is written into.
 
 ## Decision
 
-**LangChain and LangGraph live only in `src/infrastructure/`.** The adapter
-implements a domain port, `Replier`. The graph is a `StateGraph` with a single
-model node. That is ceremony for one call today, and deliberately so: memory
-extraction (FR-14), commitments (FR-29), the in-conversation adjustment (FR-15)
-and any tool the companion is ever given become nodes and edges rather than a
-rewrite of the call site. Nothing above `infrastructure/` knows the library
-exists.
+**The adapter calls the server directly, with no LangChain or LangGraph.** The
+adapter implements the domain ports `Replier`, `Interpreter` and `Embedder`. Each
+step of a turn must pass the event queue (ADR 0005), so the services own the order
+of the steps and a graph has no job left. Memory extraction (FR-14), commitments
+(FR-29) and the in-conversation adjustment (FR-15) are fields of one structured
+interpretation call. Nothing above `infrastructure/` knows how the call is made.
 
-**Ports get their own folder, `src/core/ports/`.** ADR 0001 says ports belong to
-the domain; the folder table in `CLAUDE.md` listed only `models/` and
-`services/`. The table gains a row rather than the ports being filed somewhere
-they do not belong.
+**Ports get their own folder, `src/domain/ports/`.** ADR 0001 says ports belong to
+the domain. One folder lets a reviewer read every port in one place.
 
 **The model is a llama.cpp server that ships with Cognia.** The installer
-carries `llama-server.exe` and one GGUF model file. Cognia starts the server as a
-child process when it starts, bound to `127.0.0.1` on a free port it chooses,
-with the model file's path and no option that downloads anything. The child is
+carries `llama-server.exe` in two builds, Vulkan and CPU, and the GGUF model files.
+Cognia starts the server as a child process when it starts, bound to `127.0.0.1` on a
+free port it chooses, with the model file's path, `--offline`, `--no-webui`, a new
+`--api-key` for each start, and no option that downloads anything. It tries the
+Vulkan build first and uses the CPU build if that fails. The child is
 placed in a Windows job object, so it ends with Cognia even when Cognia crashes
 rather than being left running. Paths to the binary and the model file are
 named in configuration, relative to the installation folder, and overridable by
@@ -73,26 +75,20 @@ record first named, is the first candidate to measure. Whether its GGUF weights
 may be redistributed inside an MIT-licensed installer has not been confirmed,
 and has to be before it ships.
 
-**The adapter talks to the server's HTTP API with `httpx`, through a small
-LangChain chat model of its own.** `langchain-ollama` is removed. A minimal
-`BaseChatModel` subclass in `src/infrastructure/ai/` implements streaming
-against the server, so the graph and its token streaming are unchanged above
-it. `httpx` becomes a direct dependency rather than a transitive one. The
-server's OpenAI-compatible endpoint is **not** reached through `langchain-openai`
-or the `openai` SDK: those are cloud clients, and this record already refused
-`deepagents` for making cloud SDKs mandatory.
+**The adapter talks to the server's HTTP API with `httpx`.** `langchain-ollama`,
+`langchain-core` and `langgraph` are removed. A small client in
+`src/infrastructure/ai/` reads the server's streamed reply, and it uses the
+`json_schema` option for structured calls. `httpx` becomes a direct dependency
+rather than a transitive one. The server's OpenAI-compatible endpoint is **not**
+reached through the `openai` SDK, because that is a cloud client.
 
 **Conversations are stored in plain SQLite tables that Cognia owns.** Two
 tables, `conversations` and `messages`, with ordinary columns — no blobs, no
 serialised framework state. `sqlite3 cognia.sqlite3 "SELECT * FROM messages"` is
-a supported way to read your own conversations. LangGraph's checkpointer is
-**not** used: it would store the same history as msgpack blobs, which is the
-opaque storage the specification argues against, and a second copy of the truth
-besides. The graph is stateless per turn; history is loaded from the store and
-passed in.
+a supported way to read your own conversations. History is loaded from the store and passed in for each turn.
 
-**Replies are streamed on a worker thread.** `ChatWorker` lives in `src/app/`,
-because it touches both Qt and `infrastructure/` and `ui/` may import neither.
+**Replies are streamed on a model thread.** The model thread runs one job at a time
+(ADR 0005), so no other thread waits for the model.
 The typing indicator the design already drew is shown on send and hidden at the
 first token, which is NFR-06 satisfied by a widget that previously had no
 trigger.
@@ -102,23 +98,12 @@ prompt asks for English (C-06). The plain sentences the adapter returns when the
 model cannot answer (UC-09-E1) are kept in English, because C-06 covers them too.
 There is no language setting to read.
 
-**Tracing is switched off in the program, not left to the environment.**
-`langsmith` is a hard dependency of `langchain-core`, so it is installed
-whichever LangChain packages are chosen, and it enables itself from an
-environment variable. `src/app/local_only.py` sets those variables to `false`
-before the first LangChain import, so NFR-01 is a property of Cognia rather than
-of the machine it happens to run on.
-
-**`deepagents` is not adopted.** It requires `langchain-anthropic` and
-`langchain-google-genai` — two cloud model SDKs — as mandatory dependencies. It
-may be revisited if and when its sub-agents or skills are actually needed *and*
-those SDKs can be excluded; wanting the library is not on its own a reason to
-put cloud clients in a local-only application.
+**No tracing library remains.** `langsmith` was a hard dependency of
+`langchain-core`. With that package gone, `src/app/local_only.py` has no job, and it
+goes with the same change.
 
 **No `SpeechGate` here.** NFR-10 governs *proactive* messages. A reply the user
-asked for is not proactive, so it does not pass the gate, and the ordered event
-queue and decision journal are likewise untouched: they serve observation, which
-this change does not begin.
+asked for is not proactive, so it does not pass the gate.
 
 ## Consequences
 
@@ -135,12 +120,9 @@ this change does not begin.
   it died, and saying so plainly (UC-09-E1) are Cognia's code rather than the
   user's chore. A server that fails to start leaves memory, sessions and pausing
   working, as NFR-09 requires.
-- The dependency tree loses `langchain-ollama` and its `ollama` client, and keeps
-  `langsmith`, `httpx` and `requests` — libraries whose purpose is to talk to the
-  network — inside an application that promises not to. The hard-disable above is
-  why that is tolerable; it is not why it is comfortable, and NFR-01's
-  verification by network capture matters more than it did. The capture now also
-  covers the child process.
+- The dependency tree loses LangChain, LangGraph, `langsmith` and the `ollama`
+  client. It keeps `httpx`, and only `src/infrastructure/ai/` may use it. NFR-01's
+  network capture now also covers the child processes.
 - How the server separates the model's reasoning from its answer has to be
   verified against the build that ships. The behaviour below under "Disabling the
   model's thinking" was verified against Ollama, and does not carry over by
@@ -162,10 +144,22 @@ this change does not begin.
   with SQLite's same-thread check left on so that getting it wrong fails loudly.
 - Nothing writes the `note` column. The "Stored — you told me" chip the design
   draws stays unused until FR-14.
-- The code still runs against Ollama (`OllamaAgent`, `OLLAMA_*` in
-  `src/config.json`). This revision describes where it is going, not where it is.
+- The code still runs against Ollama and LangGraph (`OllamaAgent`, `OLLAMA_*` in
+  `src/config.json`, and `ChatWorker`). This revision describes where it is going, not
+  where it is.
 
 ## Alternatives considered
+
+**LangChain and LangGraph in the adapter, as this record first decided.** One
+`StateGraph` with a model node, and a small `BaseChatModel` of its own. Graph nodes
+would stay available. Rejected because the graph has one node, each step must pass the
+queue, and it costs start-up time. One cold run on the author's machine, with each
+package in its own process, took 1232 ms for `langgraph.graph` and 665 ms for
+`langchain_core.messages`, against the 2 seconds of NFR-05. It also keeps a tracing
+library in an application that promises no outbound traffic.
+
+**`deepagents`.** It requires two cloud model SDKs as mandatory dependencies. Rejected
+for a local-only application.
 
 **A separately installed Ollama on localhost.** This record's first decision:
 `qwen3.5:2b` at `http://localhost:11434`, which the user installs and pulls
@@ -183,7 +177,7 @@ as separate processes named in configuration and never as loaded code, and
 because a model failure inside the process would take down the parts NFR-09
 requires to keep working.
 
-**The server's OpenAI-compatible API through `langchain-openai`.** The least code
+**The server's OpenAI-compatible API through an OpenAI client.** The least code
 for the adapter. Rejected for the same reason as `deepagents`: it makes a cloud
 client a dependency of a local-only application.
 

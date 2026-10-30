@@ -4,10 +4,10 @@
 |---|---|
 | **Document** | Entity-relationship design for the Cognia data file |
 | **Status** | Proposed, with ADR 0003. The design becomes binding when ADR 0003 is accepted |
-| **Date** | 2026-10-25 |
+| **Date** | 2026-10-25, revised 2026-10-30 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.0, approved ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
-| **Related decisions** | ADR 0001 (event log, pure domain), ADR 0002 (readable local storage), ADR 0003 (this schema, its migration and query layer), ADR 0004 (emotion model) |
+| **Source of requirements** | COG-UCS-001 version 5.2 ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
+| **Related decisions** | ADR 0001 (event log, pure domain), ADR 0002 (readable local storage), ADR 0003 (this schema, its migration and query layer), ADR 0004 (emotion model), ADR 0006 (application names in the event log), ADR 0007 (embeddings), [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) (the system this file serves) |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
 
 ## Contents
@@ -35,7 +35,7 @@ This document gives the logical design of the one SQLite file that holds all
 Cognia data. It shows each table, each column group, each relationship, and the
 reason for each design decision.
 
-The design covers all twenty-one use cases of COG-UCS-001 version 5.0. It also
+The design covers all twenty-one use cases of COG-UCS-001 version 5.2. It also
 covers the data categories in NFR-04 and the send record in NFR-02.
 
 This document does not contain migration scripts. It does not change the code.
@@ -56,8 +56,6 @@ moves that file to this design.
 
 ## 3. Design decisions
 
-The author made each decision below during the design review of 2026-10-25.
-
 | # | Decision | Reason |
 |---|---|---|
 | D-01 | The engine is SQLite, in one file | One user and one machine need no server (C-02). WAL mode with `synchronous=FULL` keeps committed rows after a power loss (NFR-08). The user can read the file with the `sqlite3` tool (ADR 0002) |
@@ -74,6 +72,10 @@ The author made each decision below during the design review of 2026-10-25.
 | D-12 | Each kind of reply source has its own join table | A reply can draw on a memory item, a commitment or a journal entry. Separate join tables keep real foreign keys with `ON DELETE CASCADE` |
 | D-13 | Each companion message refers to the character version that spoke it | The character can change during a conversation. The link shows which version said each line, which G-03 and replay need |
 | D-14 | Settings are one row with typed columns | `CHECK` constraints protect each value. `NULL` means "not set" for the ceiling, quiet hours and break threshold (BR-01, BR-02) |
+| D-15 | Each row that a reply can draw on holds its own embedding, in a `BLOB` column | An embedding comes from the row, so it must disappear with the row. No join and no second copy is needed (ADR 0007) |
+| D-16 | Each row that a reply can draw on holds its importance and its last retrieval time | Retrieval needs both, and the link from a row to its event can be `NULL` (ADR 0007) |
+| D-17 | Each event stores its UTC offset | The 04:00 boundary and the hour of the day are local. A replay must not depend on the time zone of the machine that runs it (NFR-14) |
+| D-18 | The event log holds each change of foreground application with its time | UC-22 decides from the application in use, and a replay needs each input (C-05 in version 5.2, ADR 0006) |
 
 ### 3.1 Rules for all tables
 
@@ -83,7 +85,7 @@ The author made each decision below during the design review of 2026-10-25.
 4. A UUID is 32 lowercase hexadecimal characters, as `uuid.uuid4().hex` gives it.
 5. A timestamp is UTC text in the form `YYYY-MM-DDTHH:MM:SS.mmm+00:00`.
 6. A local calendar day is text in the form `YYYY-MM-DD`. Only two columns use it: `commitments.due_on` and `app_usage.day`. The user said "Friday", not an instant in UTC.
-7. The database stores no start of day. The domain computes the 04:00 boundary of UC-16 from its injected clock.
+7. The database stores no start of day. The domain computes the 04:00 boundary of UC-16 from `events.occurred_at` and `events.utc_offset_min`.
 8. A boolean is `INTEGER` with `CHECK (x IN (0, 1))`.
 9. A foreign key to `events.seq` uses `ON DELETE CASCADE` in a join table or a cache table. Every other foreign key to `events.seq` uses `ON DELETE SET NULL`. Thus the user can always delete events (UC-13-A2, UC-14).
 
@@ -358,6 +360,9 @@ erDiagram
         TEXT text "the exact line shown back"
         TEXT reason "required when kind is noticed"
         TEXT source_message_id FK "message it came from, or NULL"
+        INTEGER importance "1 to 10, or NULL"
+        BLOB embedding "NULL until computed"
+        TEXT last_retrieved_at
         TEXT recorded_at
         TEXT updated_at
     }
@@ -371,6 +376,9 @@ erDiagram
         TEXT due_on "local day YYYY-MM-DD, or NULL"
         TEXT source_message_id FK "message it came from, or NULL"
         TEXT due_passed_mentioned_at "UC-21-A2"
+        INTEGER importance "1 to 10, or NULL"
+        BLOB embedding "NULL until computed"
+        TEXT last_retrieved_at
         TEXT recorded_at
         TEXT updated_at
     }
@@ -404,6 +412,14 @@ that has no evidence rows (UC-12 step 4).
 
 **Source message.** `source_message_id` uses `ON DELETE SET NULL`. When the user
 deletes a conversation, the item stays, and only the link goes.
+
+**Retrieval columns.** `importance` is the score that the AI model gave when the
+domain stored the row (UC-25 step 1). `embedding` is the vector of `text`, in the
+binary form of 32-bit floats. `last_retrieved_at` sets the recency term of retrieval.
+An edit in UC-13 sets `embedding` to `NULL`, and a later job computes it again. The
+`embedding` column is derived data. UC-12 does not show it, and `secure_delete`
+removes it with the row. `commitments` and `journal_entries` have the same columns
+(ADR 0007).
 
 ### 7.2 `memory_item_evidence`
 
@@ -513,7 +529,9 @@ local day (C-05, NFR-03, UC-24).
 
 **Privacy by shape.** The table has no column for a window title, a window position
 or a time finer than one hour. No code can store such data in it. The system-call
-audit of NFR-03 can check the table definition.
+audit of NFR-03 can check the table definition. Since version 5.2 of the specification,
+the event log also holds each change of application with its time (section 9.1). That
+log has no field for a title or a position either.
 
 **No relationships.** The table refers to no other table. An application name is not
 an entity that the user owns, so the design gives it no table of its own.
@@ -524,9 +542,10 @@ an entity that the user owns, so the design gives it no table of its own.
 
 **Purpose.** One row holds one application that the user excluded (UC-04-A3).
 
-**Behaviour.** The application deletes all `app_usage` rows for that name in the
-same transaction. Then the adapter stops counting the name. Time in that application
-is still time at the machine.
+**Behaviour.** The application deletes all `app_usage` rows for that name, and all
+`foreground_app` events for that name, in the same transaction. Then the adapter stops
+reporting the name. Time in that application is still time at the machine. A replay
+after an exclusion replays what is left (ADR 0003).
 
 **Erasure.** This table is a setting, not a memory. "Erase everything remembered"
 keeps it (section 14).
@@ -538,6 +557,7 @@ erDiagram
     events {
         INTEGER seq PK "AUTOINCREMENT, sets the order"
         TEXT occurred_at
+        INTEGER utc_offset_min "local offset at that moment"
         TEXT kind "closed set, for example user_message, session_closed"
         TEXT payload "JSON: references and figures only"
         INTEGER importance "1 to 10, or NULL"
@@ -581,13 +601,18 @@ deletes rows, through UC-13-A2 or UC-14.
 
 **Payload rule.** `payload` is JSON. It holds IDs, figures and closed-set values
 only, never text that the user wrote (D-03). The `CHECK (json_valid(payload))`
-refuses text that is not JSON. Examples:
+refuses text that is not JSON. Section 6.4 of
+[`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) gives the closed set of kinds.
+Examples:
 
 | `kind` | `payload` holds |
 |---|---|
 | `user_message` | The message ID, the event class from the AI model (praise, complaint, good news, bad news, shared worry), and its confidence |
 | `presence` | Idle seconds, lock state, presentation state |
-| `foreground_app` | The application name, if the user did not exclude it |
+| `foreground_app` | The application name, at each change, if the user did not exclude it (C-05) |
+| `app_hour_closed` | The local day, the hour, the application name and its minutes |
+| `paused`, `resumed` | Nothing. No appraisal rule reads these two kinds (BR-04, UC-23-A4) |
+| `setting_changed`, `character_changed` | The setting name and value, or the version ID |
 | `session_opened`, `session_closed` | The session ID and figures |
 | `message_answered`, `message_passed_over` | The decision ID, and whether the user was at the desk |
 | `commitment_closed` | The commitment ID, and whether the user finished it or dropped it |
@@ -607,9 +632,10 @@ importance for reflection.
 
 ### 9.2 `emotion_state`
 
-**Purpose.** One row holds the current point in PAD (UC-23, BR-08). The name that
-the user sees, for example "pleased", comes from a fixed lookup table in the code.
-The database does not store it (ADR 0004).
+**Purpose.** One row holds the current point in PAD (UC-23, BR-08). The point is the
+mood plus the current feeling. The name that the user sees, for example "pleased",
+comes from a fixed lookup table in the code. The database does not store it
+(ADR 0004).
 
 **Cache.** This is a cache table. `computed_to_seq` records the last event that the
 domain applied. The domain can delete the row and compute it again from the event
@@ -754,6 +780,9 @@ erDiagram
         TEXT id PK "UUID"
         TEXT character_version_id FK "voice it wrote in"
         TEXT text "the companion's words, never edited"
+        INTEGER importance "1 to 10, or NULL"
+        BLOB embedding "NULL until computed"
+        TEXT last_retrieved_at
         TEXT written_at
     }
     journal_entry_sources {
@@ -934,6 +963,7 @@ erDiagram
         INTEGER companion_x
         INTEGER companion_y
         TEXT companion_screen
+        TEXT embedding_model "model that made the stored embeddings"
         INTEGER outside_service_on "0 or 1, default 0"
         TEXT outside_service_warned_at "NFR-02"
     }
@@ -961,13 +991,18 @@ erDiagram
 
 **Pause.** `paused_at` records when the pause started, so that UC-15 step 5 can say
 how long it lasted. `paused_until` holds the end of the pause. `NULL` with a set
-`paused_at` means "until switched back on". A pause is not an event for the emotion
-model (BR-04, UC-23-A4). The event log records presence, not the pause itself.
+`paused_at` means "until switched back on". The event log holds `paused` and
+`resumed`, so that a replay drops a held message at the same point. No appraisal rule
+reads them, so a pause is not an event for the emotion model (BR-04, UC-23-A4).
 
 **Companion position.** `companion_x`, `companion_y` and `companion_screen` record
 where the user put the companion (UC-20, FR-26). `companion_hidden` records UC-20-A1.
 Moving or hiding the companion writes no event, because neither is an event
 (UC-20 notes).
+
+**Embedding model.** `embedding_model` names the model that made the stored vectors.
+If a new version ships another model, the application sets each `embedding` to `NULL`,
+and a job computes them again.
 
 **Outside service.** `outside_service_on` is 0 by default (C-03). The application
 sets `outside_service_warned_at` when it shows the warning of NFR-02. It refuses to
@@ -990,7 +1025,7 @@ empty table as one check, next to the network capture.
 
 | The user removes | The application does this in one transaction |
 |---|---|
-| A memory item | Deletes the row. Its evidence links and reply links go by `ON DELETE CASCADE` |
+| A memory item | Deletes the row, with its embedding. Its evidence links and reply links go by `ON DELETE CASCADE` |
 | A commitment | Deletes the row. Its reply links go by cascade |
 | A learned pattern | Undoes its adjustments, writes a pattern tombstone, deletes the pattern |
 | A journal entry | Writes a reflection tombstone with its source seqs, deletes the entry |
@@ -1032,10 +1067,10 @@ erases each table group in its own transaction and reports each result.
 | Requirement | Tables |
 |---|---|
 | FR-01 to FR-05, UC-01 to UC-03 | `character_versions`, `settings` |
-| FR-06, C-05, NFR-03, UC-04 | `settings.awareness_on`, `app_usage`, `app_exclusions` |
+| FR-06, C-05, NFR-03, UC-04 | `settings.awareness_on`, `app_usage`, `app_exclusions`, `events` of kind `foreground_app` |
 | FR-07, FR-10, FR-33, UC-05, UC-07 | `sessions`, `session_intents` |
 | FR-12, NFR-05, UC-15 | `settings.paused_at`, `settings.paused_until` |
-| FR-13, FR-14, UC-09 | `conversations`, `messages`, `memory_items`, reply source tables |
+| FR-13, FR-14, UC-09 | `conversations`, `messages`, `memory_items`, reply source tables, the retrieval columns |
 | FR-15, UC-10 | `memory_items` of kind `noticed` |
 | FR-16, FR-23, FR-34, UC-24 | `patterns`, `pattern_evidence`, `self_adjustments`, `character_proposals`, `message_kinds` |
 | FR-17, UC-12 | All state tables, `emotion_changes`, `journal_entries` |
@@ -1051,7 +1086,7 @@ erases each table group in its own transaction and reports each result.
 | FR-35, UC-25 | `journal_entries`, `journal_entry_sources`, `reflection_tombstones`, `events.importance` |
 | NFR-02 | `settings.outside_service_warned_at`, `outbound_sends` |
 | NFR-08 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
-| NFR-14 | `events` with stored model classes and stored importance |
+| NFR-14 | `events` with stored model classes, stored importance and `utc_offset_min` |
 | G-06 | `memory_item_evidence`, `pattern_evidence`, `emotion_changes.event_seq`, `decision_factors.event_seq` |
 
 ## 16. Open items
@@ -1069,6 +1104,8 @@ These items are outside this design, or need a decision before implementation.
 5. **Outside service configuration.** The specification does not say how the user
    names the service or where its credential stays. This design stores neither. The
    decision belongs to the ADR that adds the outside service.
-6. **Event kinds and payload shapes.** Section 9.1 gives examples only. The closed set
-   of event kinds, and the fields of each payload, belong to the domain code and ADR
-   0004.
+6. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
+   gives the closed set of event kinds. The exact fields of each payload belong to the
+   domain code.
+7. **`0002_redesign.sql` scope.** The migration of item 2 must include the columns that
+   decisions D-15 to D-17 add. It is not yet written.
