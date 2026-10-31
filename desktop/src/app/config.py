@@ -33,7 +33,7 @@ OLLAMA_BASE_URL: str = _DEFAULTS["OLLAMA_BASE_URL"]
 
 #: How many past messages go to the model. The window is deliberately smaller
 #: than the model's context: a long history costs first-token latency, and
-#: NFR-06 asks for words within three seconds.
+#: NFR-05 asks for words within three seconds.
 HISTORY_MESSAGES: int = _DEFAULTS["HISTORY_MESSAGES"]
 
 #: Where the SQLite file lives. ``null`` means ``cognia.sqlite3`` in the data
@@ -42,7 +42,7 @@ HISTORY_MESSAGES: int = _DEFAULTS["HISTORY_MESSAGES"]
 #: it. The user's override ``config.json`` always stays in the data directory.
 #:
 #: Choose a synced folder (OneDrive, Dropbox) and the sync client keeps a second
-#: copy of the user's data off the machine, which NFR-04 and C-02 promise never
+#: copy of the user's data off the machine, which NFR-03 and C-02 promise never
 #: happens. That is the user's call to make, not a default.
 DATABASE_PATH: str | None = _DEFAULTS["DATABASE_PATH"]
 

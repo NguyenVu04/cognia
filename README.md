@@ -24,7 +24,7 @@ your own disk, where you can read it and delete it.
 > COG-UCS-001) is **approved** at version 5.1, together with all twenty-one of its use
 > cases. Versions 5.2 and 5.3 await the author's approval, and version 5.3 removes
 > UC-02, which leaves twenty. Anything below that describes
-> behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-05 to NFR-07 and NFR-15 are still
+> behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-04 to NFR-06 and NFR-14 are still
 > unmeasured, and are to be measured before the first release.
 
 ## Contents
@@ -207,7 +207,7 @@ flowchart TB
     end
 
     store[("Local SQLite file<br/>character, memory, sessions, journals")]
-    model["AI model<br/>ships with Cognia, runs locally;<br/>an outside service only if the user switches one on"]
+    model["AI model<br/>ships with Cognia, runs locally"]
 
     user --> ui
     win --> adapters
@@ -229,10 +229,10 @@ flowchart TB
 | Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. Every screen except the Companion conversation still shows mockup copy from `ui/views/sample_data.py` |
 | Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; streams replies on a worker thread (`ChatWorker`) | Built for conversation only |
 | Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia and removes LangChain and LangGraph, which is not yet done |
-| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file, schema created by numbered SQL migrations and queried through SQLAlchemy Core (ADR 0003). See [docs/ERD.md](docs/ERD.md) | Migration `0001` exists; conversations and messages are written. ADR 0003 replaces it with the design in `docs/ERD.md` through `0002_redesign.sql`, which is not written |
-| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-14) | Not created. `desktop/src/domain/` holds the ports, the conversation models, and stubs or empty packages for the rest |
-| `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-10 requires and refuses to emit without one | Not created |
-| Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-14 replays | Table exists, nothing writes it |
+| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md) | Every table of `docs/ERD.md` exists. Only conversations and messages are written |
+| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Not created. `desktop/src/domain/` holds the ports, the conversation models, and stubs or empty packages for the rest |
+| `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Not created |
+| Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | Table exists, nothing writes it |
 
 ### External dependencies
 
@@ -240,8 +240,7 @@ flowchart TB
 |---|---|---|---|
 | QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
-| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-09) | Measurement decides which models ship (ADR 0002, ADR 0007). Gemma 4 E2B, fine-tuned at build time and merged into one file, is the candidate for chat (D-27). `qwen3.5:2b` runs in the code today |
-| An outside AI service | Optional replacement for the local model, off unless the user switches it on. Every send is warned about beforehand and recorded (NFR-02) | Optional | Chosen by the user |
+| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | Measurement decides which models ship (ADR 0002, ADR 0007). Gemma 4 E2B, fine-tuned at build time and merged into one file, is the candidate for chat (D-27). `qwen3.5:2b` runs in the code today |
 
 ## Getting started
 
@@ -302,7 +301,7 @@ created for them.
 | `OLLAMA_MODEL` | `qwen3.5:2b` | The model the conversation adapter asks for |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | The local Ollama daemon. The only endpoint |
 | `HISTORY_MESSAGES` | `40` | How many past messages go to the model |
-| `DATABASE_PATH` | `data/cognia.sqlite3` | The SQLite file. A relative path is taken from `desktop/`; `null` means `cognia.sqlite3` in the data directory. A synced folder would keep a second copy off the machine, which NFR-04 forbids — that is the user's choice, not a default |
+| `DATABASE_PATH` | `data/cognia.sqlite3` | The SQLite file. A relative path is taken from `desktop/`; `null` means `cognia.sqlite3` in the data directory. A synced folder would keep a second copy off the machine, which NFR-03 forbids — that is the user's choice, not a default |
 
 ### Settings the specification commits to
 
@@ -318,7 +317,6 @@ All set by the user in the application and stored on their own disk:
 | Each kind of proactive message | On, each switchable — also from the message itself, in one press | FR-22, UC-18-A1 |
 | Moods | On. Off holds the feeling at the temperament's resting mood | BR-08, UC-18-A2 |
 | Break threshold | Optional. Without one, the companion uses what it has learned | FR-09, UC-22-A1 |
-| Outside AI service | Off. Switching it on shows a warning first, and every send is recorded | NFR-02, C-03 |
 
 ## Usage
 
@@ -407,22 +405,22 @@ of the specification.
 
 | What is verified | How | Requirement |
 |---|---|---|
-| Nothing leaves the machine | Network capture across a full week of ordinary use, child processes included; zero outbound connections the user did not enable | NFR-01, G-05 |
-| No keystrokes, screenshots, clipboard, browsing history, window titles, contents or positions are read | Code review plus a system-call audit each release; the stored application data holds only names, minutes per hour and the time of each change | NFR-03, C-05 |
-| No proactive message escapes without a complete explanation | Automated check in the build — it refuses rather than warns — plus inspection of the message log | NFR-10 |
-| Every decision, feeling and learned pattern replays identically | Replay over a recorded week with the model switched off, compared against the original | NFR-14 |
+| Nothing leaves the machine | Network capture across a full week of ordinary use, child processes included; zero outbound connections | NFR-01, G-05 |
+| No keystrokes, screenshots, clipboard, browsing history, window titles, contents or positions are read | Code review plus a system-call audit each release; the stored application data holds only names, minutes per hour and the time of each change | NFR-02, C-05 |
+| No proactive message escapes without a complete explanation | Automated check in the build — it refuses rather than warns — plus inspection of the message log | NFR-09 |
+| Every decision, feeling and learned pattern replays identically | Replay over a recorded week with the model switched off, compared against the original | NFR-13 |
 | Every feeling and pattern can be explained | Share of emotion states, patterns and self-adjustments in a trial week that UC-17 can trace to recorded events: 100% | G-06 |
-| The application survives the model failing | Run with the model disabled; session timing, break suggestions, memory list, pause and the emotion state must all still work | NFR-09 |
-| Nothing recorded is lost on an abrupt shutdown | 20 forced power-offs | NFR-08 |
-| Every data category is visible, correctable and erasable | Walk every category through UC-12, UC-13 and UC-14, then inspect the disk | NFR-04 |
-| The companion is never the only route to anything | Keyboard-only walkthrough of every use case with the companion hidden, plus a WCAG 2.2 AA contrast audit | NFR-12, FR-28 |
-| Safety behaviour cannot be written away by a character | Scripted crisis cases under every character, reviewed by a person each release; the reply says it is a fictional character and cannot replace a real person | NFR-13, FR-04 |
-| One installer, no download at first run | Clean Windows 10 and 11 installs with the network disconnected, then a first conversation | NFR-15, NFR-11 |
-| The resource cost of running all day | Resource monitoring across an 8-hour idle run, once hidden and once on screen | NFR-05 to NFR-07 |
+| The application survives the model failing | Run with the model disabled; session timing, break suggestions, memory list, pause and the emotion state must all still work | NFR-08 |
+| Nothing recorded is lost on an abrupt shutdown | 20 forced power-offs | NFR-07 |
+| Every data category is visible, correctable and erasable | Walk every category through UC-12, UC-13 and UC-14, then inspect the disk | NFR-03 |
+| The companion is never the only route to anything | Keyboard-only walkthrough of every use case with the companion hidden, plus a WCAG 2.2 AA contrast audit | NFR-11, FR-28 |
+| Safety behaviour cannot be written away by a character | Scripted crisis cases under every character, reviewed by a person each release; the reply says it is a fictional character and cannot replace a real person | NFR-12, FR-04 |
+| One installer, no download at first run | Clean Windows 10 and 11 installs with the network disconnected, then a first conversation | NFR-14, NFR-10 |
+| The resource cost of running all day | Resource monitoring across an 8-hour idle run, once hidden and once on screen | NFR-04 to NFR-06 |
 | The tuned chat model is better than its base model | Measure both models on the same test sets, in `llama-server`. The tuned model ships only if it meets the thresholds and it beats the base model | A-02, G-03 |
 
 > [!IMPORTANT]
-> The figures in NFR-05, NFR-06 and NFR-07 are targets, not measurements, and NFR-15
+> The figures in NFR-04, NFR-05 and NFR-06 are targets, not measurements, and NFR-14
 > has no figures yet. They are to be measured and the specification updated before the
 > first release. The figures for a companion on screen, now with ambient motion, are
 > the least founded.
@@ -434,12 +432,11 @@ NFR-01. What replaces them is local and readable by the person the data is about
 
 | Signal | Where | Read by |
 |---|---|---|
-| Event journal — every event that entered the queue, including the model's interpretation of each message, and every decision to speak with its figures | On the user's disk | The user, through UC-17; the developer, through the NFR-14 replay |
+| Event journal — every event that entered the queue, including the model's interpretation of each message, and every decision to speak with its figures | On the user's disk | The user, through UC-17; the developer, through the NFR-13 replay |
 | Emotion history — every event that moved a feeling and how far | On the user's disk | The user, through UC-12 and UC-17-A2 |
-| Outside-service send log — time and destination of every send, if an outside AI service is on | On the user's disk | The user (NFR-02) |
 
 The journals record observations about the user, so they are personal data under
-NFR-04 and are reachable by UC-12, UC-13 and UC-14.
+NFR-03 and are reachable by UC-12, UC-13 and UC-14.
 
 ## Security
 
@@ -450,8 +447,8 @@ issue for a security problem.**
 |---|---|
 | **Authentication** | None. There is no account and no server (C-02) |
 | **Authorization** | One user, who holds every permission the system has |
-| **Transport** | No outbound connection unless the user switches on an outside AI service (C-03, NFR-01). The local model is reached on the user's own machine only (`localhost`) |
-| **Secrets** | Cognia holds none of its own. If the user configures an outside service, its credential is theirs and stays on their machine |
+| **Transport** | No outbound connection (C-03, NFR-01). The local model is reached on the user's own machine only (`localhost`) |
+| **Secrets** | Cognia holds none |
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
 | **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`). ADR 0002 removes LangChain, and this line goes with it |
 | **Dependency scanning** | Not set up |
@@ -470,10 +467,10 @@ own account boundary and nothing further. This follows from C-02.
 | | |
 |---|---|
 | **Regimes** | None applies to the author. Cognia collects nothing, transmits nothing, and no data reaches the developer or any third party |
-| **Data categories** | From NFR-04: what the user says about themselves, including open commitments; session records; observations and learned patterns, each with its evidence; minutes per application per hour of the day, and each change of foreground application with its time; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
+| **Data categories** | From NFR-03: what the user says about themselves, including open commitments; session records; observations and learned patterns, each with its evidence; minutes per application per hour of the day, and each change of foreground application with its time; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
 | **Retention** | Held until the user deletes it. A closed commitment is deleted, not kept as history. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
-| **Residency** | The user's own disk. No second copy anywhere (NFR-04) |
-| **Sub-processors** | None, unless the user switches on an outside AI service — warned about beforehand, every send recorded (NFR-02) |
+| **Residency** | The user's own disk. No second copy anywhere (NFR-03) |
+| **Sub-processors** | None |
 | **Model training** | User data never trains a model. Training uses reviewed synthetic examples before the installer exists, and the user's machine never trains (D-27). If a user's words trained the weights, UC-14 could not erase them |
 | **Subject access / erasure** | UC-12 shows everything held, in three groups; UC-13 corrects or removes one item; UC-14 erases. Target: any item reachable in 2 clicks and deletable in 2 more (G-04) |
 | **Audit logging** | The local event journal, on the user's disk and erasable by them like anything else |
@@ -483,11 +480,11 @@ own account boundary and nothing further. This follows from C-02.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **No version has been released.** The first release will be 0.1.0, at the end of
-phase 1. The specification carries its own version, 5.2, recorded in its section 1.1.
+phase 1. The specification carries its own version, 5.4, recorded in its section 1.1.
 
 **When there is a release, the version contract will cover** the on-disk data format,
 because it is the user's own data and an upgrade must not lose it. Schema changes
-arrive as new numbered migrations; a shipped migration is never edited (ADR 0003).
+arrive as new Alembic revisions; a shipped revision is never edited (ADR 0003).
 
 | Version line | Status | Supported until |
 |---|---|---|
@@ -495,7 +492,7 @@ arrive as new numbered migrations; a shipped migration is never edited (ADR 0003
 
 ### Reproducibility
 
-NFR-14 requires that every decision to speak, every change of feeling and every
+NFR-13 requires that every decision to speak, every change of feeling and every
 learned pattern replays to the same result on recorded data. ADR 0001 and ADR 0004 make
 this structural: a pure domain fed an ordered journal, with the model's interpretation
 of each message recorded as the event itself, so a replay never calls the model.

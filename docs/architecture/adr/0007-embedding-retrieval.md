@@ -13,8 +13,8 @@ important and how related they are". The specification takes this from Generativ
 adds three normalised terms and computes relevance as a cosine between embeddings. The earlier
 records did not say how Cognia computes "how related".
 
-NFR-15 forbids any download, so an embedding model must ship in the installer. NFR-09 needs the
-memory list to work with the model stopped. NFR-04 needs a deletion to remove all traces.
+NFR-14 forbids any download, so an embedding model must ship in the installer. NFR-08 needs the
+memory list to work with the model stopped. NFR-03 needs a deletion to remove all traces.
 
 ## Decision
 

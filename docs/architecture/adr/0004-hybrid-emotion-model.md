@@ -21,11 +21,11 @@ Three promises from earlier versions still hold and bear directly on how that is
 built:
 
 - Every decision, and now every change of feeling, must replay to an identical
-  result over the same recorded input (NFR-14). ADR 0001 gets this from a pure
+  result over the same recorded input (NFR-13). ADR 0001 gets this from a pure
   domain fed an ordered journal.
 - Every proactive message, and now every feeling, must be explainable in the real
-  figures it came from (NFR-10, UC-17-A2, G-06).
-- Everything that does not need the AI model keeps working when it fails (NFR-09).
+  figures it came from (NFR-09, UC-17-A2, G-06).
+- Everything that does not need the AI model keeps working when it fails (NFR-08).
 
 The obvious way to give a character feelings is to let the language model decide
 them: it reads the conversation and says how the character feels. That model is
@@ -88,12 +88,12 @@ interpret what the user said.
 
 **Positive**
 
-- NFR-14 holds by construction, as ADR 0001 intended: every input to a feeling
+- NFR-13 holds by construction, as ADR 0001 intended: every input to a feeling
   is a journalled event, including the model's interpretation, so a replay with
   the model switched off reproduces every feeling, decision and pattern.
 - UC-17-A2 can show the events behind a feeling, how far each moved it, and the
   temperament values involved, because those are exactly the computation.
-- NFR-09 holds: with the model stopped, every event except the user's words is
+- NFR-08 holds: with the model stopped, every event except the user's words is
   still appraised, and the companion still has moods.
 - The temperament is a handful of numbers, so G-03 — the character staying the
   same over months — can be checked directly, not only by asking participants.
@@ -109,7 +109,7 @@ interpret what the user said.
   recomputing, so a replay after a removal replays what is left (ADR 0003).
 - One more model call per user message, made before the event is queued and before
   the reply. On a slow machine it delays the first word of the reply. The typing
-  indicator covers the wait, as NFR-06 allows. The alternative is a reply that claims
+  indicator covers the wait, as NFR-05 allows. The alternative is a reply that claims
   a feeling the state does not yet hold, which BR-06 and BR-08 forbid.
 
 **Neutral**
@@ -123,8 +123,8 @@ interpret what the user said.
 
 **The model decides the feeling.** The model reads the recent conversation and
 returns the character's feeling directly. The most expressive option and the
-least code. Rejected because it cannot replay (NFR-14), cannot explain itself in
-figures (NFR-10, G-06), and stops working when the model does (NFR-09).
+least code. Rejected because it cannot replay (NFR-13), cannot explain itself in
+figures (NFR-09, G-06), and stops working when the model does (NFR-08).
 
 **Rules only.** No model anywhere in the emotion path; the user's words do not
 move the feeling. Fully deterministic and cheap. Rejected because a companion that

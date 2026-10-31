@@ -10,10 +10,10 @@
 
 COG-UCS-001 version 5.1 had a conflict between three of its parts.
 
-- C-05 and NFR-03 kept the name of the foreground application only as minutes per
+- C-05 and NFR-02 kept the name of the foreground application only as minutes per
   application per hour of the day.
 - UC-22 says that the companion decides from "which application they are in".
-- NFR-14 needs each input to a decision in the recorded log, so that a replay matches.
+- NFR-13 needs each input to a decision in the recorded log, so that a replay matches.
 
 The ERD already held a `foreground_app` event with an exact time, which C-05 did not allow.
 One of the three had to give way.
@@ -21,7 +21,7 @@ One of the three had to give way.
 ## Decision
 
 **We keep each change of foreground application in the event log, with its exact time, and
-we change the specification.** Version 5.2 widens C-05, NFR-03 and NFR-04, and it adds the
+we change the specification.** Version 5.2 widens C-05, NFR-02 and NFR-03, and it adds the
 recorded changes to UC-04 and UC-12.
 
 - The event holds the application's file name and nothing else about it. A window title, a
@@ -49,7 +49,7 @@ recorded changes to UC-04 and UC-12.
 
 **Neutral**
 
-- NFR-03 is still checked by the same audit, with a wider list of what may be stored.
+- NFR-02 is still checked by the same audit, with a wider list of what may be stored.
 
 ## Alternatives considered
 

@@ -176,7 +176,7 @@ class ChatView(QWidget):
         self._settle()
 
     def beginReply(self) -> None:  # noqa: N802 - Qt naming
-        """Say that the companion is working. NFR-06: never a blank pause."""
+        """Say that the companion is working. NFR-05: never a blank pause."""
         self._busy = True
         self.send.setEnabled(False)
         self._reply_row = None

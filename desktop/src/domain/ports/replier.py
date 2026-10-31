@@ -2,7 +2,7 @@
 
 "Replying in character" is a domain capability; that it happens to be an AI
 model on the far side is an adapter's business. The domain never learns what
-runs behind this, which is what lets NFR-09 hold — the model failing is one
+runs behind this, which is what lets NFR-08 hold — the model failing is one
 adapter raising, not the application breaking.
 """
 

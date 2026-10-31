@@ -17,9 +17,9 @@ not say what runs where. Four questions stayed open:
 - How does time reach the domain?
 
 Today the database connection is on the GUI thread, and `synchronous=FULL` makes each
-commit wait for the disk (NFR-08). Nothing reads the operating system yet.
+commit wait for the disk (NFR-07). Nothing reads the operating system yet.
 
-NFR-14 asks for an identical replay. NFR-07 asks for almost no cost while idle. NFR-05
+NFR-13 asks for an identical replay. NFR-06 asks for almost no cost while idle. NFR-04
 asks for a pause in under one second. [`ARCHITECTURE.md`](../ARCHITECTURE.md), D-01, D-03,
 D-09 and D-10, gives the full comparison.
 
@@ -61,9 +61,9 @@ the closed set.
 
 **Positive**
 
-- A replay is a fold over the log. It needs no database, no fakes and no model (NFR-14).
+- A replay is a fold over the log. It needs no database, no fakes and no model (NFR-13).
 - A slow commit cannot stop the drawing.
-- The core thread sleeps between events, which NFR-07 needs.
+- The core thread sleeps between events, which NFR-06 needs.
 - A decision has an exact time, not a time on a one-minute grid.
 
 **Negative**
@@ -75,7 +75,7 @@ the closed set.
 - The core thread folds the whole log at start, and the cost grows with the log. A snapshot
   table is the upgrade if a measurement demands it.
 - A power failure between a commit and its effect leaves a record of a message that nobody
-  saw. The design accepts this, because the reverse order breaks NFR-10.
+  saw. The design accepts this, because the reverse order breaks NFR-09.
 
 **Neutral**
 

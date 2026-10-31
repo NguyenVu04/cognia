@@ -6,7 +6,7 @@
 | **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-28 are the author's decisions. D-15 to D-25 are proposals that the author can change |
 | **Date** | 2026-10-31 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.2 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
+| **Source of requirements** | COG-UCS-001 version 5.4 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
 | **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing |
 | **Related documents** | [`docs/ERD.md`](../ERD.md) for the data design, [`README.md`](../../README.md) for the operational summary |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
@@ -71,13 +71,13 @@ that closes the difference.
 | Effect | A value that a rule returns to ask for an action outside the rule, for example "request wording" |
 | Port | An interface that the domain declares by capability. A port names no provider |
 | Adapter | A class in `infrastructure/` or `app/` that implements a port |
-| SpeechGate | The one component that can release a proactive message. It refuses a message that has no complete explanation (NFR-10) |
+| SpeechGate | The one component that can release a proactive message. It refuses a message that has no complete explanation (NFR-09) |
 | Decision | One row in `speech_decisions`. It records one decision to speak, sent or not sent |
 | Proactive message | Anything the companion says or shows that the user did not ask for (specification, section 12) |
 | PAD | Pleasure, arousal and dominance. Each axis is a real number from -1 to 1 |
 | Temperament | The fixed values of a character that set how far events move it, how fast feelings fade and where its mood rests |
 | Appraisal | A rule that turns an event into a displacement in PAD |
-| Replay | A run of the rules over the recorded event log, with no model and no database, to check that the output is the same (NFR-14) |
+| Replay | A run of the rules over the recorded event log, with no model and no database, to check that the output is the same (NFR-13) |
 | Tombstone | A row that stops the companion from repeating a conclusion that the user rejected. A tombstone holds no user text |
 | Fingerprint | A canonical text form of a conclusion. Two equal fingerprints are the same conclusion |
 | GGUF | The model file format that llama.cpp reads |
@@ -177,17 +177,17 @@ figures are targets and not results. Nobody has measured them yet.
 
 | # | Attribute | Stimulus | Response | Measure | Source |
 |---|---|---|---|---|---|
-| QA-01 | Privacy | The application runs for one week of ordinary use | Nothing leaves the machine that the user did not enable | Zero outbound connections in a network capture, including all child processes | NFR-01, G-05 |
-| QA-02 | Privacy | A reviewer audits the calls to Windows | Only the four facts and the screen layout are read | Zero calls to a forbidden interface | NFR-03, C-05 |
-| QA-03 | Latency | The user chooses a pause in the tray | Observation and messages stop, and the companion leaves the screen | Under 1 second | NFR-05, UC-15 |
-| QA-04 | Latency | The user sends a message | Words appear, or a working indicator appears | First words within 3 seconds, otherwise an indicator. Never a blank pause | NFR-06 |
-| QA-05 | Resource use | The application runs for 8 idle hours | It costs the machine almost nothing | Hidden: under 1% CPU and 150 MB. On screen: under 3% CPU and 200 MB. Both exclude the AI model | NFR-07 |
-| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items or closed sessions across 20 forced power-offs | NFR-08 |
-| QA-07 | Degradation | The AI model stops | Everything that does not need it keeps working | Session timing, break suggestions, the memory list, pausing and the emotion state stay usable | NFR-09 |
-| QA-08 | Explainability | The companion is about to speak on its own initiative | The explanation is complete, or the message is not sent | 100%. The check refuses and does not warn | NFR-10, G-06 |
-| QA-09 | Safety | The user writes about self-harm or a crisis | The reply says that the companion is a fictional character and cannot replace a real person | Every scripted test case, under every character | NFR-13 |
-| QA-10 | Reproducibility | The developer replays a recorded week | Decisions, feelings and patterns are the same as the original | Identical output, with the model switched off | NFR-14 |
-| QA-11 | Installation | The user runs the installer on a clean machine with no network | A first conversation is possible | One installer and nothing else. Under 5 minutes to a first conversation | NFR-11, NFR-15 |
+| QA-01 | Privacy | The application runs for one week of ordinary use | Nothing leaves the machine | Zero outbound connections in a network capture, including all child processes | NFR-01, G-05 |
+| QA-02 | Privacy | A reviewer audits the calls to Windows | Only the four facts and the screen layout are read | Zero calls to a forbidden interface | NFR-02, C-05 |
+| QA-03 | Latency | The user chooses a pause in the tray | Observation and messages stop, and the companion leaves the screen | Under 1 second | NFR-04, UC-15 |
+| QA-04 | Latency | The user sends a message | Words appear, or a working indicator appears | First words within 3 seconds, otherwise an indicator. Never a blank pause | NFR-05 |
+| QA-05 | Resource use | The application runs for 8 idle hours | It costs the machine almost nothing | Hidden: under 1% CPU and 150 MB. On screen: under 3% CPU and 200 MB. Both exclude the AI model | NFR-06 |
+| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items or closed sessions across 20 forced power-offs | NFR-07 |
+| QA-07 | Degradation | The AI model stops | Everything that does not need it keeps working | Session timing, break suggestions, the memory list, pausing and the emotion state stay usable | NFR-08 |
+| QA-08 | Explainability | The companion is about to speak on its own initiative | The explanation is complete, or the message is not sent | 100%. The check refuses and does not warn | NFR-09, G-06 |
+| QA-09 | Safety | The user writes about self-harm or a crisis | The reply says that the companion is a fictional character and cannot replace a real person | Every scripted test case, under every character | NFR-12 |
+| QA-10 | Reproducibility | The developer replays a recorded week | Decisions, feelings and patterns are the same as the original | Identical output, with the model switched off | NFR-13 |
+| QA-11 | Installation | The user runs the installer on a clean machine with no network | A first conversation is possible | One installer and nothing else. Under 5 minutes to a first conversation | NFR-10, NFR-14 |
 
 ### 4.2 Constraints
 
@@ -198,7 +198,7 @@ design decisions, so they are not in section 10.
 |---|---|---|---|
 | C-01 | Windows 10 and 11 only | Scope decision of the specification | Win32 calls are allowed, inside one adapter |
 | C-02 | One user, one machine. No account, no server, no synchronisation | Specification, version 2.0 | No network code exists for data. All stores are local |
-| C-03 | All data stays on the user's disk unless the user enables an outside AI service | Privacy commitment, NFR-01 to NFR-04 | The chat model and the embedding model ship inside the installer |
+| C-03 | All data stays on the user's disk | Privacy commitment, NFR-01 to NFR-03 | The chat model and the embedding model ship inside the installer |
 | C-04 | The eight base rules bind every use case, and no character can override them | Specification, FR-04 | The rules live in `domain/`, not in a prompt. A character is data and cannot change them |
 | C-05 | Only four facts about the user may be read from Windows, plus the screen layout. The foreground application name is kept as hourly totals and as changes in the event log | Privacy commitment, widened in version 5.2 | The port's data type has four fields and no more. Window titles, contents and positions stay forbidden |
 | C-06 | The companion speaks English only, including its fixed wording | Scope decision of the specification | Fixed wording exists in one language. No language setting exists |
@@ -216,7 +216,7 @@ it refuses. Section 10 refers to these rows.
 | [Generative Agents](https://arxiv.org/abs/2304.03442) | Believable agents with a memory stream. Retrieval adds recency, importance and relevance, with equal weights. Recency decays by 0.995 per game hour. Reflection runs when importance adds up past a threshold, 150 in that paper | The retrieval score and the reflection trigger (D-07, UC-25) | A model call in each step of the loop. Rules decide in Cognia, so that a replay needs no model |
 | [ALMA](https://www.dfki.de/web/forschung/projekte-publikationen/publikation/1782) | A layered model of affect: emotion, mood and personality at three time scales. It uses OCC appraisal and the PAD space | The three time scales, appraisal and PAD (ADR 0004) | Nothing in the model itself. The author designs each temperament by hand |
 | [Letta (MemGPT)](https://docs.letta.com/guides/agents/architectures/memgpt) | An agent with memory tiers: core memory in the context window, recall of old conversation, and archival memory in an embedding store. The agent edits its own memory through tools | Separate tiers for what is always in the prompt and what is retrieved (section 6.11.2). Background work on memory (D-15) | An agent that edits its memory through tools. Rules and the user own the memory in Cognia (UC-13) |
-| [Jan](https://github.com/janhq/jan) | A desktop chat application on Tauri that uses llama.cpp and offers a local server for other programs | A llama.cpp server that a desktop application owns (ADR 0002) | Downloads of backends and models at run time, because NFR-15 forbids them |
+| [Jan](https://github.com/janhq/jan) | A desktop chat application on Tauri that uses llama.cpp and offers a local server for other programs | A llama.cpp server that a desktop application owns (ADR 0002) | Downloads of backends and models at run time, because NFR-14 forbids them |
 | [Desktop Homunculus](https://github.com/not-elm/desktop-homunculus) | An open-source desktop mascot on Bevy that draws VRM characters in transparent windows. Its documentation warns about a black background on some NVIDIA setups | Evidence that VRM in a transparent window is possible, and a warning for the checks in section 12 | A second language and engine (D-08) |
 | Replika, Nomi | Character chat services. This study found no official technical description, only third-party reviews | Nothing. Cognia does not design from unverified claims | Not applicable |
 
@@ -275,11 +275,10 @@ means that the user sees no effect.
 | Dependency | Purpose | Criticality | Owner | Failure behaviour |
 |---|---|---|---|---|
 | SQLite file on the user's disk | All state | Critical | The user | Cognia says plainly what failed, and never shows a partial list as complete (UC-12-E1) |
-| `llama-server`, chat model | Words, interpretation, reflection | Degraded | llama.cpp project | Rules, memory lists, sessions and pausing continue. Break suggestions and commitments use fixed wording (NFR-09, UC-22-E3) |
+| `llama-server`, chat model | Words, interpretation, reflection | Degraded | llama.cpp project | Rules, memory lists, sessions and pausing continue. Break suggestions and commitments use fixed wording (NFR-08, UC-22-E3) |
 | `llama-server`, embedding model | Relevance in memory retrieval | Degraded | llama.cpp project | Retrieval uses recency and importance only |
 | QtWebEngine | Drawing the companion | Degraded | The Qt Company | Cognia says that it cannot show the companion. Every function stays reachable (FR-28, UC-20-E2) |
 | Windows presence interfaces | The four facts | Degraded | Microsoft | Desk awareness stays off. Conversation works (UC-04-E1) |
-| Outside AI service | A user-enabled alternative to the local model | Optional | Unknown | Off by default. Section 12 records that this feature has no use case yet |
 
 ## 6. Module view
 
@@ -393,13 +392,13 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
 5. `infrastructure/` imports `domain/` and `utils/`. It never imports `ui/` or `app/`.
 6. Nothing imports `app/`. It wires the layers together.
 7. `utils/` imports the standard library only.
-8. Only `domain/speech/speech_service.py` references the `SpeechOutput` port (NFR-10).
-9. Only `infrastructure/presence/` calls `ctypes` for Win32 functions (C-05, NFR-03). Its
+8. Only `domain/speech/speech_service.py` references the `SpeechOutput` port (NFR-09).
+9. Only `infrastructure/presence/` calls `ctypes` for Win32 functions (C-05, NFR-02). Its
    allow-list is in section 6.12.
 10. Only `infrastructure/ai/` holds HTTP code. `httpx` appears nowhere else (NFR-01).
 11. From this source tree, `training` imports `domain/` and `infrastructure/ai/` only. It never
     imports `ui/`, `app/`, `infrastructure/storage` or `infrastructure/presence`, and it never
-    reads `cognia.sqlite3` (NFR-04).
+    reads `cognia.sqlite3` (NFR-03).
 12. Nothing in `desktop/src/` imports `training`.
 
 **Enforced by.** Nothing yet. D-14 selects one standard-library script that reads the
@@ -423,7 +422,7 @@ exist, a reviewer checks these rules by hand.
 | `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
 | `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
 | `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
-| `domain/safety` | Detect a crisis and check the reply (NFR-13) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (empty) |
+| `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (empty) |
 | `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
 | `infrastructure/storage` | Implement the store ports over SQLite | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
@@ -434,7 +433,7 @@ exist, a reviewer checks these rules by hand.
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
-data (NFR-04).
+data (NFR-03).
 
 #### 6.3.1 Explained: ports and adapters
 
@@ -459,7 +458,7 @@ field for a window title, so no code above the adapter can ask for one (C-05).
 ### 6.4 `domain/events`
 
 **Purpose.** This module defines every event and the one function that applies an event
-to the companion's state (ADR 0001, NFR-14, D-09, D-10).
+to the companion's state (ADR 0001, NFR-13, D-09, D-10).
 
 ```mermaid
 classDiagram
@@ -521,7 +520,7 @@ classDiagram
 | `step` | Function | Calls the feature rules in a fixed order: awareness, sessions, emotion, learning, reflection, initiative, speech |
 
 **The closed set of events.** A new kind needs a change here. This table replaces the
-examples in section 9.1 of the ERD, and it closes ERD open item 6.
+examples in section 9.1 of the ERD, and it closes ERD open item 4.
 
 | Group | Kinds | Payload holds |
 |---|---|---|
@@ -532,14 +531,16 @@ examples in section 9.1 of the ERD, and it closes ERD open item 6.
 | Sessions | `session_opened`, `intent_changed`, `session_closed` | Session ID and figures |
 | Speech | `message_shown`, `message_answered`, `message_passed_over` | Decision ID, and whether the user was at the desk |
 | Memory | `memory_stored`, `memory_removed`, `commitment_added`, `commitment_closed` | Row ID, and finished or dropped |
-| Learning | `pattern_found`, `pattern_rejected`, `adjustment_applied`, `adjustment_undone`, `proposal_decided` | Row ID |
-| Reflection | `reflection_written`, `reflection_deleted` | Entry ID and source seqs |
+| Learning | `pattern_found`, `adjustment_applied`, `adjustment_undone`, `proposal_decided` | Row ID |
+| Learning, tombstone | `pattern_rejected` | Fingerprint and evidence seqs (D-37) |
+| Reflection | `reflection_written`, `reflection_deleted` | Entry ID and source seqs. `reflection_deleted` is a tombstone (D-37) |
 | Control | `paused`, `resumed`, `setting_changed`, `character_changed` | Setting name and value, version ID |
 
 **Input closure.** The rules may read only the event log and rows that never change, such
 as `character_versions`. Each user action that can change a decision is also an event.
-Thus `setting_changed` and `pattern_rejected` exist, although the settings row and the
-tombstone hold the same fact. A replay has no other way to see them.
+Thus `setting_changed` exists, although the settings row holds the same fact. A replay has
+no other way to see it. A tombstone has no table, so `pattern_rejected` and
+`reflection_deleted` are its only copy (D-37).
 
 **`paused` and `resumed` are control events.** No appraisal rule reads them, so a pause
 causes no feeling (BR-04, UC-23-A4). They exist so that a replay drops a held message at
@@ -557,7 +558,7 @@ way. It receives the state and the event, and it returns a result. It cannot rea
 clock, the disk or the network.
 
 **Why this matters.** The developer must compare two strategies on the same recorded week
-(NFR-14). A rule that read the real clock would give a different answer on each run.
+(NFR-13). A rule that read the real clock would give a different answer on each run.
 
 **Example.** The rule for the first opening of the day must compare the time with 04:00
 local time.
@@ -658,7 +659,7 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `EmotionState` | Frozen dataclass | `shown()` adds the feeling to the mood. `emotion_state` in the database caches this point |
+| `EmotionState` | Frozen dataclass | `shown()` adds the feeling to the mood. The core thread holds this point in memory, and no table stores it (D-38) |
 | `Temperament` | Frozen dataclass | Read from `character_versions`. It never changes for one version |
 | `appraise` | Function | One table row per event kind. It returns zero for any kind that has no row |
 | `name` | Function | Looks up a name such as "pleased". The name is derived and never stored |
@@ -782,7 +783,7 @@ for. Blinking and gaze are procedural, and they are ambient motion (BR-07).
 ### 6.6 `domain/speech`
 
 **Purpose.** This module holds the SpeechGate. It is the one way out for anything the
-companion says or shows on its own initiative (ADR 0001, NFR-10, BR-01 to BR-07, UC-17,
+companion says or shows on its own initiative (ADR 0001, NFR-09, BR-01 to BR-07, UC-17,
 UC-22).
 
 ```mermaid
@@ -796,7 +797,7 @@ classDiagram
     class Factor {
         +name: str
         +value: float
-        +unit: str
+        +ref_id: str
         +event_seq: int
     }
 
@@ -839,7 +840,7 @@ classDiagram
 | Type | Kind | Note |
 |---|---|---|
 | `Candidate` | Frozen dataclass | A wish to speak, with the figures behind it. It is not yet a message |
-| `Factor` | Frozen dataclass | One figure. It becomes one row of `decision_factors` |
+| `Factor` | Frozen dataclass | One figure. It becomes one row of `decision_factors`. `name` sets the unit of `value` and the table of `ref_id`, through one fixed lookup in `speech_rules` (ERD section 12.3) |
 | `Verdict` | Frozen dataclass | `sent`, `withheld`, `held` or `dropped`, as in ERD section 12.2 |
 | `SpeechOutput` | Port | The only route to the screen. Rule 8 of section 6.2 limits it to one file |
 
@@ -876,7 +877,7 @@ flowchart TD
     worth -- "no" --> drop0["no decision row"]
     worth -- "yes" --> allowed{"moment allowed?<br/>BR-01, BR-02, BR-04, BR-05"}
     allowed -- "no" --> withheld["withheld, rule recorded"]
-    allowed -- "yes" --> complete{"all factors present?<br/>NFR-10"}
+    allowed -- "yes" --> complete{"all factors present?<br/>NFR-09"}
     complete -- "no" --> defect["withheld, defect recorded"]
     complete -- "yes" --> pause{"user stopped typing?<br/>BR-03"}
     pause -- "not yet" --> hold["wait for a pause"]
@@ -898,7 +899,7 @@ flowchart TD
 | BR-02 | Not locked, not presenting, no quiet hours set | Pass |
 | BR-01 | No ceiling set. Break messages are on | Pass |
 | BR-05 | A session is open, and a break suggestion is allowed in a session | Pass |
-| NFR-10 | All factors of `break` are present, except the delay | Pass. The gate adds the delay at release |
+| NFR-09 | All factors of `break` are present, except the delay | Pass. The gate adds the delay at release |
 | BR-03 | The user is typing. The gate holds the message for 12 minutes | Pass at the pause |
 | Hidden | The companion is on screen | Pass |
 | Wording | "at the machine for 2 hours 47 minutes". Both numbers match the factors, and no forbidden phrase appears | Pass |
@@ -1087,7 +1088,7 @@ it describes, so it disappears with that row. An edit in UC-13 computes it again
 `embedding_server` returns normalised vectors, so a dot product gives the cosine. Python
 3.12 and later have `math.sumprod`, so the standard library does this work.
 
-**With the model stopped.** The memory list needs no model (NFR-09). If only the
+**With the model stopped.** The memory list needs no model (NFR-08). If only the
 `embedding_server` fails, `relevance` is zero for each item and the score uses the other
 two terms. New items wait with an empty vector, and a later job fills them.
 
@@ -1187,9 +1188,9 @@ this. It keeps a fingerprint and the event numbers, and it holds no words about 
 **Example.** This example follows the story in section 3 of the specification. The
 companion concludes that the user takes lunch at 11:00.
 
-| Step | `patterns` | `pattern_rejections` |
+| Step | `patterns` | Event `pattern_rejected` |
 |---|---|---|
-| The rule finds the pattern from seqs 410, 522 and 633 | `regular_absence`, hour 11, with the words "takes lunch at 11:00" | Empty |
+| The rule finds the pattern from seqs 410, 522 and 633 | `regular_absence`, hour 11, with the words "takes lunch at 11:00" | None |
 | The user marks it wrong (UC-13-A1) | Row deleted, words gone | Fingerprint `regular_absence\|hour=11`, seqs 410, 522, 633 |
 | The next run finds the same pattern from the same seqs | No new row | The fingerprint and the evidence match, so the rule refuses |
 | A later month brings different evidence | A new row is allowed | The evidence differs (ERD section 10.2) |
@@ -1276,7 +1277,7 @@ flowchart LR
 ### 6.11 `infrastructure/ai`
 
 **Purpose.** This module implements the model ports over HTTP, supervises the two server
-processes, and runs one model job at a time (ADR 0002, NFR-06, NFR-09, NFR-15, D-06, D-13,
+processes, and runs one model job at a time (ADR 0002, NFR-05, NFR-08, NFR-14, D-06, D-13,
 D-15, D-18, D-19, D-27).
 
 ```mermaid
@@ -1438,7 +1439,7 @@ flowchart TB
 | 4 | The mood name, remembered items, and any instruction for this turn | Each turn |
 
 **Example.** On a long conversation, only layer 4 and the newest message need new work. This
-matters most on a CPU, where the model reads each token of the prompt slowly (NFR-06).
+matters most on a CPU, where the model reads each token of the prompt slowly (NFR-05).
 
 **Safety does not depend on a prompt.** A character is data in layer 2, so it cannot remove
 layer 1. Section 6.13 adds a check that does not trust the model at all.
@@ -1486,13 +1487,13 @@ flowchart LR
 
 **What does not change.** The ports, the servers, the connectors and the job priorities stay
 the same. The model never sets a feeling (BR-08). A replay never calls the model, so a new
-`chat.gguf` cannot change the replay of a recorded log (NFR-14). Section 6.16 gives the module,
+`chat.gguf` cannot change the replay of a recorded log (NFR-13). Section 6.16 gives the module,
 and section 8.6 gives the steps.
 
 ### 6.12 `infrastructure/presence`
 
-**Purpose.** This module is the only code that asks Windows about the user (C-05, NFR-03,
-FR-06, UC-04, D-17). Its size is deliberate. The audit of NFR-03 reads this one directory.
+**Purpose.** This module is the only code that asks Windows about the user (C-05, NFR-02,
+FR-06, UC-04, D-17). Its size is deliberate. The audit of NFR-02 reads this one directory.
 
 ```mermaid
 classDiagram
@@ -1566,11 +1567,11 @@ refuse to state a duration (UC-16-A3). This needs no fifth fact from Windows.
 
 **Stop at once.** The pause path sets `threading.Event` directly from the GUI thread. The
 sampler reads that flag before each sample, so observation stops within one second even if
-the core thread is busy (NFR-05).
+the core thread is busy (NFR-04).
 
 ### 6.13 `domain/safety`
 
-**Purpose.** This module makes NFR-13 hold when the small model does not obey its prompt (FR-04,
+**Purpose.** This module makes NFR-12 hold when the small model does not obey its prompt (FR-04,
 UC-09-E3, D-11).
 
 ```mermaid
@@ -1675,12 +1676,12 @@ ends at `next_wake`. So one mechanism handles both arrivals and time.
 2. It opens one database transaction.
 3. It appends the event, and calls `step`.
 4. It writes state rows, cache rows and decisions.
-5. It commits. The commit reaches the disk (`synchronous=FULL`, NFR-08).
+5. It commits. The commit reaches the disk (`synchronous=FULL`, NFR-07).
 6. It starts the outward effects: signals to the GUI, and model jobs.
 7. It sets `next_wake`.
 
 Step 6 follows step 5 on purpose. A message appears only after its decision is on disk, so
-nothing can reach the screen with no record (NFR-10). If the power fails between the two, a
+nothing can reach the screen with no record (NFR-09). If the power fails between the two, a
 decision is recorded for a message that nobody saw. The design accepts this rare case.
 
 **Full queue.** Presence items are dropped first, and the next sample repeats their
@@ -1688,7 +1689,7 @@ information. Commands are never dropped. The queue is large enough that this hap
 the core thread stalled.
 
 **Start order.** `main` shows the window first, then it folds the log on the core thread. Thus
-the window meets NFR-05, and views show a loading state until the first data arrives.
+the window meets NFR-04, and views show a loading state until the first data arrives.
 
 **A start with an open session.** The rules close a session that has no end as of the last
 recorded activity (UC-07-A2).
@@ -1742,7 +1743,7 @@ every other URL. The profile is off the record, so Chromium writes no cache and 
 disk. The capture of NFR-01 must include the Chromium processes.
 
 **Drawing states (D-25).** Hidden and paused both end the render process, to return its memory
-(NFR-07). Showing the companion loads the page again.
+(NFR-06). Showing the companion loads the page again.
 
 | State | Render process | Frame rate |
 |---|---|---|
@@ -1822,7 +1823,7 @@ classDiagram
 
 **No user data.** Rule 11 of section 6.2 stops this module from reaching the data file. Cognia
 has no route that sends user data to this module (NFR-01). If a user's words trained the weights,
-UC-14 could not erase them (NFR-04).
+UC-14 could not erase them (NFR-03).
 
 **The prompts must stay the same.** The tuned model learns from the text of the prompt layers. A
 change to layer 1, or to the order of the layers, needs a new measurement, and it can need new
@@ -1891,7 +1892,7 @@ flowchart LR
 
 **Delivery guarantee.** C1, C3 and C5 hold items in memory only. An item is durable when its
 transaction commits (section 6.14). A power failure loses items that are still in the queue,
-and it loses nothing that is committed (NFR-08). Effects run at most once. No effect runs before
+and it loses nothing that is committed (NFR-07). Effects run at most once. No effect runs before
 its commit.
 
 ### 7.3 Component catalog
@@ -1947,7 +1948,7 @@ sequenceDiagram
 ```
 
 The first piece of the reply hides the working indicator. The indicator covers the
-interpretation and the retrieval, so the user never sees a blank pause (NFR-06).
+interpretation and the retrieval, so the user never sees a blank pause (NFR-05).
 
 **What happens when the model is unavailable.** The interpretation job fails at once. No event is
 raised, and the feeling does not move on a guess (UC-23-E1). The conversation view shows a plain
@@ -2082,7 +2083,7 @@ the rule makes no adjustment (UC-24-A4).
 
 ### 7.9 Scenario: the user pauses the companion
 
-**Trigger.** The user clicks the tray icon and chooses a duration (UC-15, FR-12, NFR-05).
+**Trigger.** The user clicks the tray icon and chooses a duration (UC-15, FR-12, NFR-04).
 
 ```mermaid
 sequenceDiagram
@@ -2113,7 +2114,7 @@ mood has only decayed by time, because no appraisal rule reads a pause (BR-04).
 
 ### 7.10 Scenario: the user erases everything
 
-**Trigger.** The user opens erasure and chooses a level (UC-14, FR-19, NFR-04).
+**Trigger.** The user opens erasure and chooses a level (UC-14, FR-19, NFR-03).
 
 ```mermaid
 sequenceDiagram
@@ -2146,7 +2147,7 @@ shows a waiting state. A pause still stops observation, through the stop flag.
 
 ### 7.11 Scenario: the model process ends
 
-**Trigger.** `llama-server` crashes during a reply (UC-09-E1, NFR-09).
+**Trigger.** `llama-server` crashes during a reply (UC-09-E1, NFR-08).
 
 ```mermaid
 sequenceDiagram
@@ -2170,11 +2171,11 @@ sequenceDiagram
 ```
 
 **What continues.** The queue, the rules, the memory list, sessions, pausing and the emotion state do
-not depend on `model_thread`. Decay and appraisal of non-message events continue (NFR-09).
+not depend on `model_thread`. Decay and appraisal of non-message events continue (NFR-08).
 
 ### 7.12 Scenario: the power fails
 
-**Trigger.** The machine loses power with a session open (NFR-08, UC-07-A2).
+**Trigger.** The machine loses power with a session open (NFR-07, UC-07-A2).
 
 ```mermaid
 sequenceDiagram
@@ -2197,7 +2198,7 @@ behind the log, so the fold computes them again.
 
 ### 7.13 Scenario: a crisis message
 
-**Trigger.** The user writes about harming themselves (UC-09-E3, NFR-13, D-11).
+**Trigger.** The user writes about harming themselves (UC-09-E3, NFR-12, D-11).
 
 ```mermaid
 sequenceDiagram
@@ -2226,12 +2227,12 @@ sequenceDiagram
 **What happens when the model is unavailable.** The tripwire needs no model, so the system shows the
 required line. A message that only the model could detect shows the ordinary failure sentence.
 
-**What this cannot do.** The tripwire and the model can both miss a message. NFR-13 requires scripted
+**What this cannot do.** The tripwire and the model can both miss a message. NFR-12 requires scripted
 test cases, reviewed by a person, for each release.
 
 ### 7.14 Scenario: replay of a recorded week
 
-**Trigger.** The developer compares two decision strategies (NFR-14).
+**Trigger.** The developer compares two decision strategies (NFR-13).
 
 **The idea.** A chess game can be replayed from its list of moves. The list is all you need, and you
 do not need the players. The event log is the list of moves. Replay gives each event to `step`, in
@@ -2325,19 +2326,19 @@ The diagram shows one read of each model, to keep the picture small.
 
 | Node | Environment | Sizing | Scales on | Limit |
 |---|---|---|---|---|
-| The user's machine | Production | Not set. NFR-15 needs these figures after the model is chosen and measured | Fixed: one user, one machine (C-02) | Below the stated minimum, the installer refuses and states why (NFR-15) |
+| The user's machine | Production | Not set. NFR-14 needs these figures after the model is chosen and measured | Fixed: one user, one machine (C-02) | Below the stated minimum, the installer refuses and states why (NFR-14) |
 
 ### 8.3 Installer
 
 The installer is one Inno Setup file (D-12). It does these things:
 
 1. It states the least machine that Cognia needs, and it checks the machine before it installs
-   (NFR-15).
+   (NFR-14).
 2. It installs for the current user, so it needs no administrator rights.
-3. It copies all artifacts. It downloads nothing (NFR-15).
+3. It copies all artifacts. It downloads nothing (NFR-14).
 4. It shows a box for the start entry of D-22, ticked by default.
 5. It adds a Start Menu shortcut. It shows a box for a desktop shortcut, ticked by default.
-6. On its last page it shows a box that starts Cognia, ticked by default, because NFR-11 counts
+6. On its last page it shows a box that starts Cognia, ticked by default, because NFR-10 counts
    from the end of the installer.
 
 An Inno Setup file holds at most 4.2 GB of compressed data without disk spanning. Disk spanning
@@ -2410,8 +2411,8 @@ capture of NFR-01.
 |---|---|---|---|
 | Interpretation | Messages that the author writes and labels by hand | Correct class, importance and `crisis` value | BR-08, UC-23 |
 | Voice | Character descriptions that training did not use | A person judges how well the replies follow each description | A-02, G-03 |
-| Safety | The scripted crisis cases, under each test character | `reply_complies`, with no added line | NFR-13 |
-| Cost | The same prompts on the least machine | Time to the first word, memory and file size | NFR-06, NFR-15 |
+| Safety | The scripted crisis cases, under each test character | `reply_complies`, with no added line | NFR-12 |
+| Cost | The same prompts on the least machine | Time to the first word, memory and file size | NFR-05, NFR-14 |
 
 **The safety set stays a check, not a guarantee.** The design keeps the required line of section 6.13
 for each model. A tuned model that passes this set does not remove that line.
@@ -2454,7 +2455,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 |---|---|---|---|
 | [0001](adr/0001-layered-architecture-with-event-driven-core.md) | Accepted | Layers, ports in the domain, one ordered queue, one SpeechGate, a pure domain, an append-only log | Nothing |
 | [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Proposed | A llama.cpp server as a child process, readable conversation tables | D-06 removes LangChain and LangGraph. D-07 adds a second server. D-13 selects the builds. D-27 replaces `qwen3.5:2b` as the candidate with Gemma 4 E2B, and sets how `chat.gguf` is built. The text of ADR 0002 still names `qwen3.5:2b`, and D-27 takes precedence |
-| [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Proposed | The schema, SQLAlchemy Core, one connection on one thread | D-03 moves that thread. D-07 adds vector columns |
+| [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Proposed | The schema, the ORM, Alembic, one connection on one thread | D-03 moves that thread. D-07 adds vector columns. D-36 records the change from SQLAlchemy Core and numbered SQL files |
 | [0004](adr/0004-hybrid-emotion-model.md) | Proposed | PAD, rules for appraisal, the model that only interprets | D-04 sets the order of interpretation and reply |
 
 ### 10.2 Decision register
@@ -2480,22 +2481,25 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-17 | `ctypes` with an allow-list | QA-02 | `pywin32` | None needed | Proposed |
 | D-18 | The server sleeps when idle | QA-05 | Always loaded, stop the process | None needed | Proposed |
 | D-19 | A new API key for each start | QA-01 | No key | None needed | Proposed |
-| D-20 | Windows account rights protect the data file | NFR-04 | SQLCipher, DPAPI | None needed | Proposed |
+| D-20 | Windows account rights protect the data file | NFR-03 | SQLCipher, DPAPI | None needed | Proposed |
 | D-21 | A deterministic wording check | QA-08, BR-06 | Prompt only | None needed | Proposed |
 | D-22 | A per-user `Run` key, with a ticked box in the installer and a switch in the application | FR-36, UC-16 | Startup folder, Task Scheduler, an unticked box, no question | None needed | Decided |
 | D-23 | `QLockFile` and `QLocalSocket` | ADR 0001, UC-16 | A named mutex alone | None needed | Proposed |
 | D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Proposed |
 | D-25 | End the render process when hidden or paused | QA-05 | Freeze when hidden | None needed | Proposed |
 | D-26 | Own characters from VRoid Studio | FR-01, FR-05, UC-01 | Sample models, avatar registries, marketplaces | None needed | Decided |
-| D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-04 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
-| D-28 | Ministral 3 3B Reasoning replaces Gemma 4 E2B as the base model, with reasoning on for both jobs. D-28 takes precedence over each statement in this document that names Gemma 4 E2B as the candidate | A-02, section 8.3, NFR-06 | Gemma 4 E2B, Qwen3.5, SmolLM3-3B, Phi-4-mini, reasoning off | None needed | Decided |
-| D-29 | Two first-run screens: the character, then desk awareness | UC-01, UC-04, NFR-11 | One screen, a full wizard | None needed | Decided |
+| D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-03 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
+| D-28 | Ministral 3 3B Reasoning replaces Gemma 4 E2B as the base model, with reasoning on for both jobs. D-28 takes precedence over each statement in this document that names Gemma 4 E2B as the candidate | A-02, section 8.3, NFR-05 | Gemma 4 E2B, Qwen3.5, SmolLM3-3B, Phi-4-mini, reasoning off | None needed | Decided |
+| D-29 | Two first-run screens: the character, then desk awareness | UC-01, UC-04, NFR-10 | One screen, a full wizard | None needed | Decided |
 | D-30 | The close button hides the window, and the tray menu quits | FR-37, UC-16 | The close button quits, ask at the first close | None needed | Decided |
 | D-31 | The companion first appears at the bottom right of the primary screen | UC-20 | Beside the main window, placed in first run, hidden until asked | None needed | Decided |
-| D-32 | The model loads at the first need | NFR-06, NFR-07, D-18 | Load at sign-in, load after a fixed delay | None needed | Decided |
+| D-32 | The model loads at the first need | NFR-05, NFR-06, D-18 | Load at sign-in, load after a fixed delay | None needed | Decided |
 | D-33 | Four characters: Yuna, Rin, Mira, Shiori | UC-01, FR-01 | The four mockups, the four tones of version 1.0, wait for the VRM files | None needed | Decided |
 | D-34 | The companion asks what to call the user in its first greeting | UC-01, FR-14, C-05 | Never ask, a first-run field, the Windows account name | None needed | Decided |
 | D-35 | Remove UC-02. UC-03 changes between the four characters | FR-03, D-27 | Keep the text editor, no change after first run | None needed | Decided |
+| D-36 | SQLAlchemy ORM classes state the schema, and Alembic applies it | QA-06 | Numbered SQL files with SQLAlchemy Core | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
+| D-37 | A rejected pattern and a deleted journal entry are tombstones in the event log | QA-10, UC-24-A3, UC-25-A2 | One table for each kind, one flat table for each kind | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
+| D-38 | The local models are the only models, and no table holds the current emotion point | QA-01, QA-10 | A second provider that is off by default, a cache row for the emotion point | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -2504,11 +2508,11 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. One application process and child servers** (chosen) | No IPC contract. Least memory. One thing to package | A Python crash stops the GUI and the core together. Committed data survives |
-| B. A background core and a separate UI process | A GUI crash leaves the core alive | An IPC contract and version matching. Both always run, because the tray and the companion are always present. So memory rises against NFR-07 |
+| B. A background core and a separate UI process | A GUI crash leaves the core alive | An IPC contract and version matching. Both always run, because the tray and the companion are always present. So memory rises against NFR-06 |
 | C. A local WebSocket server and a UI client | The UI can change freely, also to a web page | One more port to protect, more noise in the NFR-01 capture, and a shape for many clients |
 
 **Reason.** Option A is enough, because the model is already a separate process, so a model failure
-cannot stop the application (NFR-09). Open-LLM-VTuber and AIRI have a client-server shape because they
+cannot stop the application (NFR-08). Open-LLM-VTuber and AIRI have a client-server shape because they
 serve several clients. Cognia has one.
 
 **Trade-off accepted.** A fault in Python stops everything until the next start.
@@ -2539,7 +2543,7 @@ of `ui.views.sample_data` and its `Trait` type (section 12).
 | B. The core writes, and the GUI reads on a second connection | Views stay simple. WAL allows this | Changes ADR 0003. A slow query still stops the GUI |
 | C. All work on the GUI thread | Least code, and the state today | Each commit with `synchronous=FULL` runs on the thread that draws |
 
-**Reason.** NFR-08 makes each commit wait for the disk. That wait must not reach the thread that keeps
+**Reason.** NFR-07 makes each commit wait for the disk. That wait must not reach the thread that keeps
 the window alive.
 
 **Trade-off accepted.** More code in `Bridge`, and a waiting state in views.
@@ -2550,8 +2554,8 @@ the window alive.
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. Interpret first** (chosen) | The reply carries the new feeling, and the crisis class is known before the reply | One more model call before the first word. The indicator covers it, and NFR-06 allows that |
-| B. Reply first | The fastest first word | The feeling lags one turn. A reply that says "I am pleased" before the state moves breaks BR-06 and BR-08. NFR-13 needs another detector |
+| **A. Interpret first** (chosen) | The reply carries the new feeling, and the crisis class is known before the reply | One more model call before the first word. The indicator covers it, and NFR-05 allows that |
+| B. Reply first | The fastest first word | The feeling lags one turn. A reply that says "I am pleased" before the state moves breaks BR-06 and BR-08. NFR-12 needs another detector |
 | C. Two calls at once with two slots | Good on a GPU | Both calls are slow on a CPU. The reply still cannot use the result |
 | D. One joint call | Saves one call | A small model does both jobs worse. No streaming until the JSON ends. One failure loses both |
 
@@ -2563,12 +2567,12 @@ says that the model never sets a feeling, so the state must move first.
 ### 10.7 D-05: the application name in the log
 
 **Question.** ERD section 9.1 stored `foreground_app` events with an exact time, but C-05 kept the name
-only in hourly totals. UC-22 decides from the application in use, and NFR-14 needs each input in the log.
+only in hourly totals. UC-22 decides from the application in use, and NFR-13 needs each input in the log.
 Which requirement gives way?
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. Log the name, and change the specification** (chosen) | Exact replay, the simplest design, and decisions see the application at once | The disk holds each change of application with its time. This widens the privacy promise of C-05 and NFR-03 |
+| **A. Log the name, and change the specification** (chosen) | Exact replay, the simplest design, and decisions see the application at once | The disk holds each change of application with its time. This widens the privacy promise of C-05 and NFR-02 |
 | B. Keep the live name in memory only, and log hourly totals | C-05 stays. Replay stays exact, because decisions do not read the live name | Decisions see the application only up to the last closed hour |
 | C. Log a category such as `writing` | Decisions see a category at once | Still finer than an hour. It needs a table of applications and a specification change |
 
@@ -2591,7 +2595,7 @@ application.
 | C. Keep `langchain-core` only | Shared message types | Still brings `langsmith` and most of the import cost |
 
 **Measurement.** The author's machine, one cold run, each package in its own process. These costs overlap,
-so they do not add up. NFR-05 allows 2 seconds for the main window.
+so they do not add up. NFR-04 allows 2 seconds for the main window.
 
 | Import | Time |
 |---|---|
@@ -2631,7 +2635,7 @@ replay does not repeat it.
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. 3D VRM** (chosen) | A real character in three dimensions, gaze, and expressions with continuous weights | The heaviest option against NFR-07 |
+| **A. 3D VRM** (chosen) | A real character in three dimensions, gaze, and expressions with continuous weights | The heaviest option against NFR-06 |
 | B. Layered PNG sprites | Lowest cost, only Qt | Less fluid motion, and each expression must be drawn in advance |
 | C. Live2D Cubism | Fluid motion, used by AIRI and Open-LLM-VTuber | A proprietary SDK with its own licence agreements, and a publication agreement on release for some users |
 | D. Vector art | Small files, sharp at each scale | Rasterising costs CPU in each frame, and the anime style is hard to reach |
@@ -2640,15 +2644,15 @@ replay does not repeat it.
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. QtWebEngine and `three-vrm`** (chosen) | VRM, MToon and expressions already work. MIT licence for `three-vrm`. Least code, no new language. A render crash cannot stop the application | Chromium memory, likely above NFR-07. A larger installer. Focus and network behaviour need proof |
+| **A. QtWebEngine and `three-vrm`** (chosen) | VRM, MToon and expressions already work. MIT licence for `three-vrm`. Least code, no new language. A render crash cannot stop the application | Chromium memory, likely above NFR-06. A larger installer. Focus and network behaviour need proof |
 | B. Godot as a child process | `godot-vrm` has a full MToon. Possibly lighter | A second language and toolchain, IPC, and two windows to align |
 | C. Qt Quick 3D | One process, native | GPLv3 or commercial, not LGPL. `RuntimeLoader` reads glTF but has no VRM support, so the expressions, MToon and spring bones are all new work |
-| D. VRM authoring, frames rendered in advance | Surest against NFR-07, no GPU at run time | Not real-time 3D. A fixed camera, and no continuous blending |
+| D. VRM authoring, frames rendered in advance | Surest against NFR-06, no GPU at run time | Not real-time 3D. A fixed camera, and no continuous blending |
 
 **Reason.** Character is a pillar of the project, and `three-vrm` gives the shortest path to a real VRM
 character.
 
-**Trade-off accepted.** NFR-07 is at risk, and nobody has measured it. The specification already asks for
+**Trade-off accepted.** NFR-06 is at risk, and nobody has measured it. The specification already asks for
 this measurement before ambient motion is kept. No reliable published figure exists. One commercial
 product claims about 200 MB for a high-resolution model. That is a vendor claim. Section 12 lists the
 checks, and it states what happens if they fail.
@@ -2661,9 +2665,9 @@ checks, and it states what happens if they fail.
 |---|---|---|
 | **A. Change events and a next wake time** (chosen) | A small log, low CPU, exact times | Each rule must compute its next time |
 | B. A tick in the log, for example each 60 seconds | Simple rules, exact replay | About 525,000 rows each year, a disk write each minute, decisions on a one-minute grid |
-| C. A tick that is not logged | Fewest writes | A replay must invent the ticks, so it differs after a sleep. This breaks NFR-14 |
+| C. A tick that is not logged | Fewest writes | A replay must invent the ticks, so it differs after a sleep. This breaks NFR-13 |
 
-**Reason.** NFR-07 and NFR-14 both favour option A. ActivityWatch shows the same idea with heartbeats.
+**Reason.** NFR-06 and NFR-13 both favour option A. ActivityWatch shows the same idea with heartbeats.
 
 **Trade-off accepted.** Rules are harder to reason about (section 6.7.1).
 
@@ -2676,14 +2680,14 @@ checks, and it states what happens if they fail.
 | **A. Pure rules and services** (chosen) | A replay is a fold over the log, with no database and no fakes. I/O cannot enter a rule | A clear split between `rules.py` and the service in each feature |
 | B. Domain services that call ports | Close to the wording of ADR 0001, and familiar | A replay needs a fake for each port. Hidden I/O can enter a rule |
 
-**Reason.** NFR-14 is the hardest promise in the specification, and option A makes it a property of the
+**Reason.** NFR-13 is the hardest promise in the specification, and option A makes it a property of the
 structure. This fits ADR 0001: ports stay in the domain, and only the caller changes.
 
 **Trade-off accepted.** State must fit in memory, so learning keeps small totals and not whole events.
 
 ### 10.13 D-11: safety
 
-**Question.** How does the architecture make NFR-13 hold?
+**Question.** How does the architecture make NFR-12 hold?
 
 | Option | Benefit | Cost |
 |---|---|---|
@@ -2691,7 +2695,7 @@ structure. This fits ADR 0001: ports stay in the domain, and only the caller cha
 | B. Always add a fixed line first | Certain | Breaks "keeps its character's voice" |
 | C. A prompt only, as in `config.py` today | The cheapest | A small model can ignore it, so "every scripted test case" has no guarantee |
 
-**Reason.** NFR-13 asks for a voice and a guarantee, and only option A gives both.
+**Reason.** NFR-12 asks for a voice and a guarantee, and only option A gives both.
 
 **Trade-off accepted.** Detection can still miss a message (section 7.13).
 
@@ -2703,7 +2707,7 @@ structure. This fits ADR 0001: ports stay in the domain, and only the caller cha
 |---|---|---|
 | **A. PyInstaller one-dir** (chosen) | Common, fast builds, no extraction at start | Many files, and unused Qt modules must be removed by hand. PySide6 is 639 MB in the virtual environment |
 | B. `pyside6-deploy` | The Qt documentation recommends it | Slower builds, and it needs a C compiler |
-| C. Briefcase, MSI | A short workflow | Fewer users with PySide6, and the NFR-15 check before install is harder |
+| C. Briefcase, MSI | A short workflow | Fewer users with PySide6, and the NFR-14 check before install is harder |
 
 Inno Setup is the installer, because a script can check the machine first. Section 8.3 gives the size limit.
 
@@ -2716,7 +2720,7 @@ Inno Setup is the installer, because a script can check the machine first. Secti
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. Vulkan with a CPU fallback** (chosen) | Runs on many GPUs, with a way back | A larger installer, and one more branch in the supervisor |
-| B. CPU only | The simplest, and no contest for the GPU with VRM | The slowest, so NFR-06 is hard, above all with D-04 |
+| B. CPU only | The simplest, and no contest for the GPU with VRM | The slowest, so NFR-05 is hard, above all with D-04 |
 | C. CUDA as well | The fastest on NVIDIA | Very large libraries, redistribution terms to check, and the most test branches |
 
 **Trade-off accepted.** VRM and the model share the GPU. A reply may slow the animation. This needs a
@@ -2724,14 +2728,14 @@ measurement (section 12).
 
 ### 10.16 D-14: enforcing the rules
 
-**Question.** How do the rules of section 6.2 become automatic? ADR 0001 and NFR-10 ask for a build check.
+**Question.** How do the rules of section 6.2 become automatic? ADR 0001 and NFR-09 ask for a build check.
 
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. One script on the syntax tree, behind `task check`** (chosen) | No dependency. One file covers imports, the gate rule and the Win32 rule | One more file to maintain |
 | B. `import-linter` and a second script | A proven tool for imports | A dependency, and the other two rules still need a script |
 | C. Rules as `pytest` tests | Beside future tests | Adds a test runner, which the repository does not have |
-| D. Review by hand | No work now | NFR-10 says that the check refuses. A person cannot promise that |
+| D. Review by hand | No work now | NFR-09 says that the check refuses. A person cannot promise that |
 
 **Trade-off accepted.** Neither the script nor the task exists yet (section 12). `CLAUDE.md` does not list
 `task check`, because it lists only commands that exist.
@@ -2745,7 +2749,7 @@ measurement (section 12).
 | **A. One slot, a priority list, and cancellation** (recommended) | The user always comes first. All context goes to one job | Background work can restart many times |
 | B. Two slots, one kept for the user | Background work continues | The context divides, and a CPU serves both slowly |
 
-**Reason.** NFR-06 concerns the user's reply, and nothing else is urgent. Letta's background memory work
+**Reason.** NFR-05 concerns the user's reply, and nothing else is urgent. Letta's background memory work
 shows the same split between the user's turn and memory work. The server's documentation read for this
 design does not state how to cancel a running completion. Section 12 records this check.
 
@@ -2771,7 +2775,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 | **A. `ctypes` with an allow-list** (recommended) | The standard library. The audit reads one short list | Declarations by hand |
 | B. `pywin32` | Ready-made calls | It makes every forbidden call one import away. So the audit must read all usage |
 
-**Reason.** NFR-03 is verified by review, so a short list is worth more than convenience.
+**Reason.** NFR-02 is verified by review, so a short list is worth more than convenience.
 
 ### 10.20 D-18: an idle model (proposed)
 
@@ -2780,7 +2784,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. `--sleep-idle-seconds`** (recommended) | Frees memory, and the supervisor stays simple | The first reply after a sleep waits for the load |
-| B. Always loaded | The fastest reply at all times | Holds memory all day. NFR-07 excludes it from the figure, but the machine still pays |
+| B. Always loaded | The fastest reply at all times | Holds memory all day. NFR-06 excludes it from the figure, but the machine still pays |
 | C. Stop the process | Frees everything | Cognia must own the restart logic |
 
 **Reason.** The value is a calibration setting, so it stays in configuration, and measurement sets it.
@@ -2798,7 +2802,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 
 ### 10.22 D-20: data at rest (proposed)
 
-**Question.** How does the data file stay "visible only to the person at that machine" (NFR-04)?
+**Question.** How does the data file stay "visible only to the person at that machine" (NFR-03)?
 
 | Option | Benefit | Cost |
 |---|---|---|
@@ -2863,7 +2867,7 @@ also how an opening happens while Cognia runs in the background (section 7.6).
 |---|---|---|
 | **A. `Bridge`: Qt signals out, the queue in** (recommended) | Keeps the existing Qt pattern. The core loop stays free of Qt. Frozen dataclasses cannot change under a reader | Small classes for each command |
 | B. Direct calls with locks | Less code at first | Locks everywhere, and the order of events is lost |
-| C. The GUI polls the core | Simple | Wasted wake-ups against NFR-07 |
+| C. The GUI polls the core | Simple | Wasted wake-ups against NFR-06 |
 
 **Reason.** ADR 0001 gives one queue. All inputs reach it the same way.
 
@@ -2874,10 +2878,10 @@ also how an opening happens while Cognia runs in the background (section 7.6).
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. End it when hidden or paused** (recommended) | Returns the memory, so the 150 MB figure for "hidden" can hold | Showing the companion again reloads the page and the VRM file |
-| B. Freeze it when hidden, end it when paused | Showing it again is instant | The memory stays in use while hidden, against NFR-07 |
+| B. Freeze it when hidden, end it when paused | Showing it again is instant | The memory stays in use while hidden, against NFR-06 |
 
-**Reason.** NFR-07 sets a lower figure for "hidden", and a frozen page keeps its memory. The first design
-notes recommended option B. The figure in NFR-07 decides against it.
+**Reason.** NFR-06 sets a lower figure for "hidden", and a frozen page keeps its memory. The first design
+notes recommended option B. The figure in NFR-06 decides against it.
 
 ### 10.28 D-26: where the appearances come from
 
@@ -2933,7 +2937,7 @@ specification weakens?
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. Synthetic examples, reviewed by the author** (chosen) | Control of the content and the licence. The examples use the real prompt layers | Review takes time. The terms of the generating model must allow this use |
-| B. Public datasets, such as PIPPA | Ready at once | This study could not confirm the licence. The content can conflict with NFR-13 and BR-04, so it needs filtering |
+| B. Public datasets, such as PIPPA | Ready at once | This study could not confirm the licence. The content can conflict with NFR-12 and BR-04, so it needs filtering |
 | C. Written by hand only | The cleanest licence | A small set, and few character descriptions |
 
 **Fourth part: where training happens.**
@@ -2941,7 +2945,7 @@ specification weakens?
 | Option | Benefit | Cost |
 |---|---|---|
 | **A. A rented GPU, at build time** (chosen) | The user's machine does nothing new. The cost falls once | The author pays for GPU time. The author's own GPU is too small for this model |
-| B. On the user's machine, from their conversations | A voice that adapts to one user | It needs a GPU that the user may not have. The weights would hold personal data that UC-14 cannot erase and UC-17 cannot explain (NFR-04, G-06) |
+| B. On the user's machine, from their conversations | A voice that adapts to one user | It needs a GPU that the user may not have. The weights would hold personal data that UC-14 cannot erase and UC-17 cannot explain (NFR-03, G-06) |
 
 **Fifth part: the base model.** D-28 replaces this choice. Licences and sizes come from each model card. Video memory comes from
 Unsloth. These are published figures, and this project did not measure them.
@@ -2950,7 +2954,7 @@ Unsloth. These are published figures, and this project did not measure them.
 |---|---|---|---|---|
 | **A. [Gemma 4 E2B](https://huggingface.co/google/gemma-4-E2B-it)** (chosen) | Apache-2.0 | 2.3B effective, 5.1B with embeddings | 8 to 10 GB | Native system role. GGUF at Q4_K_M is 3.11 GB |
 | B. [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | Apache-2.0 | 2B | 5 GB, 16-bit | The model in the code today. GGUF at Q4_K_M is about 1.3 GB, by a secondary source |
-| C. [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | Apache-2.0 | 4B | 10 GB, 16-bit | A larger file and a higher least machine (NFR-15) |
+| C. [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | Apache-2.0 | 4B | 10 GB, 16-bit | A larger file and a higher least machine (NFR-14) |
 | D. [Phi-4-mini](https://huggingface.co/microsoft/Phi-4-mini-instruct) | MIT | 3.8B | Not stated | Its model card aims at reasoning, and it does not mention role-play |
 
 **Reason.** A-02 is an assumption about small models, and fine-tuning is a direct way to test it. D-04,
@@ -3001,9 +3005,9 @@ limit in section 8.3, the support in the tools, and reasoning.
 - No source shows that this model can hold a character. The baseline measurement of section 8.6 must show
   this before training.
 - The `json_schema` option forces JSON from the first token. This can stop the `[THINK]` block. A short
-  test must show the result before training (item 22 of section 12). If the test fails, the author decides
+  test must show the result before training (item 21 of section 12). If the test fails, the author decides
   about reasoning for interpretation again.
-- Reasoning can make the first word later than the 3 seconds of NFR-06. NFR-06 then needs the working
+- Reasoning can make the first word later than the 3 seconds of NFR-05. NFR-05 then needs the working
   indicator.
 - The model card recommends that reasoning stays in the history. The examples hold reasoning in the last
   answer only, because this keeps the prompt short.
@@ -3016,9 +3020,9 @@ limit in section 8.3, the support in the tools, and reasoning.
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. Two screens: the character, then desk awareness** (chosen) | UC-04 step 1 names setup. UC-04-A1 forbids a second question, so this is the only time that Cognia can ask | One screen of text before the first conversation (NFR-11). The privacy question comes before the user trusts the application |
+| **A. Two screens: the character, then desk awareness** (chosen) | UC-04 step 1 names setup. UC-04-A1 forbids a second question, so this is the only time that Cognia can ask | One screen of text before the first conversation (NFR-10). The privacy question comes before the user trusts the application |
 | B. One screen: the character | The fastest route | A user who does not find the desk screen gets no UC-05, UC-07, UC-22 or UC-24, and FR-31 does not occur |
-| C. A full wizard | Each default is visible | It reads as a form, it puts NFR-11 at risk, and it is against the idea of BR-01 |
+| C. A full wizard | Each default is visible | It reads as a form, it puts NFR-10 at risk, and it is against the idea of BR-01 |
 
 **Reason.** Turn on and Not now have equal weight. Phase 1 has no desk awareness, so phase 1 shows
 the character screen only. All other defaults stay as the specification states them.
@@ -3056,7 +3060,7 @@ user decides the position. The companion does not appear before a character is i
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. At the first need** (chosen) | Sign-in stays fast | The greeting of the day waits for the load, so NFR-06 needs the working indicator |
+| **A. At the first need** (chosen) | Sign-in stays fast | The greeting of the day waits for the load, so NFR-05 needs the working indicator |
 | B. At sign-in | A fast greeting | The machine is slow when the user arrives |
 | C. After a fixed delay | A balance of A and B | The delay needs a measured value |
 
@@ -3169,7 +3173,7 @@ Let's just take our time and get to know each other.
 **Reason.** A card shows one line, because a card is about 208 pixels wide. The full text appears when
 the user picks the character, with the live answer of UC-01 step 4. Each sample is an introduction:
 a normal reply stays short for all four characters. The temperament values are start values, and
-trial use sets them (item 18 of section 12).
+trial use sets them (item 17 of section 12).
 
 **Trade-off accepted.** Rin's sample speaks about an absence. BR-04 forbids a reproach. The author
 keeps the text, because it is a joke in an introduction. BR-04 still binds each real reply.
@@ -3182,7 +3186,7 @@ keeps the text, because it is a joke in an introduction. BR-04 still binds each 
 |---|---|---|
 | **A. It asks in its first greeting** (chosen) | No new kind of data. The answer is a `told` memory item, so UC-13 and UC-14 cover it | It needs FR-14. A user who ignores the question gives no name |
 | B. It never asks | The specification needs no change | The first days feel distant |
-| C. A first-run field | The name is ready for the first greeting | A new column of personal data outside memory. NFR-04, UC-12 to UC-14 and the ERD need changes |
+| C. A first-run field | The name is ready for the first greeting | A new column of personal data outside memory. NFR-03, UC-12 to UC-14 and the ERD need changes |
 
 **Rejected without a table row.** The Windows account name is a fifth fact from the operating system.
 C-05 forbids it.
@@ -3211,22 +3215,71 @@ C-05 forbids it.
 the author sets it by hand (D-33). The numbers UC-02 and FR-02 stay reserved, so an older reference
 does not point to another item.
 
+### 10.38 D-36: the ORM and Alembic
+
+**Question.** How does Python state the schema, and how does a change reach the user's file?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. ORM classes and Alembic** (chosen) | One definition of the schema. Alembic writes the next revision from the classes | A second package. An `alembic_version` table in the user's file. Autogenerate misses an expression index and a changed `CHECK`, so each revision needs a review |
+| B. Numbered SQL files and SQLAlchemy Core | No new package and no new table in the file | Two definitions of the schema, and a self-check to keep them equal |
+| C. ORM classes and numbered SQL files | No new package | Two definitions of the schema, as in B |
+
+**Where the classes live.** `orm.py` in `infrastructure/storage` holds all of them. A store turns a row into a
+frozen dataclass, so `domain/` imports no SQLAlchemy (rule 1 of section 6.2).
+
+**First revision.** Nothing has been released, so one revision builds the whole schema. A file from before
+that revision is refused, and it stays as it was.
+
+**Trade-off accepted.** The conversation store still builds its queries with the tables of the ORM classes, and
+no `Session` runs yet.
+
+### 10.39 D-37: tombstones in the event log
+
+**Question.** Where does a rejected pattern or a deleted journal entry stay, so that it does not come back?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. In the payload of `pattern_rejected` and `reflection_deleted`** (chosen) | One copy of the fact, which a replay can already read. No table | The payload holds seqs and a fingerprint, so the database checks neither |
+| B. One flat table for each kind | Two tables fewer than C. A query can read them | A second copy of the event. No foreign key to `events` |
+| C. Two tables for each kind | A foreign key for each seq | Four tables that hold a second copy of the event |
+
+**Reason.** A rule reads only the event log (section 6.4). The events must hold the fingerprint and the seqs in
+all options, so a table adds nothing. A sequence number is never used again, so a seq in a payload cannot
+point to a new event after a delete.
+
+### 10.40 D-38: local models only, and no stored emotion point
+
+**First part: models.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The local models only** (chosen) | C-03 and NFR-01 have no exception. No table, setting or warning exists for this | The user has no other model if the local model fails A-02 |
+| B. A second provider, off by default | A way out if the local model is too weak | No use case describes it. It needs a warning, a record of each send and a stored credential |
+
+**Second part: the emotion point.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. In memory only** (chosen) | The core thread already folds the log at each start, so a table would have no reader | A snapshot needs a new table (section 12) |
+| B. A cache row | A snapshot exists | A row that nothing reads |
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
 |---|---|---|
 | FR-01, FR-03 to FR-05, UC-01, UC-03 | Module | `domain/character`, `domain/safety`, `resources/companion/` |
-| FR-06, UC-04, C-05, NFR-03 | Module, C&C | `infrastructure/presence`, `PresenceSample`, sampler_thread, C11 |
+| FR-06, UC-04, C-05, NFR-02 | Module, C&C | `infrastructure/presence`, `PresenceSample`, sampler_thread, C11 |
 | FR-07 to FR-11, FR-33, UC-05, UC-07 | Module | `domain/sessions`, `domain/awareness`, `domain/initiative` |
-| FR-12, NFR-05, UC-15 | C&C | Stop flag, `paused` event, section 7.9 |
+| FR-12, NFR-04, UC-15 | C&C | Stop flag, `paused` event, section 7.9 |
 | FR-13, FR-14, FR-15, UC-09, UC-10 | Module, C&C | `domain/conversation`, `domain/memory`, `infrastructure/ai`, section 7.4 |
 | FR-16, FR-23, FR-34, UC-24 | Module, C&C | `domain/learning`, section 7.8 |
-| FR-17, FR-18, FR-19, NFR-04, UC-12 to UC-14 | Module, C&C | State tables, `domain/memory`, section 7.10 |
+| FR-17, FR-18, FR-19, NFR-03, UC-12 to UC-14 | Module, C&C | State tables, `domain/memory`, section 7.10 |
 | FR-20, FR-11, UC-16 | C&C | `greeting_items`, section 7.6 |
-| FR-21, NFR-10, UC-17 | Module, C&C | `domain/speech`, `SpeechOutput`, `Factor`, section 6.6.1 |
+| FR-21, NFR-09, UC-17 | Module, C&C | `domain/speech`, `SpeechOutput`, `Factor`, section 6.6.1 |
 | FR-22, UC-18 | Module | `settings`, `setting_changed`, `admit` |
 | FR-24, section 5 of the specification | Module | Met by absence. No port exists for mail, calendars, files or the clipboard. `commitments` has no time of day and no status. No code path acts for the user |
-| FR-25 to FR-28, NFR-12, UC-20 | Module, C&C | `ui/windows/companion_window`, companion_renderer, C10 |
+| FR-25 to FR-28, NFR-11, UC-20 | Module, C&C | `ui/windows/companion_window`, companion_renderer, C10 |
 | FR-29, UC-21 | Module | `Commitment`, `greeting_items`, `domain/initiative` |
 | FR-31, BR-01 to BR-07, UC-22 | Module, C&C | `domain/initiative`, `domain/speech`, section 7.5 |
 | FR-32, BR-08, UC-23 | Module | `domain/emotion` |
@@ -3235,14 +3288,13 @@ does not point to another item.
 | C-06 | Module | `fixed_wording`, `required_line`, English only |
 | A-02, G-03 | Module, Deployment | `training`, tuned `chat.gguf`, the acceptance gate of section 8.6 (D-27) |
 | NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai`, `127.0.0.1` only, interceptor in the page. `training` holds no user data and does not ship |
-| NFR-02 | Module | `outbound_sends` in the ERD. The adapter is not designed (section 12) |
-| NFR-06 | C&C | Working indicator, `ModelScheduler`, prompt layers |
-| NFR-07 | C&C, Deployment | Next wake time, change events, drawing states, section 12 |
-| NFR-08 | C&C | One item, one transaction, section 7.12 |
-| NFR-09 | C&C | Rules that need no model, section 7.11 |
-| NFR-11, NFR-15 | Deployment | Inno Setup installer, shipped models, section 8.3 |
-| NFR-13 | Module, C&C | `domain/safety`, section 7.13 |
-| NFR-14, G-06 | Module, C&C | `step`, input closure, `app/replay`, section 7.14 |
+| NFR-05 | C&C | Working indicator, `ModelScheduler`, prompt layers |
+| NFR-06 | C&C, Deployment | Next wake time, change events, drawing states, section 12 |
+| NFR-07 | C&C | One item, one transaction, section 7.12 |
+| NFR-08 | C&C | Rules that need no model, section 7.11 |
+| NFR-10, NFR-14 | Deployment | Inno Setup installer, shipped models, section 8.3 |
+| NFR-12 | Module, C&C | `domain/safety`, section 7.13 |
+| NFR-13, G-06 | Module, C&C | `step`, input closure, `app/replay`, section 7.14 |
 
 ## 12. Open items
 
@@ -3252,66 +3304,63 @@ These items are outside this design, or need a decision before implementation.
 2. **Proposals.** D-15 to D-25 need the author's review.
 3. **The chat model.** D-27 names Gemma 4 E2B as the only candidate, and measurement accepts or refuses it
    (section 8.6). If it fails, the author selects another candidate. It must hold a character in English for
-   months (A-02). Its size sets the NFR-15 figures and the limit in section 8.3. Its model card states
+   months (A-02). Its size sets the NFR-14 figures and the limit in section 8.3. Its model card states
    Apache-2.0, and the Gemma pages also link to a prohibited-use page and terms of use. A person must read
    those pages before the model ships, because this design did not read them.
 4. **The embedding model.** D-07 needs one small GGUF. Candidates must be measured on English recall, and their
    licences must be read. No model is selected.
-5. **Measurements.** NFR-05, NFR-06, NFR-07 and NFR-15 have no measured values. D-13 and D-08 add one more: the
+5. **Measurements.** NFR-04, NFR-05, NFR-06 and NFR-14 have no measured values. D-13 and D-08 add one more: the
    model and VRM share a GPU, so the reply time and the frame rate must be measured together.
 6. **VRM checks, before any other phase 2 work.** A short test build must show these facts:
-   - memory and CPU of Chromium with one VRM, against NFR-07, on screen and hidden
+   - memory and CPU of Chromium with one VRM, against NFR-06, on screen and hidden
    - no change of keyboard focus while the companion draws and moves (FR-25)
    - a transparent background on Windows, including NVIDIA machines, because Desktop Homunculus warns about
      a black background there
    - mouse clicks that pass through the transparent parts of the window, or a decision to accept the rectangle
    - zero outbound connections from the Chromium processes (NFR-01)
    - a working PyInstaller build with `QtWebEngineProcess.exe`
-7. **If VRM fails NFR-07.** The author chooses one of these: a lower frame limit, a changed figure in the
+7. **If VRM fails NFR-06.** The author chooses one of these: a lower frame limit, a changed figure in the
    specification, or frames rendered in advance from the same VRM files (D-08, second table, option D).
 8. **VRoid Studio terms.** A person must read the full terms. The question is whether a VRM file with pixiv
    base content can go into a public repository and an installer. Until then, D-26 option B or C is the fallback.
-9. **The four characters.** Closed by D-33. Trial use sets their temperaments (item 18).
-10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-10 stay
+9. **The four characters.** Closed by D-33. Trial use sets their temperaments (item 17).
+10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-09 stay
     unproven until they do.
 11. **Move the code.** The code does not match this design yet. The work is:
     - replace `OllamaAgent`, remove `langchain-*`, `langgraph` and `local_only.py` (D-06)
     - move the database connection from the GUI thread to the core thread (D-03)
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
-    - replace the crisis text in `config.system_prompt`, which is older than NFR-13 in version 5.0
+    - replace the crisis text in `config.system_prompt`, which is older than NFR-12 in version 5.0
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
     The author decides whether the tuned model uses the `<|think|>` token. Reasoning costs time before the
-    first word (NFR-06), and ADR 0002 kept reasoning on for answer quality on another model.
-14. **Outside AI service.** NFR-02 and C-03 allow it, but no use case describes how the user enables it. This
-    design provides the ports and `outbound_sends`, and no adapter. The ADR that adds the service decides how the
-    user names it and where its credential stays.
-15. **A user setting for starting with Windows.** Closed by FR-36 and D-22.
-16. **Code signing.** An unsigned installer triggers a Windows warning, which works against NFR-11. The project has
+    first word (NFR-05), and ADR 0002 kept reasoning on for answer quality on another model.
+14. **A user setting for starting with Windows.** Closed by FR-36 and D-22.
+15. **Code signing.** An unsigned installer triggers a Windows warning, which works against NFR-10. The project has
     no sponsor and no certificate. The author decides.
-17. **Start-up fold.** The core thread folds the whole log at start. If the time becomes a problem, a snapshot table
+16. **Start-up fold.** The core thread folds the whole log at start. If the time becomes a problem, a snapshot table
     is the upgrade, and it is one more cache table in the ERD.
-18. **Trial values.** Trial use sets these values:
+17. **Trial values.** Trial use sets these values:
     - the temperament ranges and the appraisal table
     - the sadness floor and the reflection threshold
     - the worth formula and the desk thresholds
     - the frame limit and the idle time of D-18
-19. **Size of the tuned model.** Measure the full installer against the limit in section 8.3. The options to
+18. **Size of the tuned model.** Measure the full installer against the limit in section 8.3. The options to
     test are a smaller quantisation, such as Q3_K_M, and a removal of the image and audio parts, because Cognia
     uses text only. Nobody has verified the second option. Each option needs the measurements of section 8.6.
-20. **Acceptance thresholds and dataset size.** The author sets the thresholds before training. This design
+19. **Acceptance thresholds and dataset size.** The author sets the thresholds before training. This design
     states no figure, because no baseline exists. The number of examples and of character descriptions is also
     open.
-21. **The generating model.** The author selects the model that generates the examples. Its terms must allow
+20. **The generating model.** The author selects the model that generates the examples. Its terms must allow
     the use of its output to train another model. Some services limit this use, so a person must read the terms.
     A model with an open licence that runs in the training environment avoids the question.
-22. **Tool checks on Gemma 4 E2B.** A short test must show these facts:
+21. **Tool checks on Gemma 4 E2B.** A short test must show these facts:
     - both `llama-server` builds of D-13 run the merged file
     - the `json_schema` option works on the merged file
     - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
       the quality of an exported model
-23. **Finish the module.** `desktop/training/` holds the tools, and `desktop/training/GUIDE.md` gives the steps.
+22. **Finish the module.** `desktop/training/` holds the tools, and `desktop/training/GUIDE.md` gives the steps.
     `train_lora` and `merge_and_quantise` have not run. `make_examples` needs a generating model, and `measure`
     needs `LlamaClient`. Rules 11 and 12 of section 6.2 join the script of D-14 when that script exists.
 

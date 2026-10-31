@@ -78,9 +78,7 @@ class Cognia(QObject):
         )
 
         self.store = SqliteConversationStore(config.database_path())
-        self.conversation = self.store.latest() or self.store.create(
-            self.character.id, datetime.now()
-        )
+        self.conversation = self.store.latest() or self.store.create(datetime.now())
 
         self.thread = QThread()
         self.thread.setObjectName("cognia-model")
@@ -164,7 +162,7 @@ class Cognia(QObject):
     def _new_conversation(self) -> None:
         if not self.store.history(self.conversation.id, 1):
             return  # already sitting in an empty one; don't pile up more
-        self.conversation = self.store.create(self.character.id, datetime.now())
+        self.conversation = self.store.create(datetime.now())
         self.window.chat.loadConversation([])
         self._refresh_picker()
 

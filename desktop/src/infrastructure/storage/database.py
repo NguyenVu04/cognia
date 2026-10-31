@@ -11,25 +11,31 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sqlalchemy import URL, Engine, create_engine, event
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import URL, Connection, Engine, create_engine, event
 from sqlalchemy.pool import StaticPool
 
-from src.infrastructure.storage.migrate import migrate
+_MIGRATIONS = Path(__file__).parent / "migrations"
 
 _PRAGMAS = (
     # WAL survives an abrupt shutdown; FULL means a committed row is on the
-    # platter before we say it was recorded. NFR-08 asks for both.
+    # platter before we say it was recorded. NFR-07 asks for both.
     "PRAGMA journal_mode=WAL",
     "PRAGMA synchronous=FULL",
     "PRAGMA foreign_keys=ON",
     # Deleted rows are overwritten, not left in free pages: a removed memory
-    # item is gone from the disk (NFR-04, UC-13, UC-14).
+    # item is gone from the disk (NFR-03, UC-13, UC-14).
     "PRAGMA secure_delete=ON",
 )
 
 
 def open_database(path: Path) -> Engine:
-    """Open (or create) the file, and bring it up to the newest schema."""
+    """Open (or create) the file, and bring it up to the newest schema.
+
+    A file from before the Alembic baseline raises ``OperationalError`` and
+    stays as it was (ADR 0003).
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(
         URL.create("sqlite", database=str(path)),
@@ -37,15 +43,27 @@ def open_database(path: Path) -> Engine:
         connect_args={"check_same_thread": True},
     )
     event.listen(engine, "connect", _configure)
-
-    connection = engine.raw_connection()
-    try:
-        migrate(connection.driver_connection)
-    finally:
-        connection.close()
+    event.listen(engine, "begin", _begin)
+    _upgrade(engine)
     return engine
 
 
+def _upgrade(engine: Engine) -> None:
+    """Apply every revision in one transaction, so a failure leaves the file alone."""
+    config = Config()
+    config.set_main_option("script_location", str(_MIGRATIONS).replace("%", "%%"))
+    with engine.begin() as connection:
+        config.attributes["connection"] = connection
+        command.upgrade(config, "head")
+
+
 def _configure(dbapi_connection, _record) -> None:
+    # Left alone, sqlite3 opens no transaction for DDL, and a failed revision
+    # would leave half a schema. _begin opens every transaction instead.
+    dbapi_connection.isolation_level = None
     for pragma in _PRAGMAS:
         dbapi_connection.execute(pragma)
+
+
+def _begin(connection: Connection) -> None:
+    connection.exec_driver_sql("BEGIN")

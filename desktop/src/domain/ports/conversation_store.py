@@ -16,7 +16,7 @@ from src.domain.conversation.models import Conversation, Message
 class ConversationStore(Protocol):
     """Somewhere a conversation and its messages survive a restart."""
 
-    def create(self, character_id: str, now: datetime) -> Conversation:
+    def create(self, now: datetime) -> Conversation:
         """Open a new, empty conversation and return it."""
         ...
 

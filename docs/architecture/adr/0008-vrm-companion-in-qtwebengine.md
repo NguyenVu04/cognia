@@ -12,7 +12,7 @@ FR-25 draws the companion on the desktop, above other windows, and it must never
 focus. FR-27 asks that its appearance carries its mood. BR-07 allows ambient motion at any time, and
 treats motion addressed to the user as speech. The design document shows an anime-style character.
 
-NFR-07 limits the companion on screen to 3% CPU and 200 MB, and to 1% CPU and 150 MB when hidden. The
+NFR-06 limits the companion on screen to 3% CPU and 200 MB, and to 1% CPU and 150 MB when hidden. The
 specification says that these are its least founded figures, and that ambient motion must be
 measured against them.
 
@@ -50,7 +50,7 @@ the assets are not under the repository's MIT licence. D-26 gives the rules for 
 
 **Negative**
 
-- Chromium's memory is likely above the NFR-07 figure. Nobody has measured it.
+- Chromium's memory is likely above the NFR-06 figure. Nobody has measured it.
 - The installer grows by QtWebEngine.
 - Keyboard focus, the transparent background on Windows and click-through all need proof. Desktop
   Homunculus warns about a black background on some NVIDIA setups.
@@ -81,5 +81,5 @@ because it adds a language, a toolchain, IPC, and a second window to align with 
 **Qt Quick 3D.** One process, native. Rejected because its licence is GPLv3 or commercial, not LGPL, and
 `RuntimeLoader` reads glTF with no VRM support. Expressions, MToon and spring bones would all be new work.
 
-**VRM authoring with frames rendered in advance.** The surest option against NFR-07. Kept as the fallback.
+**VRM authoring with frames rendered in advance.** The surest option against NFR-06. Kept as the fallback.
 It is not real-time 3D, so it has a fixed camera and no continuous blending.

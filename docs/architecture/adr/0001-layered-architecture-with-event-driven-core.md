@@ -20,14 +20,14 @@ every use case at once:
 - Eight base rules bind every use case, and no character may override them
   (C-04, FR-04).
 - No proactive message may be sent without a complete explanation, and the check
-  refuses rather than warns, in the build (NFR-10, UC-17).
+  refuses rather than warns, in the build (NFR-09, UC-17).
 - Every decision to speak, and every change in the companion's feelings, must
   replay to an identical result over the same recorded input, so that two
-  strategies can be compared fairly (NFR-14).
-- If the AI model fails, everything that does not need it keeps working (NFR-09).
+  strategies can be compared fairly (NFR-13).
+- If the AI model fails, everything that does not need it keeps working (NFR-08).
 - Exactly four facts about the user may be read from the operating system:
   idle time, lock state, presentation state, and the name of the application in
-  the foreground — never its window title (C-05, NFR-03).
+  the foreground — never its window title (C-05, NFR-02).
 
 None of these is a feature that can live in one place. Each is a property that
 has to hold across every use case, including ones not yet written, and each
@@ -63,7 +63,7 @@ enforce the layering mechanically rather than by discipline.
   journalled, so the domain never waits on the model and a replay never calls it.
 - **One way out.** Every proactive message, including anything the companion
   shows rather than says to the user — a speech bubble, a gesture — leaves
-  through a single `SpeechGate`. It assembles the explanation NFR-10 requires and
+  through a single `SpeechGate`. It assembles the explanation NFR-09 requires and
   refuses to emit without one. No other component may reference the outbound
   port. Ambient motion, which is addressed to nobody (BR-07), does not pass the
   gate: it is drawn from the emotion state on a path of its own that can take
@@ -73,7 +73,7 @@ enforce the layering mechanically rather than by discipline.
 - **An append-only decision journal.** What was observed, which threshold was
   crossed, what delayed the message, any ceiling the user set and how much of it
   was spent, and every event that moved the companion's feelings. UC-17 reads
-  from it and NFR-14 replays it. How feelings are computed from it is ADR 0004.
+  from it and NFR-13 replays it. How feelings are computed from it is ADR 0004.
 
 This shape is independent of the framework, which has not been chosen.
 
@@ -81,15 +81,15 @@ This shape is independent of the framework, which has not been chosen.
 
 **Positive**
 
-- NFR-14 becomes a property of the structure rather than a feature to be built: a
+- NFR-13 becomes a property of the structure rather than a feature to be built: a
   pure domain fed an ordered journal replays by construction.
-- NFR-10 has a single choke point to guard, so the build check enforces one rule
+- NFR-09 has a single choke point to guard, so the build check enforces one rule
   instead of policing an ever-growing list of call sites.
-- NFR-09 becomes a table. Each use case names the ports it needs, and the
+- NFR-08 becomes a table. Each use case names the ports it needs, and the
   degradation test is to disable an adapter and check the table still holds.
 - C-05 is carried by a data type rather than by a rule someone has to remember
   — four facts now, as it was three —
-  which reduces the code review NFR-03 asks for to reading one adapter.
+  which reduces the code review NFR-02 asks for to reading one adapter.
 - The exclusions in section 5 are enforced by absence. There is no mail port, so
   there is no way to read mail.
 
@@ -104,7 +104,7 @@ This shape is independent of the framework, which has not been chosen.
 - Domain purity forbids reading the clock anywhere inside it. This is easy to
   break by accident and is caught only because a test goes looking for it.
 - The journal records observations about the user, so it is personal data under
-  NFR-04 and must be reachable by UC-12, UC-13 and UC-14. Being an implementation
+  NFR-03 and must be reachable by UC-12, UC-13 and UC-14. Being an implementation
   detail does not exempt it. Since version 5.0 it also holds what the user said
   as the model interpreted it, and the companion's feelings about them, which
   makes it the most personal thing Cognia stores.
@@ -122,20 +122,20 @@ This shape is independent of the framework, which has not been chosen.
 presence source and the kinds of proactive message all look pluggable. Rejected
 for two reasons. Extensibility is an explicit anti-goal here, so the cost of a
 plugin contract, versioning and lifecycle is never repaid. More decisively, a
-plugin able to load code into the process makes FR-04 and NFR-13 unenforceable:
+plugin able to load code into the process makes FR-04 and NFR-12 unenforceable:
 "no character can switch this off" stops being true the moment a character can
 arrive with code attached. Swappable providers are kept, but as separate
 processes named in configuration — never as loaded code.
 
 **A publish/subscribe bus throughout.** The natural reading of "event-driven",
 and it would decouple the components further. Rejected because unordered or
-parallel handlers destroy the determinism NFR-14 requires, and because a bus
+parallel handlers destroy the determinism NFR-13 requires, and because a bus
 multiplies the places a message can leave the system, which is exactly what the
-single guarded exit in NFR-10 depends on. Events are kept at the boundary;
+single guarded exit in NFR-09 depends on. Events are kept at the boundary;
 dispatch inside is a direct, ordered call.
 
 **Plain layering, with the domain calling infrastructure directly.** The smallest
 structure that still separates concerns, and the cheapest to write. Rejected
-because NFR-09 and NFR-14 both need the domain to be substitutable and pure. A
+because NFR-08 and NFR-13 both need the domain to be substitutable and pure. A
 domain that opens its own database connection and reads its own clock can neither
 be replayed nor run with the model switched off.

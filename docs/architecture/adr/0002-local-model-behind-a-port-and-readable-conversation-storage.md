@@ -3,7 +3,7 @@
 - **Status:** Proposed
 - **Date:** 2026-09-02
 - **Revised:** 2026-10-24 — the model ships with the application as a llama.cpp
-  server instead of a separately installed Ollama (COG-UCS-001 v4.0, NFR-15)
+  server instead of a separately installed Ollama (COG-UCS-001 v4.0, NFR-14)
 - **Revised:** 2026-10-25 — English only; the Vietnamese option is removed
   (COG-UCS-001 v5.0, C-06)
 - **Revised:** 2026-10-30 — LangChain and LangGraph are removed, the server ships in
@@ -23,16 +23,16 @@ answer, somewhere for the conversation to live, and a way to do the first
 without freezing the second.
 
 Several promises bear on how those are built. NFR-01 and C-02 allow no account,
-no server, and no outbound connection the user did not switch on. NFR-04 keeps
+no server, and no outbound connection. NFR-03 keeps
 the user's data on their disk with no second copy. The specification is
 unusually direct about the *shape* that storage should take: "local storage that
-cannot be read is worth no more than storage on someone else's server". NFR-09
+cannot be read is worth no more than storage on someone else's server". NFR-08
 requires that everything not needing the model keeps working when the model
-fails, and NFR-06 forbids a blank pause while a reply is composed.
+fails, and NFR-05 forbids a blank pause while a reply is composed.
 
-Version 4.0 of the specification adds two more. NFR-15 requires the model and
+Version 4.0 of the specification adds two more. NFR-14 requires the model and
 everything needed to run it to ship inside the installer: no separate runtime to
-install, nothing downloaded at first run. NFR-11 counts on that — five minutes
+install, nothing downloaded at first run. NFR-10 counts on that — five minutes
 from a finished installation to a first conversation, with no second program.
 C-06 makes the companion speak English, including the fixed wording it uses when
 the model cannot answer. Version 4.0 also offered Vietnamese on request; version
@@ -70,7 +70,7 @@ with the process now Cognia's to start and stop.
 
 **Which model ships is not decided here.** It is chosen by measurement, not by
 this record: it must hold a character in English (A-02, C-06),
-and its size sets the figures NFR-15 leaves open. `qwen3.5:2b`, the model this
+and its size sets the figures NFR-14 leaves open. `qwen3.5:2b`, the model this
 record first named, is the first candidate to measure. Whether its GGUF weights
 may be redistributed inside an MIT-licensed installer has not been confirmed,
 and has to be before it ships.
@@ -90,7 +90,7 @@ a supported way to read your own conversations. History is loaded from the store
 **Replies are streamed on a model thread.** The model thread runs one job at a time
 (ADR 0005), so no other thread waits for the model.
 The typing indicator the design already drew is shown on send and hidden at the
-first token, which is NFR-06 satisfied by a widget that previously had no
+first token, which is NFR-05 satisfied by a widget that previously had no
 trigger.
 
 **The companion speaks English, and so does its fallback wording.** The system
@@ -102,24 +102,24 @@ There is no language setting to read.
 `langchain-core`. With that package gone, `src/app/local_only.py` has no job, and it
 goes with the same change.
 
-**No `SpeechGate` here.** NFR-10 governs *proactive* messages. A reply the user
+**No `SpeechGate` here.** NFR-09 governs *proactive* messages. A reply the user
 asked for is not proactive, so it does not pass the gate.
 
 ## Consequences
 
-- FR-13 becomes real, and NFR-06, NFR-08 and NFR-09 acquire implementations that
+- FR-13 becomes real, and NFR-05, NFR-07 and NFR-08 acquire implementations that
   can be tested rather than intentions. The traceability matrix can move them off
   "Not started".
-- NFR-11 and NFR-15 become attainable: the user installs one thing, and the first
+- NFR-10 and NFR-14 become attainable: the user installs one thing, and the first
   run needs no network. UC-01-E1 shrinks to two failures Cognia can name
   precisely — a damaged installation, or a machine below the stated minimum.
 - The installer grows by the server binary and the model file. How much is not
-  measured, because the model is not chosen; NFR-15 leaves the figure open for
+  measured, because the model is not chosen; NFR-14 leaves the figure open for
   exactly this reason.
 - Cognia now owns a second process. Starting it, choosing its port, noticing that
   it died, and saying so plainly (UC-09-E1) are Cognia's code rather than the
   user's chore. A server that fails to start leaves memory, sessions and pausing
-  working, as NFR-09 requires.
+  working, as NFR-08 requires.
 - The dependency tree loses LangChain, LangGraph, `langsmith` and the `ollama`
   client. It keeps `httpx`, and only `src/infrastructure/ai/` may use it. NFR-01's
   network capture now also covers the child processes.
@@ -155,7 +155,7 @@ asked for is not proactive, so it does not pass the gate.
 would stay available. Rejected because the graph has one node, each step must pass the
 queue, and it costs start-up time. One cold run on the author's machine, with each
 package in its own process, took 1232 ms for `langgraph.graph` and 665 ms for
-`langchain_core.messages`, against the 2 seconds of NFR-05. It also keeps a tracing
+`langchain_core.messages`, against the 2 seconds of NFR-04. It also keeps a tracing
 library in an application that promises no outbound traffic.
 
 **`deepagents`.** It requires two cloud model SDKs as mandatory dependencies. Rejected
@@ -163,8 +163,8 @@ for a local-only application.
 
 **A separately installed Ollama on localhost.** This record's first decision:
 `qwen3.5:2b` at `http://localhost:11434`, which the user installs and pulls
-themselves. Replaced because NFR-15 forbids a second installation and a
-first-run download, and NFR-11 cannot be met with one.
+themselves. Replaced because NFR-14 forbids a second installation and a
+first-run download, and NFR-10 cannot be met with one.
 
 **Ollama itself, shipped inside the installer.** The smallest change: the
 `langchain-ollama` adapter would stay as it is. Not chosen. It would carry a
@@ -174,7 +174,7 @@ use, inside an application that is meant to run one fixed model file.
 **`llama-cpp-python`, with the model loaded into Cognia's own process.** No child
 process to manage. Rejected because ADR 0001, which is accepted, keeps providers
 as separate processes named in configuration and never as loaded code, and
-because a model failure inside the process would take down the parts NFR-09
+because a model failure inside the process would take down the parts NFR-08
 requires to keep working.
 
 **The server's OpenAI-compatible API through an OpenAI client.** The least code
@@ -184,7 +184,7 @@ client a dependency of a local-only application.
 **LangGraph's `SqliteSaver` as the only store.** The least code, and the
 idiomatic way to give a LangGraph agent memory. Rejected on the specification's
 own terms: the history would be msgpack inside a `checkpoints` table, unreadable
-without the application, which is the thing NFR-04's supporting argument
+without the application, which is the thing NFR-03's supporting argument
 explicitly calls worthless. A readable mirror alongside it was also considered
 and rejected as two sources of truth for one fact.
 
@@ -201,5 +201,5 @@ nothing and no text had to be stripped; with the llama.cpp server this is to be
 re-verified, as noted above.
 
 **Running the model call on the GUI thread.** Rejected outright; a 2B model
-takes seconds and the window would stop painting, which NFR-06 forbids in
-spirit and NFR-07 in figures.
+takes seconds and the window would stop painting, which NFR-05 forbids in
+spirit and NFR-06 in figures.

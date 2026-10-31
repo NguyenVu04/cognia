@@ -53,15 +53,15 @@ of scope or as an accepted risk, and credited in the advisory unless you ask oth
 
 - The Cognia desktop application, once released — and above all anything that breaks
   one of the guarantees the product is built on:
-  - data leaving the machine that the user did not switch on (NFR-01);
+  - data leaving the machine (NFR-01);
   - reading anything from the operating system beyond idle time, lock state,
     presentation state and screen layout — keystrokes, screenshots, the clipboard,
-    browsing history, or which window is open (NFR-03, C-05);
+    browsing history, or which window is open (NFR-02, C-05);
   - a proactive message reaching the user without a complete explanation attached,
-    which means something bypassed the `SpeechGate` (NFR-10, ADR 0001);
-  - data surviving an erasure the user asked for (UC-14, NFR-04);
+    which means something bypassed the `SpeechGate` (NFR-09, ADR 0001);
+  - data surviving an erasure the user asked for (UC-14, NFR-03);
   - a character description switching off the safety behaviour it must never be able
-    to switch off (FR-04, NFR-13).
+    to switch off (FR-04, NFR-12).
 - The contents of this repository — anything here that would execute on a reader's
   machine, or that would mislead a reader into an unsafe action.
 
@@ -76,9 +76,6 @@ of scope or as an accepted risk, and credited in the advisory unless you ask oth
   while unlocked. Cognia is specified as one user on one machine (C-02), and the data
   on disk is protected by the operating system's account boundary and nothing further
   — this is a stated accepted risk, not an oversight.
-- The AI model or outside AI service the user chose to run. Cognia warns before the
-  first send and records every send afterwards (NFR-02); what that service does with
-  what it receives is between the user and that service.
 
 ## Disclosure
 

@@ -2,7 +2,7 @@
 
 The "Why did this appear?" panel is the point of the component: the real
 figures the decision was made from, not a description of the feature. A
-message whose explanation cannot be assembled is never sent (NFR-10).
+message whose explanation cannot be assembled is never sent (NFR-09).
 """
 
 from __future__ import annotations

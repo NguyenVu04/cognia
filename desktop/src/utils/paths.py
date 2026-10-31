@@ -35,7 +35,7 @@ def data_dir() -> Path:
 
     Everything above is read-only and ships with the application; this is the
     other half — the one place on disk that belongs to the user rather than to
-    the build. NFR-04 keeps their data here and nowhere else.
+    the build. NFR-03 keeps their data here and nowhere else.
 
     The standard library only, per the layering rules: no ``platformdirs``.
     """

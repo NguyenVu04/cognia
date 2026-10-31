@@ -1,12 +1,12 @@
 """Conversations on the user's own disk, in a file anyone can open.
 
-NFR-04 keeps this data on the user's machine with no second copy anywhere, and
+NFR-03 keeps this data on the user's machine with no second copy anywhere, and
 the specification is blunt about the shape it should take: "local storage that
 cannot be read is worth no more than storage on someone else's server". So the
 schema is plain tables with plain columns — no blobs, no pickles, no
 framework's private format. ``sqlite3 cognia.sqlite3 "SELECT * FROM messages"``
 is a supported way to read your own conversations. The tables themselves are
-defined in ``migrations/``; see ADR 0003.
+defined in ``orm.py``; see ADR 0003.
 
 Times are stored in UTC. A naive ``datetime`` handed in is read as local time.
 
@@ -24,12 +24,19 @@ from pathlib import Path
 
 from sqlalchemy import Row, delete, insert, literal_column, select, update
 
-from src.domain.conversation.models import Conversation, Message
+from src.domain.conversation.models import COMPANION, USER, Conversation, Message
 from src.infrastructure.storage.database import open_database
-from src.infrastructure.storage.schema import conversations, messages
+from src.infrastructure.storage.orm import ConversationRow, MessageRow
+
+conversations = ConversationRow.__table__
+messages = MessageRow.__table__
 
 UNTITLED = "New conversation"
 TITLE_LENGTH = 40
+
+# The file spells a role in full, so that it reads without this code (ADR 0002).
+_ROLE_TO_STORED = {USER: "user", COMPANION: "companion"}
+_ROLE_FROM_STORED = {stored: role for role, stored in _ROLE_TO_STORED.items()}
 
 
 def title_from(text: str) -> str:
@@ -48,22 +55,18 @@ class SqliteConversationStore:
 
     # ── conversations ─────────────────────────────────────────────────────
 
-    def create(self, character_id: str, now: datetime) -> Conversation:
+    def create(self, now: datetime) -> Conversation:
         now = _utc(now)
         conversation = Conversation(
             id=uuid.uuid4().hex,
-            character_id=character_id,
             title=UNTITLED,
-            started_at=now,
             last_active_at=now,
         )
         with self._engine.begin() as db:
             db.execute(
                 insert(conversations).values(
                     id=conversation.id,
-                    character_id=conversation.character_id,
                     title=conversation.title,
-                    started_at=_text(now),
                     last_active_at=_text(now),
                 )
             )
@@ -112,9 +115,8 @@ class SqliteConversationStore:
                 insert(messages).values(
                     id=message.id,
                     conversation_id=message.conversation_id,
-                    role=message.role,
+                    role=_ROLE_TO_STORED[message.role],
                     text=message.text,
-                    note=message.note,
                     created_at=_text(message.created_at),
                 )
             )
@@ -148,9 +150,7 @@ class SqliteConversationStore:
     def _conversation(row: Row) -> Conversation:
         return Conversation(
             id=row.id,
-            character_id=row.character_id,
             title=row.title,
-            started_at=datetime.fromisoformat(row.started_at),
             last_active_at=datetime.fromisoformat(row.last_active_at),
         )
 
@@ -159,10 +159,9 @@ class SqliteConversationStore:
         return Message(
             id=row.id,
             conversation_id=row.conversation_id,
-            role=row.role,
+            role=_ROLE_FROM_STORED[row.role],
             text=row.text,
             created_at=datetime.fromisoformat(row.created_at),
-            note=row.note,
         )
 
 

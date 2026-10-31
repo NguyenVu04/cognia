@@ -213,7 +213,7 @@ model with `--base`. The examples stay valid, because the chat template applies 
 3. Set `OLLAMA_MODEL` in `src/config.json`.
 4. Check that `reasoning=True` in `OllamaAgent` removes the `[THINK]` text from the reply.
 
-This route does not meet NFR-15, and it is not the route that you measured.
+This route does not meet NFR-14, and it is not the route that you measured.
 
 **To ship the model.** Write `LlamaClient` and the supervisor (D-06, section 6.11). Then
 replace `OllamaAgent`.
@@ -239,5 +239,5 @@ application does not use it yet.
 | Unsloth cannot train text only on Ministral 3, or cannot export it | `train.py` or `export.py` needs a change | Step 1 |
 | `apply_chat_template` does not read `reasoning_content` on this tokenizer | The training text holds no reasoning | Step 1 |
 | Ministral 3 cannot hold a character | Select another base model | Step 6 |
-| Two reasoning calls make the first word late | NFR-06 needs the working indicator | Step 6 |
+| Two reasoning calls make the first word late | NFR-05 needs the working indicator | Step 6 |
 | The file is too large with the other installer content | Test `--method` with a smaller quantisation | Step 10 |

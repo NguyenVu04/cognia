@@ -4,9 +4,9 @@
 |---|---|
 | **Document** | Entity-relationship design for the Cognia data file |
 | **Status** | Proposed, with ADR 0003. The design becomes binding when ADR 0003 is accepted |
-| **Date** | 2026-10-25, revised 2026-10-30 |
+| **Date** | 2026-10-25, revised 2026-10-31 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.2 ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
+| **Source of requirements** | COG-UCS-001 version 5.4 ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
 | **Related decisions** | ADR 0001 (event log, pure domain), ADR 0002 (readable local storage), ADR 0003 (this schema, its migration and query layer), ADR 0004 (emotion model), ADR 0006 (application names in the event log), ADR 0007 (embeddings), [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) (the system this file serves) |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
 
@@ -24,7 +24,7 @@
 10. [Learning and self-adjustment](#10-learning-and-self-adjustment)
 11. [The companion's journal](#11-the-companions-journal)
 12. [Speech decisions and explanations](#12-speech-decisions-and-explanations)
-13. [Settings and outbound sends](#13-settings-and-outbound-sends)
+13. [Settings](#13-settings)
 14. [Deletion and erasure](#14-deletion-and-erasure)
 15. [Traceability](#15-traceability)
 16. [Open items](#16-open-items)
@@ -35,12 +35,12 @@ This document gives the logical design of the one SQLite file that holds all
 Cognia data. It shows each table, each column group, each relationship, and the
 reason for each design decision.
 
-The design covers all twenty-one use cases of COG-UCS-001 version 5.2. It also
-covers the data categories in NFR-04 and the send record in NFR-02.
+The design covers all use cases of COG-UCS-001 version 5.4. It also covers the data
+categories in NFR-03.
 
-This document does not contain migration scripts. It does not change the code.
-The current file uses migration `0001`. ADR 0003 decides how `0002_redesign.sql`
-moves that file to this design.
+This document does not contain migration scripts. The ORM classes in
+`desktop/src/infrastructure/storage/orm.py` state this design in code, and Alembic
+revisions apply it to the file (ADR 0003).
 
 ## 2. Terms
 
@@ -50,7 +50,7 @@ moves that file to this design.
 | Journal | The companion's own written reflections (UC-25), in the table `journal_entries` |
 | State table | A table that holds data the user owns and can read, correct or delete. A state table is the source of truth for its data |
 | Cache table | A table that the domain computes from the event log. The application can delete a cache table and compute it again with no loss |
-| Tombstone | A row that keeps only enough data to stop the companion from repeating a conclusion that the user rejected. A tombstone holds no user text |
+| Tombstone | A record that keeps only enough data to stop the companion from repeating a conclusion that the user rejected. A tombstone holds no user text |
 | Seq | The sequence number of one row in the event log. It sets the order of events |
 | PAD | Pleasure, arousal and dominance. Each axis is a real number from -1 to 1 (ADR 0004) |
 
@@ -58,8 +58,8 @@ moves that file to this design.
 
 | # | Decision | Reason |
 |---|---|---|
-| D-01 | The engine is SQLite, in one file | One user and one machine need no server (C-02). WAL mode with `synchronous=FULL` keeps committed rows after a power loss (NFR-08). The user can read the file with the `sqlite3` tool (ADR 0002) |
-| D-02 | The design is a hybrid of state tables and an event log | Data that the user owns is easy to correct or delete in a state table (UC-13). Feelings and patterns come from events, so the event log is their source and the domain can replay it (NFR-14) |
+| D-01 | The engine is SQLite, in one file | One user and one machine need no server (C-02). WAL mode with `synchronous=FULL` keeps committed rows after a power loss (NFR-07). The user can read the file with the `sqlite3` tool (ADR 0002) |
+| D-02 | The design is a hybrid of state tables and an event log | Data that the user owns is easy to correct or delete in a state table (UC-13). Feelings and patterns come from events, so the event log is their source and the domain can replay it (NFR-13) |
 | D-03 | The event log holds references and figures, never user text | A user message, a memory line or a commitment exists in one state table only. When the user deletes that row, the text is gone. The event stays, so replay still works |
 | D-04 | Primary keys are UUID text. Time is UTC ISO-8601 text | A UUID exists before the write, so the application can link rows in one transaction. Fixed-width UTC text sorts in time order and a person can read it |
 | D-05 | Evidence is a join table to event seqs | Each item in "I noticed" points to the exact events behind it. A foreign key proves the link, which G-06 needs at 100% |
@@ -68,26 +68,86 @@ moves that file to this design.
 | D-08 | A character version stores the description and structured columns | UC-03 shows the character in force. The specification does not define traits, so the design has no trait tables |
 | D-09 | Commitments have their own table | A commitment has a due day that no other item has. Closing a commitment deletes the row (section 5 of the specification) |
 | D-10 | Explanation figures are rows in a child table, `decision_factors` | Each kind of message needs different figures. One child table holds all of them, and the `SpeechGate` checks the required factors for each kind |
-| D-11 | Each kind of rejection has its own tombstone table | Pattern rejections, refused proposals and deleted journal entries have different rules. A separate table for each makes each rule clear |
+| D-11 | A rejected pattern and a deleted journal entry are tombstones in the event log | A rule reads only the event log (input closure, section 6.4 of `ARCHITECTURE.md`), so the events `pattern_rejected` and `reflection_deleted` must hold the fingerprint and the seqs. A table would hold a second copy. A refused proposal and an undone adjustment stay as rows in their own tables |
 | D-12 | Each kind of reply source has its own join table | A reply can draw on a memory item, a commitment or a journal entry. Separate join tables keep real foreign keys with `ON DELETE CASCADE` |
 | D-13 | Each companion message refers to the character version that spoke it | The character can change during a conversation. The link shows which version said each line, which G-03 and replay need |
 | D-14 | Settings are one row with typed columns | `CHECK` constraints protect each value. `NULL` means "not set" for the ceiling, quiet hours and break threshold (BR-01, BR-02) |
 | D-15 | Each row that a reply can draw on holds its own embedding, in a `BLOB` column | An embedding comes from the row, so it must disappear with the row. No join and no second copy is needed (ADR 0007) |
 | D-16 | Each row that a reply can draw on holds its importance and its last retrieval time | Retrieval needs both, and the link from a row to its event can be `NULL` (ADR 0007) |
-| D-17 | Each event stores its UTC offset | The 04:00 boundary and the hour of the day are local. A replay must not depend on the time zone of the machine that runs it (NFR-14) |
+| D-17 | Each event stores its UTC offset | The 04:00 boundary and the hour of the day are local. A replay must not depend on the time zone of the machine that runs it (NFR-13) |
 | D-18 | The event log holds each change of foreground application with its time | UC-22 decides from the application in use, and a replay needs each input (C-05 in version 5.2, ADR 0006) |
+| D-19 | The current emotion point stays in memory, and no table stores it | The core thread folds the event log at each start, so nothing would read such a table. A snapshot table is the upgrade if a measurement shows a slow start |
+| D-20 | `name` in `decision_factors` sets the unit of `value` and the table of `ref_id` | A stored unit and a stored table name each depend on `name` and not on the key, which breaks third normal form. The set of factors is closed, so the domain holds one lookup |
+| D-21 | Each foreign key has an index, with the exceptions in section 3.3 | SQLite makes no index for a foreign key. With no index, each deleted parent row scans the child table |
 
 ### 3.1 Rules for all tables
 
 1. Every table is `STRICT`, so SQLite refuses a value of the wrong type.
 2. The application sets `PRAGMA foreign_keys=ON` on each connection.
-3. `PRAGMA secure_delete=ON` overwrites deleted rows on disk (NFR-04).
+3. `PRAGMA secure_delete=ON` overwrites deleted rows on disk (NFR-03).
 4. A UUID is 32 lowercase hexadecimal characters, as `uuid.uuid4().hex` gives it.
 5. A timestamp is UTC text in the form `YYYY-MM-DDTHH:MM:SS.mmm+00:00`.
 6. A local calendar day is text in the form `YYYY-MM-DD`. Only two columns use it: `commitments.due_on` and `app_usage.day`. The user said "Friday", not an instant in UTC.
 7. The database stores no start of day. The domain computes the 04:00 boundary of UC-16 from `events.occurred_at` and `events.utc_offset_min`.
 8. A boolean is `INTEGER` with `CHECK (x IN (0, 1))`.
 9. A foreign key to `events.seq` uses `ON DELETE CASCADE` in a join table or a cache table. Every other foreign key to `events.seq` uses `ON DELETE SET NULL`. Thus the user can always delete events (UC-13-A2, UC-14).
+
+### 3.2 Normal forms
+
+The design has 25 tables. This check looks at the functional dependencies inside each
+table. Twenty-two tables are in Boyce-Codd normal form (BCNF).
+
+| Tables | Result | Reason |
+|---|---|---|
+| `memory_items`, `commitments`, `journal_entries` | Not in third normal form, by decision | `text` sets `embedding`, and `text` is not a key. The vector is a cache that the application can compute again, and it must disappear with its row (D-15). A separate table would add a join and give no benefit |
+| `character_versions` | BCNF | `template_id` seems to set `name`, `role` and `appearance_id`, but a resource file can change between releases. A row is a fixed copy that a restore needs (UC-03), so this is not a dependency |
+| `character_proposals`, `patterns` | BCNF | `fingerprint` is a candidate key, so the columns that make it depend on a key |
+| `speech_decisions` | BCNF | `message_id` is a candidate key, with a partial unique index |
+| `decision_factors` | BCNF | `name` no longer has a stored unit or table (D-20) |
+| All other tables | BCNF | Each non-key column depends on the key only |
+
+**JSON columns.** `events.payload` and `patterns.parameters` hold JSON, so they are not in
+first normal form in the strict sense. This check treats each as one value, because each
+event kind and each rule has a different shape (D-03).
+
+**Copies across tables.** A normal form looks at one table only. Some facts exist in a
+state table and in an event, because a rule reads only the event log. These are
+`app_usage` and `app_hour_closed`, `messages.rating` and `message_rated`, and
+`speech_decisions.response` and `message_answered`. `conversations.last_active_at` is a
+copy of the time of the last message. An empty conversation has no message, and the
+picker sorts by this column.
+
+### 3.3 Indexes
+
+SQLite makes no index for a foreign key. When foreign keys are on, each deleted parent row
+must find its child rows. With no index, this is a scan of the child table (D-21).
+
+*Illustration.* A test in memory held 50,000 events and 30,000 rows in each of three
+evidence tables. It deleted 500 events. With no index on `event_seq` the delete took 2.6
+seconds. With the index it took 0.001 seconds. UC-04-A3 runs such a delete on the core
+thread.
+
+**Rule.** The first column of the primary key or of an index covers each foreign key. An
+index on a nullable column is partial, with `WHERE column IS NOT NULL`. A test checks this
+rule.
+
+**Exceptions.** These foreign keys have no index.
+
+| Column | Reason |
+|---|---|
+| `character_version_id` in `messages`, `journal_entries`, `emotion_changes`, `settings` | A character version is deleted only by "erase everything", after its child rows. `messages` also has many writes |
+| `message_kinds.streak_reset_seq` | The table has nine rows |
+
+**Other indexes that the design does not use.**
+
+| Index | Reason |
+|---|---|
+| `conversations (last_active_at)` | Each message updates this column, and the table has few rows |
+| `app_usage (app_name)`, or an expression on `events.payload` | Only UC-04-A3 needs them, and it is rare |
+
+**The vector column.** `embedding` is the last column of its table, so a read of the other
+columns does not go through the overflow pages of the vector. The ORM marks it as deferred,
+so a list does not load it.
 
 ## 4. Overview diagram
 
@@ -96,7 +156,6 @@ columns.
 
 ```mermaid
 erDiagram
-    character_versions ||--o{ character_versions : "parent of"
     character_versions ||--o{ messages : "spoke"
     character_versions ||--o{ character_proposals : "base of"
     character_versions ||--o{ journal_entries : "wrote"
@@ -122,13 +181,9 @@ erDiagram
     events ||--o| emotion_changes : "caused"
     events ||--o{ journal_entry_sources : "used by"
     journal_entries ||--o{ journal_entry_sources : "drew on"
-    reflection_tombstones ||--|{ reflection_tombstone_sources : "has"
-    events ||--o{ reflection_tombstone_sources : "blocked"
 
     patterns ||--|{ pattern_evidence : "has"
     events ||--o{ pattern_evidence : "supports"
-    pattern_rejections ||--|{ pattern_rejection_evidence : "has"
-    events ||--o{ pattern_rejection_evidence : "blocked"
     patterns ||--o{ self_adjustments : "led to"
     patterns |o--o{ character_proposals : "prompted"
     character_proposals |o--o| character_versions : "became"
@@ -137,12 +192,10 @@ erDiagram
     speech_decisions ||--o{ decision_factors : "explained by"
     events |o--o{ speech_decisions : "triggered"
     speech_decisions |o--o{ self_adjustments : "announced"
-    messages |o--o{ outbound_sends : "sent for"
 ```
 
-Three tables are not in this diagram: `app_usage`, `app_exclusions` and
-`emotion_state`. The first two refer to no other table. `emotion_state` is a cache
-with one row, and section 9 shows its link to the event log.
+Two tables are not in this diagram: `app_usage` and `app_exclusions`. They refer to no
+other table.
 
 ## 5. Character
 
@@ -151,7 +204,7 @@ erDiagram
     character_versions {
         TEXT id PK "UUID"
         INTEGER number UK "1, 2, 3 ... in order of creation"
-        TEXT template_id "ready-made character it started from, or NULL"
+        TEXT template_id "ready-made character it started from"
         TEXT name
         TEXT role
         TEXT description "from the resource file, or a change approved in UC-24"
@@ -162,10 +215,7 @@ erDiagram
         REAL rest_pleasure "-1 to 1"
         REAL rest_arousal "-1 to 1"
         REAL rest_dominance "-1 to 1"
-        TEXT origin "chosen, written, edited, restored, proposal"
-        TEXT parent_version_id FK "version it replaced"
-        TEXT restored_from_version_id FK "set only when origin is restored"
-        TEXT change_summary
+        TEXT origin "chosen, restored, proposal"
         TEXT created_at
     }
     character_proposals {
@@ -183,10 +233,8 @@ erDiagram
         TEXT fingerprint UK "canonical form of the change"
         TEXT status "open, approved, refused"
         TEXT proposed_at
-        TEXT decided_at
         TEXT result_version_id FK "new version when approved"
     }
-    character_versions ||--o{ character_versions : "parent of"
     character_versions ||--o{ character_proposals : "base of"
     character_proposals |o--o| character_versions : "became"
 ```
@@ -196,8 +244,8 @@ erDiagram
 **Purpose.** One row holds one complete version of the character: who it is, how
 it speaks, how it looks and how it feels things (FR-04).
 
-**Immutability.** The application never updates a row. An edit, a restore or an
-approved proposal inserts a new row (UC-03). Thus every earlier version stays
+**Immutability.** The application never updates a row. A change of character, a restore
+or an approved proposal inserts a new row (UC-03). Thus every earlier version stays
 available for restore.
 
 **One character per installation.** The specification gives one companion to one
@@ -217,7 +265,7 @@ appearance is part of the version, so a restore brings back the old look (UC-03)
 
 **Temperament columns.** The author sets these values by hand for each ready-made
 character (UC-01). The application copies them from the resource file. No process
-reads them from the text, so feelings replay the same way (NFR-14).
+reads them from the text, so feelings replay the same way (NFR-13).
 
 | Column | Range | Meaning |
 |---|---|---|
@@ -230,16 +278,18 @@ The three time scales of ALMA (ADR 0004) need two rates. The feeling rate and th
 mood rate are separate columns. The ranges are proposals. Trial use sets the final
 values, as ADR 0004 states.
 
-**Lineage columns.** `origin` records how the row came to exist. `parent_version_id`
-points to the version that this row replaced. `restored_from_version_id` points to
-the earlier version that a restore copied (UC-03-A1). A `CHECK` requires
-`restored_from_version_id` when `origin` is `restored`, and refuses it otherwise.
+**Lineage.** `origin` records how the row came to exist. `number` gives the order of the
+versions, so the version that a row replaced is the row with the previous number. A
+restored row is a complete copy, so it needs no link to the row that it copied
+(UC-03-A1). UC-03-A1 shows the date that each version was in force, which comes from
+`created_at`.
 
 **Constraints.**
 
 - `UNIQUE (number)`.
 - `CHECK` on each temperament column, as in the table above.
-- `CHECK (origin IN ('chosen', 'written', 'edited', 'restored', 'proposal'))`.
+- `CHECK (origin IN ('chosen', 'restored', 'proposal'))`.
+- `template_id` is `NOT NULL`, because each character comes from a ready-made one (UC-01).
 
 ### 5.2 `character_proposals`
 
@@ -263,6 +313,7 @@ The previous version stays, as in UC-03.
 
 - `CHECK (status IN ('open', 'approved', 'refused'))`.
 - `CHECK ((status = 'approved') = (result_version_id IS NOT NULL))`.
+- A partial unique index on `result_version_id`. A version comes from one proposal only.
 - `pattern_id` uses `ON DELETE SET NULL`. A proposal can stay after the user deletes
   its pattern.
 
@@ -273,7 +324,6 @@ erDiagram
     conversations {
         TEXT id PK "UUID"
         TEXT title
-        TEXT started_at
         TEXT last_active_at
     }
     messages {
@@ -283,7 +333,6 @@ erDiagram
         TEXT text
         TEXT character_version_id FK "companion messages only"
         INTEGER rating "-1, 1 or NULL"
-        TEXT rated_at
         TEXT created_at
     }
     message_memory_refs {
@@ -329,7 +378,7 @@ has no version, because the mockup character has no row (ADR 0003).
 
 **Rating.** `rating` holds the up or down mark of UC-09-A2, as 1 or -1. `NULL` means
 no rating. The learning rules use a rating as evidence only (UC-24). The application
-also writes an event for each rating, so the evidence has a seq.
+also writes a `message_rated` event, so the evidence has a seq and a time.
 
 **Proactive messages.** A proactive message that the companion said is also a
 companion message. Its decision is in `speech_decisions` (section 12).
@@ -362,10 +411,9 @@ erDiagram
         TEXT reason "required when kind is noticed"
         TEXT source_message_id FK "message it came from, or NULL"
         INTEGER importance "1 to 10, or NULL"
-        BLOB embedding "NULL until computed"
         TEXT last_retrieved_at
         TEXT recorded_at
-        TEXT updated_at
+        BLOB embedding "NULL until computed, last column"
     }
     memory_item_evidence {
         TEXT memory_item_id PK, FK
@@ -378,10 +426,9 @@ erDiagram
         TEXT source_message_id FK "message it came from, or NULL"
         TEXT due_passed_mentioned_at "UC-21-A2"
         INTEGER importance "1 to 10, or NULL"
-        BLOB embedding "NULL until computed"
         TEXT last_retrieved_at
         TEXT recorded_at
-        TEXT updated_at
+        BLOB embedding "NULL until computed, last column"
     }
     messages |o--o{ memory_items : "source of"
     messages |o--o{ commitments : "source of"
@@ -402,7 +449,7 @@ other than a commitment or a learned pattern.
   the user asked it to keep (UC-10). UC-12 shows it under *I noticed*.
 
 **Exact text.** `text` holds the line exactly as the companion showed it back
-(FR-14, UC-09 step 5). A correction in UC-13 updates `text` and `updated_at`.
+(FR-14, UC-09 step 5). A correction in UC-13 updates `text`.
 
 **Reason and evidence.** A `noticed` item needs two things. `reason` holds the
 reason in words, for display. `memory_item_evidence` holds the events behind it
@@ -468,7 +515,6 @@ erDiagram
         TEXT session_id PK, FK
         INTEGER position PK "0 is the first line"
         TEXT text
-        TEXT stated_at
     }
     app_usage {
         TEXT day PK "local day YYYY-MM-DD"
@@ -478,7 +524,6 @@ erDiagram
     }
     app_exclusions {
         TEXT app_name PK
-        TEXT excluded_at
     }
     sessions ||--o{ session_intents : "has"
 ```
@@ -526,11 +571,11 @@ application does not guess an intent for it.
 ### 8.3 `app_usage`
 
 **Purpose.** One row holds the minutes in one application during one hour of one
-local day (C-05, NFR-03, UC-24).
+local day (C-05, NFR-02, UC-24).
 
 **Privacy by shape.** The table has no column for a window title, a window position
 or a time finer than one hour. No code can store such data in it. The system-call
-audit of NFR-03 can check the table definition. Since version 5.2 of the specification,
+audit of NFR-02 can check the table definition. Since version 5.2 of the specification,
 the event log also holds each change of application with its time (section 9.1). That
 log has no field for a title or a position either.
 
@@ -563,14 +608,6 @@ erDiagram
         TEXT payload "JSON: references and figures only"
         INTEGER importance "1 to 10, or NULL"
     }
-    emotion_state {
-        INTEGER id PK "always 1"
-        REAL pleasure "-1 to 1"
-        REAL arousal "-1 to 1"
-        REAL dominance "-1 to 1"
-        INTEGER computed_to_seq FK "last event applied"
-        TEXT computed_at
-    }
     emotion_changes {
         INTEGER event_seq PK, FK "the event that caused it"
         TEXT character_version_id FK "temperament used"
@@ -583,7 +620,6 @@ erDiagram
         INTEGER floor_reached "0 or 1"
     }
     events ||--o| emotion_changes : "caused"
-    events ||--o| emotion_state : "computed to"
     character_versions ||--o{ emotion_changes : "temperament of"
 ```
 
@@ -591,7 +627,7 @@ erDiagram
 
 **Purpose.** The event log holds every event that entered the domain queue, in
 order (ADR 0001). The domain replays it to get the same decisions, feelings and
-patterns (NFR-14).
+patterns (NFR-13).
 
 **Integer key.** This table is the one exception to UUID keys (D-04). The order of
 events is part of the data. An `INTEGER PRIMARY KEY AUTOINCREMENT` gives one strict
@@ -618,6 +654,8 @@ Examples:
 | `message_answered`, `message_passed_over` | The decision ID, and whether the user was at the desk |
 | `commitment_closed` | The commitment ID, and whether the user finished it or dropped it |
 | `adjustment_applied`, `adjustment_undone` | The adjustment ID |
+| `pattern_rejected` | The fingerprint and the evidence seqs. This is the tombstone (section 10.2) |
+| `reflection_deleted` | The entry ID and the source seqs. This is the tombstone (section 11.3) |
 
 **Model interpretation.** The AI model classifies a user message once, before the
 event enters the queue (ADR 0004). The class is the event. A replay reads the class
@@ -631,22 +669,16 @@ importance for reflection.
 
 **Index.** `(kind, seq)` supports the counting rules of UC-24.
 
-### 9.2 `emotion_state`
+### 9.2 The current emotion point
 
-**Purpose.** One row holds the current point in PAD (UC-23, BR-08). The point is the
-mood plus the current feeling. The name that the user sees, for example "pleased",
-comes from a fixed lookup table in the code. The database does not store it
-(ADR 0004).
-
-**Cache.** This is a cache table. `computed_to_seq` records the last event that the
-domain applied. The domain can delete the row and compute it again from the event
-log.
+**No table.** The current point in PAD is the mood plus the current feeling (UC-23,
+BR-08). The core thread holds it in `CompanionState`, and it computes it from the event
+log at each start (D-19). The name that the user sees, for example "pleased", comes from
+a fixed lookup table in the code (ADR 0004).
 
 **Moods off.** When the user switches moods off (UC-18-A2), the domain holds the
 state at the resting mood of the current temperament. When the user switches moods
 on again, the state starts from the resting mood.
-
-**Constraints.** `CHECK (id = 1)` and a range `CHECK` on each axis.
 
 ### 9.3 `emotion_changes`
 
@@ -667,8 +699,8 @@ reason.
 
 **Cache.** The domain can compute this table again from the event log. When the user
 removes a past mood (UC-13-A2), the application deletes the events behind it, which
-removes the changes by `ON DELETE CASCADE`. Then the domain computes `emotion_state`
-again. ADR 0003 states the cost: a later replay replays what is left.
+removes the changes by `ON DELETE CASCADE`. Then the domain folds the event log again.
+ADR 0003 states the cost: a later replay replays what is left.
 
 ## 10. Learning and self-adjustment
 
@@ -681,20 +713,9 @@ erDiagram
         TEXT statement "wording for the user"
         TEXT fingerprint UK "rule_id plus canonical parameters"
         TEXT found_at
-        TEXT updated_at
     }
     pattern_evidence {
         TEXT pattern_id PK, FK
-        INTEGER event_seq PK, FK
-    }
-    pattern_rejections {
-        TEXT id PK "UUID"
-        TEXT rule_id
-        TEXT fingerprint
-        TEXT rejected_at
-    }
-    pattern_rejection_evidence {
-        TEXT rejection_id PK, FK
         INTEGER event_seq PK, FK
     }
     self_adjustments {
@@ -709,8 +730,6 @@ erDiagram
     }
     patterns ||--|{ pattern_evidence : "has"
     events ||--o{ pattern_evidence : "supports"
-    pattern_rejections ||--|{ pattern_rejection_evidence : "has"
-    events ||--o{ pattern_rejection_evidence : "blocked"
     patterns ||--o{ self_adjustments : "led to"
     speech_decisions |o--o{ self_adjustments : "announced"
 ```
@@ -734,18 +753,18 @@ form. The unique constraint stops two rows for the same conclusion.
 **Evidence.** `pattern_evidence` holds the events behind the pattern. A pattern with
 no evidence is not stored (UC-24-E1).
 
-### 10.2 `pattern_rejections` and `pattern_rejection_evidence`
+### 10.2 A rejected pattern
 
-**Purpose.** A row in `pattern_rejections` is the tombstone for a pattern that the
-user marked wrong (UC-13-A1, UC-24-A3).
+**Purpose.** The event `pattern_rejected` is the tombstone for a pattern that the user
+marked wrong (UC-13-A1, UC-24-A3). It has no table (D-11).
 
 **Behaviour.** The application undoes every adjustment built on the pattern first.
-Then it writes the tombstone and deletes the pattern, in one transaction.
+Then it writes the event and deletes the pattern, in one transaction.
 
-**Content.** The tombstone keeps `rule_id`, `fingerprint` and the evidence seqs. It
-does not keep `statement`, because that text is about the user. The domain refuses
-a new pattern with the same fingerprint from the same evidence. New evidence can
-still support a new conclusion.
+**Content.** The payload holds `fingerprint` and the evidence seqs. It does not hold
+`statement`, because that text is about the user. The domain refuses a new pattern with
+the same fingerprint from the same evidence. New evidence can still support a new
+conclusion.
 
 ### 10.3 `self_adjustments`
 
@@ -782,27 +801,17 @@ erDiagram
         TEXT character_version_id FK "voice it wrote in"
         TEXT text "the companion's words, never edited"
         INTEGER importance "1 to 10, or NULL"
-        BLOB embedding "NULL until computed"
         TEXT last_retrieved_at
         TEXT written_at
+        BLOB embedding "NULL until computed, last column"
     }
     journal_entry_sources {
         TEXT journal_entry_id PK, FK
         INTEGER event_seq PK, FK
     }
-    reflection_tombstones {
-        TEXT id PK "UUID"
-        TEXT deleted_at
-    }
-    reflection_tombstone_sources {
-        TEXT tombstone_id PK, FK
-        INTEGER event_seq PK, FK
-    }
     character_versions ||--o{ journal_entries : "wrote"
     journal_entries ||--o{ journal_entry_sources : "drew on"
     events ||--o{ journal_entry_sources : "used by"
-    reflection_tombstones ||--|{ reflection_tombstone_sources : "has"
-    events ||--o{ reflection_tombstone_sources : "blocked"
 ```
 
 ### 11.1 `journal_entries`
@@ -826,13 +835,13 @@ adds `events.importance` for the events after the last `reflection_written` even
 If the model is not available, nothing changes, and the total stays for the next
 chance (UC-25-E1).
 
-### 11.3 `reflection_tombstones` and `reflection_tombstone_sources`
+### 11.3 A deleted journal entry
 
-**Purpose.** These rows are the tombstone for a journal entry that the user deleted
-(UC-25-A2).
+**Purpose.** The event `reflection_deleted` is the tombstone for a journal entry that the
+user deleted (UC-25-A2). It has no table (D-11).
 
-**Content.** The tombstone keeps only the set of source seqs. It keeps no text. The
-domain does not write an entry again from the same set of events.
+**Content.** The payload holds the entry ID and the set of source seqs. It holds no text.
+The domain does not write an entry again from the same set of events.
 
 ## 12. Speech decisions and explanations
 
@@ -854,17 +863,13 @@ erDiagram
         TEXT withheld_by "rule ID, for example BR-02"
         TEXT message_id FK "the message said, when sent"
         TEXT response "answered, dismissed, passed_over, taken, postponed, silenced"
-        INTEGER user_at_desk "0 or 1 at response time"
-        TEXT responded_at
     }
     decision_factors {
         TEXT decision_id PK, FK
         INTEGER position PK
         TEXT name "for example observed_seconds"
-        REAL value
-        TEXT unit "seconds, minutes, count, pad"
-        TEXT ref_table "for example commitments"
-        TEXT ref_id "ID in that table"
+        REAL value "NULL for a reference"
+        TEXT ref_id "ID of a row, or NULL"
         INTEGER event_seq FK "event behind the figure"
     }
     message_kinds ||--o{ speech_decisions : "kind of"
@@ -902,15 +907,21 @@ UC-17). This includes a withheld message, because UC-17 must still explain it
 | `held` | The companion was hidden, so the message waits | UC-22-A3, UC-20-A1 |
 | `dropped` | The reason stopped before a pause came, or a held message no longer fits | UC-22-A4 |
 
-A `CHECK` requires `withheld_by` when `outcome` is `withheld` or `dropped`, and
-requires `message_id` when `outcome` is `sent`.
+A `CHECK` requires `withheld_by` when `outcome` is `withheld` or `dropped`.
 
 **Words.** The words of a sent message are in `messages`, through `message_id`. The
 decision row keeps figures, not words.
 
-**Response.** `response` records what the user did. `user_at_desk` records whether the
-user was at the desk at that time. UC-23-A1 and UC-24-A1 count a passed-over message
-only when `user_at_desk` is 1.
+**A sent decision outlives its message.** `message_id` uses `ON DELETE SET NULL`. When the
+user deletes a conversation, the decision stays with `outcome` set to `sent`. UC-17 still
+explains it, and the ceiling and the greeting check still count it. The `SpeechGate`
+requires a message when it records a send. The database cannot, because of this case.
+A partial unique index on `message_id` keeps one decision for each message.
+
+**Response.** `response` records what the user did. The events `message_answered` and
+`message_passed_over` hold the time and whether the user was at the desk. UC-23-A1 and
+UC-24-A1 read those events, and they count a passed-over message only when the user was
+at the desk.
 
 **Greeting.** Whether today has a greeting comes from this table: a `greeting` row
 with `decided_at` after today's 04:00 boundary (UC-16-A2). The design keeps no
@@ -919,7 +930,9 @@ separate flag, so one fact has one place.
 **Ceiling.** The count against a daily ceiling comes from this table too. Greetings
 and replies the user asked for do not count (BR-01).
 
-**Index.** `(kind, decided_at)` supports the ceiling count and the greeting check.
+**Index.** `(kind, decided_at)` supports the ceiling count and the greeting check. A query
+over several kinds must name them with `IN`. With `kind <> 'greeting'`, SQLite scans the
+index and does not seek in it.
 
 ### 12.3 `decision_factors`
 
@@ -931,21 +944,24 @@ rows as the explanation.
 | Kind | Factors |
 |---|---|
 | `break` | `observed_seconds`, `threshold_seconds`, `delayed_seconds` by typing, mood contribution, ceiling used and ceiling total |
-| `greeting` | Each item mentioned, as `ref_table` and `ref_id`, in the order of UC-16 |
-| `commitment` | The commitment, as `ref_table` and `ref_id`, and the mood contribution |
+| `greeting` | Each item mentioned, as `ref_id`, in the order of UC-16 |
+| `commitment` | The commitment, as `ref_id`, and the mood contribution |
 | `adjustment` | The adjustment and its pattern, as references |
 
-**NFR-10.** The `SpeechGate` knows which factors each kind needs. It writes the
+**NFR-09.** The `SpeechGate` knows which factors each kind needs. It writes the
 decision and its factors in one transaction. It refuses to send a message when a
 required factor is missing. The database cannot know the required set for each
 kind, so the gate holds that rule (ADR 0003 states the same split).
 
-**References without foreign keys.** `ref_table` and `ref_id` can point to a row that
-the user later deletes, for example a closed commitment. The factor then keeps only
-an ID, with no text (D-03). `event_seq` is a real foreign key, because events stay
-until the user erases them.
+**Unit and table.** `name` sets the unit of `value` and the table of `ref_id`. For example,
+`observed_seconds` is always seconds, and a `commitment` factor always refers to
+`commitments`. The domain holds this lookup for the closed set of names (D-20).
 
-## 13. Settings and outbound sends
+**References without foreign keys.** `ref_id` can point to a row that the user later
+deletes, for example a closed commitment. The factor then keeps only an ID, with no text
+(D-03). `event_seq` is a real foreign key, because events stay until the user erases them.
+
+## 13. Settings
 
 ```mermaid
 erDiagram
@@ -966,18 +982,8 @@ erDiagram
         TEXT companion_screen
         INTEGER close_hint_shown "0 or 1, default 0"
         TEXT embedding_model "model that made the stored embeddings"
-        INTEGER outside_service_on "0 or 1, default 0"
-        TEXT outside_service_warned_at "NFR-02"
-    }
-    outbound_sends {
-        TEXT id PK "UUID"
-        TEXT sent_at
-        TEXT destination "host of the outside service"
-        TEXT purpose "reply, interpretation, reflection, wording"
-        TEXT message_id FK "message it served, or NULL"
     }
     settings }o--|| character_versions : "current"
-    messages |o--o{ outbound_sends : "sent for"
 ```
 
 ### 13.1 `settings`
@@ -1010,21 +1016,6 @@ sets it to 0 with the other settings (section 14.2).
 If a new version ships another model, the application sets each `embedding` to `NULL`,
 and a job computes them again.
 
-**Outside service.** `outside_service_on` is 0 by default (C-03). The application
-sets `outside_service_warned_at` when it shows the warning of NFR-02. It refuses to
-send while that column is `NULL`. The design stores no credential (section 16).
-
-### 13.2 `outbound_sends`
-
-**Purpose.** One row records one send to an outside AI service (NFR-02).
-
-**Content.** The row holds the time, the destination and the purpose. It does not
-hold a copy of what the application sent, because a copy would be a second store of user text
-(NFR-04). `message_id` links to the message that the send served, if there was one.
-
-**Normal use.** With the local model only, this table stays empty. G-05 can use an
-empty table as one check, next to the network capture.
-
 ## 14. Deletion and erasure
 
 ### 14.1 One item (UC-13)
@@ -1033,9 +1024,9 @@ empty table as one check, next to the network capture.
 |---|---|
 | A memory item | Deletes the row, with its embedding. Its evidence links and reply links go by `ON DELETE CASCADE` |
 | A commitment | Deletes the row. Its reply links go by cascade |
-| A learned pattern | Undoes its adjustments, writes a pattern tombstone, deletes the pattern |
-| A journal entry | Writes a reflection tombstone with its source seqs, deletes the entry |
-| A past mood | Deletes the events behind it, which removes the changes by cascade. Then computes `emotion_state` again |
+| A learned pattern | Undoes its adjustments, writes a `pattern_rejected` event, deletes the pattern |
+| A journal entry | Writes a `reflection_deleted` event with its source seqs, deletes the entry |
+| A past mood | Deletes the events behind it, which removes the changes by cascade. Then folds the event log again |
 | A conversation | Deletes the conversation and its messages. Items that came from it stay, with `source_message_id` set to `NULL` |
 
 If any step fails, the transaction rolls back. The item stays exactly as it was
@@ -1050,20 +1041,23 @@ If any step fails, the transaction rolls back. The item stays exactly as it was
 | `memory_items`, `memory_item_evidence`, `commitments` | Deleted | Deleted |
 | `sessions`, `session_intents`, `app_usage` | Deleted | Deleted |
 | `events`, `emotion_changes` | Deleted | Deleted |
-| `emotion_state` | Set to the resting mood of the current temperament | Deleted |
-| `patterns`, `self_adjustments` and all tombstone tables | Deleted | Deleted |
+| `patterns`, `self_adjustments` | Deleted | Deleted |
 | `journal_entries`, `journal_entry_sources` | Deleted | Deleted |
 | `speech_decisions`, `decision_factors` | Deleted | Deleted |
-| `outbound_sends` | Deleted | Deleted |
 | `app_exclusions`, `message_kinds`, `settings` | Kept, because they are settings | Reset to defaults |
 
 **Order.** UC-14 step 2 counts the rows to delete before the user confirms. After the
 deletes, the application runs a WAL checkpoint and `VACUUM`, so no deleted page stays
 in the file (ADR 0003).
 
-**Tombstones on full erase.** "Erase memory" deletes the tombstones too. The evidence
-seqs that a tombstone blocks no longer exist after the event log is erased. A
-tombstone with no events has nothing left to block.
+**Tombstones on erase.** A tombstone is an event, so "Erase memory" deletes it with the
+event log. The seqs that it blocks no longer exist, so it has nothing left to block.
+
+**Emotion state on erase.** The core thread sets the state to the resting mood of the
+current temperament.
+
+**Schema version.** Neither level changes `alembic_version`. Alembic owns that table, and it
+holds no user data.
 
 **Failure.** UC-14-E1 requires an exact report of what the application removed. The application
 erases each table group in its own transaction and reports each result.
@@ -1073,26 +1067,25 @@ erases each table group in its own transaction and reports each result.
 | Requirement | Tables |
 |---|---|
 | FR-01 to FR-05, UC-01 to UC-03 | `character_versions`, `settings` |
-| FR-06, C-05, NFR-03, UC-04 | `settings.awareness_on`, `app_usage`, `app_exclusions`, `events` of kind `foreground_app` |
+| FR-06, C-05, NFR-02, UC-04 | `settings.awareness_on`, `app_usage`, `app_exclusions`, `events` of kind `foreground_app` |
 | FR-07, FR-10, FR-33, UC-05, UC-07 | `sessions`, `session_intents` |
-| FR-12, NFR-05, UC-15 | `settings.paused_at`, `settings.paused_until` |
+| FR-12, NFR-04, UC-15 | `settings.paused_at`, `settings.paused_until` |
 | FR-13, FR-14, UC-09 | `conversations`, `messages`, `memory_items`, reply source tables, the retrieval columns |
 | FR-15, UC-10 | `memory_items` of kind `noticed` |
 | FR-16, FR-23, FR-34, UC-24 | `patterns`, `pattern_evidence`, `self_adjustments`, `character_proposals`, `message_kinds` |
 | FR-17, UC-12 | All state tables, `emotion_changes`, `journal_entries` |
-| FR-18, FR-19, NFR-04, UC-13, UC-14 | Section 14 |
+| FR-18, FR-19, NFR-03, UC-13, UC-14 | Section 14 |
 | FR-20, FR-11, UC-16 | `speech_decisions` of kind `greeting`, `decision_factors` |
-| FR-21, NFR-10, UC-17 | `speech_decisions`, `decision_factors`, `emotion_changes`, evidence tables |
+| FR-21, NFR-09, UC-17 | `speech_decisions`, `decision_factors`, `emotion_changes`, evidence tables |
 | FR-22, UC-18 | `settings`, `message_kinds` |
 | FR-24 | No table holds a time of day for a commitment, a list order or a completion status |
 | FR-25 to FR-28, UC-20 | `settings` companion columns |
 | FR-29, UC-21 | `commitments`, `message_commitment_refs` |
 | FR-31, UC-22 | `speech_decisions`, `decision_factors`, `events` |
-| FR-32, BR-08, UC-23 | `events`, `emotion_state`, `emotion_changes`, temperament columns |
-| FR-35, UC-25 | `journal_entries`, `journal_entry_sources`, `reflection_tombstones`, `events.importance` |
-| NFR-02 | `settings.outside_service_warned_at`, `outbound_sends` |
-| NFR-08 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
-| NFR-14 | `events` with stored model classes, stored importance and `utc_offset_min` |
+| FR-32, BR-08, UC-23 | `events`, `emotion_changes`, temperament columns |
+| FR-35, UC-25 | `journal_entries`, `journal_entry_sources`, `reflection_deleted` events, `events.importance` |
+| NFR-07 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
+| NFR-13 | `events` with stored model classes, stored importance and `utc_offset_min` |
 | G-06 | `memory_item_evidence`, `pattern_evidence`, `emotion_changes.event_seq`, `decision_factors.event_seq` |
 
 ## 16. Open items
@@ -1100,18 +1093,10 @@ erases each table group in its own transaction and reports each result.
 These items are outside this design, or need a decision before implementation.
 
 1. **Acceptance.** ADR 0003 records this design and is still Proposed.
-2. **Migration from `0001`.** ADR 0003 decides the path: `0002_redesign.sql` builds
-   every table, copies `conversations` and `messages`, and drops the old tables. The
-   migration and its mirror in `schema.py` are not yet written.
-3. **Temperament ranges.** The ranges in section 5.1 are proposals. Trial use sets
+2. **Temperament ranges.** The ranges in section 5.1 are proposals. Trial use sets
    them (ADR 0004).
-4. **Importance scale.** The 1-to-10 scale follows Generative Agents. The
+3. **Importance scale.** The 1-to-10 scale follows Generative Agents. The
    specification does not set a scale or the reflection threshold (UC-25 notes).
-5. **Outside service configuration.** The specification does not say how the user
-   names the service or where its credential stays. This design stores neither. The
-   decision belongs to the ADR that adds the outside service.
-6. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
+4. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
    gives the closed set of event kinds. The exact fields of each payload belong to the
    domain code.
-7. **`0002_redesign.sql` scope.** The migration of item 2 must include the columns that
-   decisions D-15 to D-17 add. It is not yet written.

@@ -25,10 +25,7 @@ with Diagram(
         windows = Windows("Windows\nfour facts and\nscreen layout")
         disk = SQL("the user's disk\none SQLite file")
 
-    outside = Server("outside AI service\noff by default")
-
     user >> Edge(label="talks, sets limits, reads memory") >> system
     system >> Edge(label="speaks, shows feelings, explains") >> user
     windows >> Edge(label="idle, lock, presenting,\nforeground application name") >> system
     system >> Edge(label="reads and writes") >> disk
-    system >> Edge(label="only if the user switches it on", style="dashed") >> outside

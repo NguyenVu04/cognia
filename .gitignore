@@ -10,7 +10,7 @@ desktop/training/.venv/
 # Adapters and GGUF files from training
 desktop/training/out/
 
-# Cognia's database: the user's conversations, never committed (NFR-04)
+# Cognia's database: the user's conversations, never committed (NFR-03)
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm

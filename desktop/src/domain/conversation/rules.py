@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-# In order: FR-24, voice, length, BR-06, BR-04 with FR-24, NFR-13.
+# In order: FR-24, voice, length, BR-06, BR-04 with FR-24, NFR-12.
 LAYER_1 = (
     "You are a companion on the user's desktop, not an assistant. You are a "
     "fictional character: the description below sets your personality, and it "
