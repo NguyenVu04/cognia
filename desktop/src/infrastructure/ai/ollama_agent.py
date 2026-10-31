@@ -8,7 +8,7 @@ site. The graph is deliberately stateless: the conversation lives in the store,
 which is readable, rather than in a checkpointer, which would not be.
 
 Nothing above ``infrastructure/`` knows this file exists. The application talks
-to :class:`~src.core.ports.Replier`.
+to :class:`~src.domain.ports.Replier`.
 """
 
 from __future__ import annotations
@@ -19,12 +19,12 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, START, MessagesState, StateGraph
 
-from src.core.models import Message
-from src.core.ports import ReplyFailed
+from src.domain.conversation.models import Message
+from src.domain.ports import ReplyFailed
 
 
 class OllamaAgent:
-    """A :class:`~src.core.ports.Replier` backed by a local Ollama daemon."""
+    """A :class:`~src.domain.ports.Replier` backed by a local Ollama daemon."""
 
     def __init__(self, model: str, base_url: str) -> None:
         self._model = model

@@ -83,7 +83,7 @@ def database_path() -> Path:
 def system_prompt(name: str, role: str) -> str:
     """The character, said to the model in the second person.
 
-    Temporary: the character is mockup copy until ``core/`` owns it (FR-02).
+    Temporary: the character is mockup copy until ``domain/`` owns it (FR-02).
     """
     return (
         f"You are {name}, {role}. You are a companion on someone's desktop, not "

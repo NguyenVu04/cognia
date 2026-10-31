@@ -361,7 +361,7 @@ src/
 
 One module stays outside this tree. `desktop/training/` builds the tuned chat model (D-27).
 It is a separate Python project, as `docs/architecture/` is. So PyInstaller does not package
-it, and its training libraries do not enter `desktop/uv.lock`. The folder does not exist yet.
+it, and its training libraries do not enter `desktop/uv.lock`. Its Python files are stubs today.
 
 ```text
 desktop/training/
@@ -408,26 +408,26 @@ exist, a reviewer checks these rules by hand.
 
 | Module | Responsibility | Source |
 |---|---|---|
-| `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain) (planned) |
-| `domain/events` | Define the closed set of events and the `step` function | Planned |
+| `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain/ports) |
+| `domain/events` | Define the closed set of events and the `step` function | [`desktop/src/domain/events`](../../desktop/src/domain/events) (empty) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (stub) |
 | `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (stub) |
 | `domain/memory` | Hold memory items and commitments, and score retrieval (UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (stub) |
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
-| `domain/sessions` | Hold work sessions (UC-05, UC-07) | Planned |
-| `domain/emotion` | Compute feelings (UC-23) | Planned |
-| `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | Planned |
-| `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | Planned |
-| `domain/learning` | Find patterns and adjustments (UC-24) | Planned |
-| `domain/reflection` | Trigger reflection and hold the journal (UC-25) | Planned |
-| `domain/safety` | Detect a crisis and check the reply (NFR-13) | Planned |
+| `domain/sessions` | Hold work sessions (UC-05, UC-07) | [`desktop/src/domain/sessions`](../../desktop/src/domain/sessions) (empty) |
+| `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (empty) |
+| `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (empty) |
+| `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
+| `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
+| `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
+| `domain/safety` | Detect a crisis and check the reply (NFR-13) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (empty) |
 | `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
 | `infrastructure/storage` | Implement the store ports over SQLite | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
-| `infrastructure/presence` | Implement the presence port over Win32 | Planned |
+| `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
 | `utils` | Logging and paths | [`desktop/src/utils`](../../desktop/src/utils) |
-| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | Planned |
+| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | [`desktop/training`](../../desktop/training) (stubs) |
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
@@ -3007,8 +3007,6 @@ These items are outside this design, or need a decision before implementation.
 10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-10 stay
     unproven until they do.
 11. **Move the code.** The code does not match this design yet. The work is:
-    - move `src/core/` into `src/domain/` (D-02)
-    - remove the import of `ui.views.sample_data` and the `Trait` type from `domain/character/models/character.py`
     - replace `OllamaAgent`, remove `langchain-*`, `langgraph` and `local_only.py` (D-06)
     - move the database connection from the GUI thread to the core thread (D-03)
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
@@ -3046,6 +3044,6 @@ These items are outside this design, or need a decision before implementation.
     - the `json_schema` option works on the merged file
     - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
       the quality of an exported model
-23. **Write the module.** `desktop/training/` does not exist. Rules 11 and 12 of section 6.2 join the script of
+23. **Write the module.** `desktop/training/` holds stubs only. Rules 11 and 12 of section 6.2 join the script of
     D-14 when that script exists.
 

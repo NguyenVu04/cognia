@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import Protocol
 
-from src.core.models import Message
+from src.domain.conversation.models import Message
 
 
 class ReplyFailed(Exception):

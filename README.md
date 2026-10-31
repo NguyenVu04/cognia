@@ -230,7 +230,7 @@ flowchart TB
 | Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; streams replies on a worker thread (`ChatWorker`) | Built for conversation only |
 | Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia and removes LangChain and LangGraph, which is not yet done |
 | Storage (`desktop/src/infrastructure/storage/`) | One SQLite file, schema created by numbered SQL migrations and queried through SQLAlchemy Core (ADR 0003). See [docs/ERD.md](docs/ERD.md) | Migration `0001` exists; conversations and messages are written. ADR 0003 replaces it with the design in `docs/ERD.md` through `0002_redesign.sql`, which is not written |
-| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-14) | Not created. `desktop/src/domain/` holds empty service stubs |
+| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-14) | Not created. `desktop/src/domain/` holds the ports, the conversation models, and stubs or empty packages for the rest |
 | `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-10 requires and refuses to emit without one | Not created |
 | Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-14 replays | Table exists, nothing writes it |
 
@@ -361,14 +361,13 @@ cognia/
 │   │   ├── config.json              shipped defaults
 │   │   ├── app/                     wiring: QApplication, surfaces, worker thread, config
 │   │   ├── ui/                      windows, dialogs, widgets, views, theme
-│   │   ├── core/                    models and ports (pure), moving to domain/
-│   │   ├── domain/                  feature packages, service stubs today
-│   │   ├── infrastructure/          SQLite storage and the model adapter
-│   │   ├── resources/               vendored fonts and the QSS style sheet
+│   │   ├── domain/                  ports and conversation models, stubs or empty packages for the rest
+│   │   ├── infrastructure/          SQLite storage and the model adapter, presence/ is empty
+│   │   ├── resources/               vendored fonts, the QSS style sheet, companion/ is empty
 │   │   └── utils/                   paths
-│   ├── tests/                       empty, no test suite exists
+│   ├── tests/                       pytest suite, one folder for each module of src/
 │   ├── data/                        the development database, not in git
-│   └── training/                    planned, not created: builds the tuned chat model (D-27)
+│   └── training/                    stubs: builds the tuned chat model (D-27)
 ├── docs/
 │   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.2
 │   ├── ERD.md                       the database design
@@ -385,7 +384,7 @@ cognia/
 
 | | |
 |---|---|
-| **Style and lint** | No linter or formatter is configured |
+| **Style and lint** | Ruff, through `task lint`. No formatter is configured |
 | **Commits** | [Conventional Commits](https://www.conventionalcommits.org/) |
 | **Branching** | Branch from `main` as `type/short-description` |
 | **Review** | See [CONTRIBUTING.md](CONTRIBUTING.md) |
@@ -393,8 +392,8 @@ cognia/
 
 ### Local loop
 
-There is no lint command and no test suite: `desktop/tests/` is empty, and no test
-runner is configured. The checks that apply today are running the application
+`task test` runs the pytest suite in `desktop/tests/`, which holds one simple test for
+each module today. `task lint` runs Ruff. The other checks are running the application
 (`task run`) and comparing every interface change against the design document, screen
 by screen.
 

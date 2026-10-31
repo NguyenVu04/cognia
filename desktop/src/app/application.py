@@ -25,7 +25,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 import src.app.local_only  # noqa: F401  - must precede any LangChain import
 from src.app import config
 from src.app.chat_worker import ChatWorker
-from src.core.models import COMPANION, USER, Message
+from src.domain.conversation.models import COMPANION, USER, Message
 from src.infrastructure.ai.ollama_agent import OllamaAgent
 from src.infrastructure.storage.sqlite_store import (
     UNTITLED,

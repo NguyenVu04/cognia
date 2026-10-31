@@ -24,7 +24,7 @@ from pathlib import Path
 
 from sqlalchemy import Row, delete, insert, literal_column, select, update
 
-from src.core.models import Conversation, Message
+from src.domain.conversation.models import Conversation, Message
 from src.infrastructure.storage.database import open_database
 from src.infrastructure.storage.schema import conversations, messages
 
@@ -41,7 +41,7 @@ def title_from(text: str) -> str:
 
 
 class SqliteConversationStore:
-    """A :class:`~src.core.ports.ConversationStore` kept in one SQLite file."""
+    """A :class:`~src.domain.ports.ConversationStore` kept in one SQLite file."""
 
     def __init__(self, path: Path) -> None:
         self._engine = open_database(path)

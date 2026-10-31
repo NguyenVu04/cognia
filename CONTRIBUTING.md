@@ -76,8 +76,8 @@ what a user has to do about it.
 
 ### Before you push
 
-There is no lint command and no test suite yet, so there is nothing to run. What is
-checked by reading, and what a reviewer will check:
+Run `task lint` and `task test`. What is checked by reading, and what a reviewer will
+check:
 
 - every claim in a document is traceable to the specification, an ADR, or something in
   the repository — not to a reasonable assumption;

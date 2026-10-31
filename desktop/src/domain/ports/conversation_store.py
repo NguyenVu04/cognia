@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
-from src.core.models import Conversation, Message
+from src.domain.conversation.models import Conversation, Message
 
 
 class ConversationStore(Protocol):

@@ -16,8 +16,8 @@ from collections.abc import Sequence
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.core.models import Message
-from src.core.ports import Replier, ReplyFailed
+from src.domain.conversation.models import Message
+from src.domain.ports import Replier, ReplyFailed
 
 
 class ChatWorker(QObject):

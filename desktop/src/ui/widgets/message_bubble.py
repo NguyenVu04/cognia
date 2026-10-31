@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from src.core.models import Message
+from src.domain.conversation.models import Message
 from src.ui import icons, theme
 from src.ui.widgets.surface import Panel
 from src.ui.widgets.typography import paragraph, set_paragraph_text

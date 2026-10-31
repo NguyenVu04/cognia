@@ -11,3 +11,19 @@ dependencies = [
     "pyside6>=6.11.1",
     "sqlalchemy>=2.1.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-qt>=4.5.0",
+    "ruff>=0.17.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
+qt_api = "pyside6"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

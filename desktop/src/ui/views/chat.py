@@ -16,7 +16,7 @@ from datetime import datetime
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
-from src.core.models import COMPANION, Conversation, Message
+from src.domain.conversation.models import COMPANION, Conversation, Message
 from src.ui import theme
 from src.ui.dialogs.conversation_menu import ConversationMenu
 from src.ui.views import sample_data

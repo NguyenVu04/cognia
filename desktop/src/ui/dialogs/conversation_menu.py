@@ -15,7 +15,7 @@ from collections.abc import Sequence
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtWidgets import QLayout, QVBoxLayout, QWidget
 
-from src.core.models import Conversation
+from src.domain.conversation.models import Conversation
 from src.ui import theme
 from src.ui.widgets.buttons import menu_button
 from src.ui.widgets.shadow import ShadowWindow

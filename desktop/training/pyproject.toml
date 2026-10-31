@@ -1,0 +1,6 @@
+[project]
+name = "training"
+version = "0.1.0"
+description = "Builds the tuned chat model. Nothing here ships (D-27)."
+requires-python = ">=3.12"
+dependencies = []
