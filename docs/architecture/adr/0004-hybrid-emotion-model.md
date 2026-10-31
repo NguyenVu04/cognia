@@ -47,10 +47,10 @@ interpret what the user said.
   the domain in `domain/emotion/`. The mood is that point; a feeling caused by an event is
   a displacement of it. A fixed table maps regions of PAD to the names the user
   sees — pleased, low, restless — so the name is derived, never stored.
-- **Temperament.** Each character version carries a temperament (UC-02): how far
-  events move it, how fast the mood decays, and a resting point in PAD. The AI
-  model reads it from the user's description once, the user sees and may adjust
-  it, and it is then stored as fixed values (ADR 0003). It is never re-read on
+- **Temperament.** Each character version carries a temperament (UC-01): how far
+  events move it, how fast the mood decays, and a resting point in PAD. The author
+  designs it by hand for each ready-made character, and it is stored as fixed
+  values (ADR 0003). It is never re-read on
   the fly.
 - **Appraisal by rules.** Each event kind has an appraisal rule: a desirability
   and a weight, scaled by the temperament, producing a displacement in PAD. Desk

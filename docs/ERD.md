@@ -65,7 +65,7 @@ moves that file to this design.
 | D-05 | Evidence is a join table to event seqs | Each item in "I noticed" points to the exact events behind it. A foreign key proves the link, which G-06 needs at 100% |
 | D-06 | The temperament is typed numeric columns with `CHECK` constraints | The database refuses a value out of range. A JSON column can only show that the text is valid JSON |
 | D-07 | Mood history is a cache table, `emotion_changes` | UC-17-A2 and UC-12 read each change and its cause with one query. The domain can compute the table again from the event log |
-| D-08 | A character version stores the plain-words description and structured columns | UC-03 shows the character "in the same plain words it was written in". The specification does not define traits, so the design has no trait tables |
+| D-08 | A character version stores the description and structured columns | UC-03 shows the character in force. The specification does not define traits, so the design has no trait tables |
 | D-09 | Commitments have their own table | A commitment has a due day that no other item has. Closing a commitment deletes the row (section 5 of the specification) |
 | D-10 | Explanation figures are rows in a child table, `decision_factors` | Each kind of message needs different figures. One child table holds all of them, and the `SpeechGate` checks the required factors for each kind |
 | D-11 | Each kind of rejection has its own tombstone table | Pattern rejections, refused proposals and deleted journal entries have different rules. A separate table for each makes each rule clear |
@@ -154,7 +154,7 @@ erDiagram
         TEXT template_id "ready-made character it started from, or NULL"
         TEXT name
         TEXT role
-        TEXT description "plain words, exactly as written"
+        TEXT description "from the resource file, or a change approved in UC-24"
         TEXT appearance_id "ready-made appearance set"
         REAL reactivity "0 to 1: how far events move it"
         REAL feeling_half_life_min "greater than 0: how long a feeling lasts"
@@ -205,18 +205,19 @@ installation (section 6.1). The design therefore has no `characters` table. The
 `settings` row points to the version in force. The `number` column orders the
 versions.
 
-**Identity columns.** `name`, `role` and `description` hold the words that the user
-chose or wrote. `description` keeps the exact text, because UC-03 shows it again.
-`template_id` names the ready-made character from the resource file, if the user
-started from one (UC-01, UC-02-A1).
+**Identity columns.** `name`, `role` and `description` hold the words of the
+ready-made character that the user chose. `description` keeps the exact text, because
+UC-03 shows it again. `template_id` names that character in the resource file (UC-01).
+The user cannot edit these words. Only a change that the user approves in UC-24 makes
+a new `description`.
 
 **Appearance.** `appearance_id` names a ready-made appearance set in the resources
 (UC-01). The user cannot write an appearance (section 5 of the specification). The
 appearance is part of the version, so a restore brings back the old look (UC-03).
 
-**Temperament columns.** The AI model reads these values from the description once
-(UC-02). The user can adjust them before saving. After that, no process reads them
-again from the text, so feelings replay the same way (NFR-14).
+**Temperament columns.** The author sets these values by hand for each ready-made
+character (UC-01). The application copies them from the resource file. No process
+reads them from the text, so feelings replay the same way (NFR-14).
 
 | Column | Range | Meaning |
 |---|---|---|
@@ -963,6 +964,7 @@ erDiagram
         INTEGER companion_x
         INTEGER companion_y
         TEXT companion_screen
+        INTEGER close_hint_shown "0 or 1, default 0"
         TEXT embedding_model "model that made the stored embeddings"
         INTEGER outside_service_on "0 or 1, default 0"
         TEXT outside_service_warned_at "NFR-02"
@@ -999,6 +1001,10 @@ reads them, so a pause is not an event for the emotion model (BR-04, UC-23-A4).
 where the user put the companion (UC-20, FR-26). `companion_hidden` records UC-20-A1.
 Moving or hiding the companion writes no event, because neither is an event
 (UC-20 notes).
+
+**Close hint.** `close_hint_shown` becomes 1 after the first close of the main window
+shows its explanation (FR-37), so the explanation appears once. "Erase everything"
+sets it to 0 with the other settings (section 14.2).
 
 **Embedding model.** `embedding_model` names the model that made the stored vectors.
 If a new version ships another model, the application sets each `embedding` to `NULL`,

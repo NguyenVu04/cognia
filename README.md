@@ -22,7 +22,8 @@ your own disk, where you can read it and delete it.
 > [!NOTE]
 > The specification ([`docs/USECASE_SPECIFICATION.html`](docs/USECASE_SPECIFICATION.html),
 > COG-UCS-001) is **approved** at version 5.1, together with all twenty-one of its use
-> cases. Version 5.2 awaits the author's approval. Anything below that describes
+> cases. Versions 5.2 and 5.3 await the author's approval, and version 5.3 removes
+> UC-02, which leaves twenty. Anything below that describes
 > behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-05 to NFR-07 and NFR-15 are still
 > unmeasured, and are to be measured before the first release.
 
@@ -53,8 +54,8 @@ asks what it takes for a piece of software to behave as though it has feelings a
 mind of its own — and then builds one, and measures whether it does.
 
 Cognia is a character that sits at your desk with you, on the screen rather than
-behind a tray icon. You choose one of four ready-made characters, or write your own in
-plain words: a name, a role, a temperament. From then on it is not waiting for you. It
+behind a tray icon. You choose one of four ready-made characters, each with a name, a
+role and a temperament. From then on it is not waiting for you. It
 notices how long you have been at the machine and which application is in front, it
 remembers what you said you have to finish, and it decides for itself when it has
 something worth saying — waiting until you stop typing before it says it. Its moods
@@ -74,7 +75,7 @@ while you are presenting, and it never interrupts your typing.
 > To design and build a desktop companion that, to the one person who lives with it,
 > behaves as though it has feelings and a will of its own — its emotions arising from
 > what actually happens between them, its initiative drawn from the character the user
-> described and from what it learns of how they work — while every feeling and every
+> chose and from what it learns of how they work — while every feeling and every
 > decision stays explainable in real figures, and everything it holds stays on the
 > user's own disk, readable and deletable.
 
@@ -89,13 +90,12 @@ while you are presenting, and it never interrupts your typing.
 
 ### Capabilities
 
-The twenty-one use cases of section 10, grouped as the specification groups them.
+The twenty use cases of section 10, grouped as the specification groups them.
 
-- **Choose or write a character** — pick one of four ready-made characters, each
-  shown with a name, a role, a temperament, an appearance and a sample exchange, or
-  describe your own in plain words and see the temperament read from it before saving.
-  Every earlier version is kept, temperament and appearance included, so a rewrite can
-  be undone (UC-01 to UC-03).
+- **Choose a character** — pick one of four ready-made characters, each shown with a
+  name, a role, a temperament, an appearance and a sample exchange. You can change to
+  another of the four later. Every earlier version is kept, temperament and appearance
+  included, so a change can be undone (UC-01, UC-03).
 - **Desk awareness, off until switched on** — four facts and nothing else: idle time,
   lock state, presentation state, and the name of the application in the foreground,
   kept as minutes per application per hour of the day and as changes in the event
@@ -284,7 +284,7 @@ them.
 
 Open `docs/USECASE_SPECIFICATION.html` in a browser. Start at section 3 for what
 Cognia is, section 5 for what it will deliberately never do, section 8.1 for the base
-rules, and section 10 for the twenty-one use cases.
+rules, and section 10 for the twenty use cases.
 
 ## Configuration
 
@@ -310,7 +310,7 @@ All set by the user in the application and stored on their own disk:
 
 | Setting | Default | Specified in |
 |---|---|---|
-| Character — name, role, temperament, appearance, manner of speaking | None. No character is chosen for the user | FR-01 to FR-04, UC-01 to UC-03 |
+| Character — name, role, temperament, appearance, manner of speaking | None. No character is chosen for the user | FR-01, FR-03, FR-04, UC-01, UC-03 |
 | Desk awareness | Off until the user switches it on, after being told plainly what is read and what is not | FR-06, UC-04 |
 | Excluded applications | None. Excluding one also deletes its totals and its recorded changes | C-05, UC-04-A3 |
 | Daily ceiling on proactive messages | None — the companion decides for itself | BR-01, FR-22, UC-18 |
@@ -325,9 +325,8 @@ All set by the user in the application and stored on their own disk:
 Today the application shows every screen of the design and holds a real conversation
 on the Companion screen. The rest is specified, not built. In outline:
 
-**First run** (UC-01, UC-02). The user picks a character or writes one. The
-temperament read from a written description is shown, and can be adjusted, before it
-is saved.
+**First run** (UC-01). The user picks one of the four characters and hears it answer
+before confirming.
 
 **Talking** (UC-09). Replies come in character and in the companion's current mood.
 When the user says something about themselves, the exact stored line is shown back for
@@ -367,7 +366,7 @@ cognia/
 │   │   └── utils/                   paths
 │   ├── tests/                       pytest suite, one folder for each module of src/
 │   ├── data/                        the development database, not in git
-│   └── training/                    stubs: builds the tuned chat model (D-27)
+│   └── training/                    tools that build the tuned chat model (D-27, D-28)
 ├── docs/
 │   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.2
 │   ├── ERD.md                       the database design
@@ -519,23 +518,26 @@ demonstrated ends at phase 2.
 
 | Phase | Use cases | What exists at the end of it | Status |
 |---|---|---|---|
-| **1** | UC-01, 02, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet | Started — conversation (part of UC-09) works |
+| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet | Started — conversation (part of UC-09) works |
 | **2** | UC-04, 05, 07, 15, 20, 22, 24 | Desk awareness, the companion on the screen, its own initiative, shared work sessions, and learning how the user works | Not started |
 
-Open questions recorded against UC-01, owned by the author: the four ready-made
-characters need names, stated roles and appearances. The author makes the appearances
-in VRoid Studio, and whether its terms allow redistribution from a public MIT-licensed
-repository is not yet confirmed (D-26 in `docs/architecture/ARCHITECTURE.md`).
+Open question recorded against UC-01, owned by the author: the author makes the
+appearances in VRoid Studio, and whether its terms allow redistribution from a public
+MIT-licensed repository is not yet confirmed (D-26 in
+`docs/architecture/ARCHITECTURE.md`).
 
-The fine-tuned chat model (D-27) is not started. Its work has this order:
+The tools for the fine-tuned chat model (D-27, D-28) exist in `desktop/training/`, and no model is
+trained yet. [`desktop/training/GUIDE.md`](desktop/training/GUIDE.md) gives the steps. The work has this
+order:
 
-1. Measure Gemma 4 E2B as published.
-2. Set the acceptance thresholds.
-3. Train on reviewed synthetic examples.
-4. Measure the tuned file against the published model.
+1. Test the tools on the base model.
+2. Measure the base model as published.
+3. Set the acceptance thresholds.
+4. Train on reviewed synthetic examples.
+5. Measure the tuned file against the published model.
 
-The file size puts the limit of the installer at risk. The thresholds, the model that generates the
-examples, and the Gemma terms are open. Section 12 of `docs/architecture/ARCHITECTURE.md` lists these items.
+The thresholds and the model that generates the examples are open. Section 12 of
+`docs/architecture/ARCHITECTURE.md` lists these items.
 
 ## Contributing
 

@@ -1,21 +1,29 @@
-"""Character — UC-02 and UC-03.
+"""Character — UC-03.
 
-The character in the words it was written in, and every earlier version kept
-beside it, because a rewrite is not always an improvement.
+The character in force, read-only because the four ship as they are, and every
+earlier version kept beside it, because a change is not always an improvement.
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from src.ui import theme
 from src.ui.views import sample_data
-from src.ui.widgets.buttons import accent_button, dashed_button, quiet_button, small_button
+from src.ui.widgets.buttons import dashed_button, small_button
 from src.ui.widgets.hatch import HatchPanel
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule
-from src.ui.widgets.typography import body, eyebrow, heading, kicker, label, lede
+from src.ui.widgets.typography import (
+    body,
+    eyebrow,
+    heading,
+    kicker,
+    label,
+    lede,
+    paragraph,
+)
 
 
 class CharacterView(QWidget):
@@ -30,14 +38,14 @@ class CharacterView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-02 · UC-03"))
+        column.addWidget(eyebrow("UC-03"))
         column.addSpacing(6)
         column.addWidget(heading("Character"))
         column.addSpacing(4)
         column.addWidget(
             lede(
                 "In force from the next message. Every earlier version is "
-                "kept, appearance included — a rewrite is not always an "
+                "kept, appearance included — a change is not always an "
                 "improvement.",
                 max_width=600,
             )
@@ -79,44 +87,24 @@ class CharacterView(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(0)
 
-        column.addWidget(
-            body("The character, in the words it was written in", px=13, weight=500)
-        )
+        column.addWidget(body("The character", px=13, weight=500))
         column.addSpacing(8)
-
-        editor = QTextEdit(sample_data.CHARACTER_TEXT)
-        editor.setFont(theme.font(13.5))
-        editor.setFixedHeight(150)
-        editor.setStyleSheet("QTextEdit { border-radius: 9px; padding: 13px 15px; }")
-        column.addWidget(editor)
+        column.addWidget(
+            paragraph(
+                sample_data.CHARACTER_TEXT,
+                font=theme.font(13.5), colour=theme.muted(0.72), max_width=472,
+            )
+        )
         column.addSpacing(12)
 
-        # The design puts these three on one row under a 920px max-width, but
-        # the column only ever resolves to 716px here, so the row overflows by
-        # about 10px and clips the last caption. Wrapping keeps every label
-        # readable and changes nothing else.
-        actions = QVBoxLayout()
-        actions.setContentsMargins(0, 0, 0, 0)
+        actions = QHBoxLayout()
         actions.setSpacing(10)
-
-        first = QHBoxLayout()
-        first.setSpacing(10)
-        first.addWidget(accent_button("Save", px=13.5, radius=8, padding=(10, 18)))
-        first.addWidget(
-            quiet_button("Hear a sample first", px=13.5, radius=8, padding=(10, 16))
-        )
-        first.addStretch(1)
-        actions.addLayout(first)
-
-        second = QHBoxLayout()
-        second.setSpacing(10)
         open_first_run = dashed_button(
-            "Open the first-run choice (UC-01)", px=13.5, radius=8, padding=(10, 16)
+            "Choose another character", px=13.5, radius=8, padding=(10, 16)
         )
         open_first_run.clicked.connect(self.firstRunRequested)
-        second.addWidget(open_first_run)
-        second.addStretch(1)
-        actions.addLayout(second)
+        actions.addWidget(open_first_run)
+        actions.addStretch(1)
         column.addLayout(actions)
 
         column.addSpacing(26)

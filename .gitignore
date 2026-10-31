@@ -5,6 +5,10 @@ __pycache__/
 
 # uv virtual environment
 desktop/.venv/
+desktop/training/.venv/
+
+# Adapters and GGUF files from training
+desktop/training/out/
 
 # Cognia's database: the user's conversations, never committed (NFR-04)
 *.sqlite3

@@ -2,5 +2,27 @@
 name = "training"
 version = "0.1.0"
 description = "Builds the tuned chat model. Nothing here ships (D-27)."
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = []
+
+[project.optional-dependencies]
+gpu = [
+    "unsloth>=2026.10.11",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".."]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+src = [".."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]

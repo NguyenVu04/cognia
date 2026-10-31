@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
-| **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14, D-26 and D-27 are the author's decisions. D-15 to D-25 are proposals that the author can change |
+| **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-28 are the author's decisions. D-15 to D-25 are proposals that the author can change |
 | **Date** | 2026-10-31 |
 | **Author** | Nguyễn Duy Vũ |
 | **Source of requirements** | COG-UCS-001 version 5.2 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
@@ -214,7 +214,7 @@ it refuses. Section 10 refers to these rows.
 | [Project AIRI](https://github.com/moeru-ai/airi) | An open-source companion. It is a monorepo with web, desktop and mobile stages, separate Live2D and three.js renderers, and a server runtime that connects outside channels. Its long-term memory is marked as work in progress | A web stage that draws the character with three.js (D-08) | Server channels and plugins, because extensibility is an anti-goal (ADR 0001) |
 | [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) | An offline voice companion with replaceable ASR, LLM and TTS modules, an agent interface, and a desktop pet mode with a transparent window. Its [documentation](https://docs.llmvtuber.com/docs/intro) describes long-term memory on Letta, but its README says that the feature is removed for now | The pet window behaviour: transparent, top-most, and dragged by the user (D-08) | A pluggable agent. FR-04 needs rules that no plugged-in part can change |
 | [Generative Agents](https://arxiv.org/abs/2304.03442) | Believable agents with a memory stream. Retrieval adds recency, importance and relevance, with equal weights. Recency decays by 0.995 per game hour. Reflection runs when importance adds up past a threshold, 150 in that paper | The retrieval score and the reflection trigger (D-07, UC-25) | A model call in each step of the loop. Rules decide in Cognia, so that a replay needs no model |
-| [ALMA](https://www.dfki.de/web/forschung/projekte-publikationen/publikation/1782) | A layered model of affect: emotion, mood and personality at three time scales. It uses OCC appraisal and the PAD space | The three time scales, appraisal and PAD (ADR 0004) | Nothing in the model itself. Cognia reads the personality from the user's plain words |
+| [ALMA](https://www.dfki.de/web/forschung/projekte-publikationen/publikation/1782) | A layered model of affect: emotion, mood and personality at three time scales. It uses OCC appraisal and the PAD space | The three time scales, appraisal and PAD (ADR 0004) | Nothing in the model itself. The author designs each temperament by hand |
 | [Letta (MemGPT)](https://docs.letta.com/guides/agents/architectures/memgpt) | An agent with memory tiers: core memory in the context window, recall of old conversation, and archival memory in an embedding store. The agent edits its own memory through tools | Separate tiers for what is always in the prompt and what is retrieved (section 6.11.2). Background work on memory (D-15) | An agent that edits its memory through tools. Rules and the user own the memory in Cognia (UC-13) |
 | [Jan](https://github.com/janhq/jan) | A desktop chat application on Tauri that uses llama.cpp and offers a local server for other programs | A llama.cpp server that a desktop application owns (ADR 0002) | Downloads of backends and models at run time, because NFR-15 forbids them |
 | [Desktop Homunculus](https://github.com/not-elm/desktop-homunculus) | An open-source desktop mascot on Bevy that draws VRM characters in transparent windows. Its documentation warns about a black background on some NVIDIA setups | Evidence that VRM in a transparent window is possible, and a warning for the checks in section 12 | A second language and engine (D-08) |
@@ -361,15 +361,18 @@ src/
 
 One module stays outside this tree. `desktop/training/` builds the tuned chat model (D-27).
 It is a separate Python project, as `docs/architecture/` is. So PyInstaller does not package
-it, and its training libraries do not enter `desktop/uv.lock`. Its Python files are stubs today.
+it, and its training libraries do not enter `desktop/uv.lock`. Its tools exist, and no model is
+trained yet.
 
 ```text
 desktop/training/
 ├── pyproject.toml       its own dependencies
-├── generate.py          make the examples for review
+├── GUIDE.md             the steps that build chat.gguf
+├── generate.py          check and review the examples
 ├── train.py             LoRA training
 ├── export.py            merge, quantise, write the licence files
 ├── evaluate.py          measure a model, apply the acceptance gate
+├── tests/               tests of the tools
 └── data/                reviewed examples and test sets
 ```
 
@@ -411,7 +414,7 @@ exist, a reviewer checks these rules by hand.
 | `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain/ports) |
 | `domain/events` | Define the closed set of events and the `step` function | [`desktop/src/domain/events`](../../desktop/src/domain/events) (empty) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (stub) |
-| `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (stub) |
+| `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
 | `domain/memory` | Hold memory items and commitments, and score retrieval (UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (stub) |
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
 | `domain/sessions` | Hold work sessions (UC-05, UC-07) | [`desktop/src/domain/sessions`](../../desktop/src/domain/sessions) (empty) |
@@ -427,7 +430,7 @@ exist, a reviewer checks these rules by hand.
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
 | `utils` | Logging and paths | [`desktop/src/utils`](../../desktop/src/utils) |
-| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | [`desktop/training`](../../desktop/training) (stubs) |
+| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | [`desktop/training`](../../desktop/training) (tools, no model trained yet) |
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
@@ -1430,7 +1433,7 @@ flowchart TB
 | Layer | Holds | Changes |
 |---|---|---|
 | 1 | The base rules that a prompt can state, and the safety text | Never |
-| 2 | The character's own words | When the user edits the character |
+| 2 | The character's own words | When the user changes the character, or approves a change (UC-03, UC-24) |
 | 3 | The recent messages | One message added at the end |
 | 4 | The mood name, remembered items, and any instruction for this turn | Each turn |
 
@@ -1458,9 +1461,10 @@ model does both jobs.
 | Voice | `Replier` | Follow the character description in layer 2, in replies, wording and journal entries | `reply_complies` (section 6.13), `check_wording` (section 6.6) |
 | Interpretation | `Interpreter` | Select the correct class, importance, facts and `crisis` value | The `json_schema` option, the closed set of events (section 6.4), `tripwire`, `appraise` |
 
-**Many characters, no fixed character.** The user can write any character (UC-02). So the
-examples hold many different character descriptions. The model learns to follow a description,
-and it does not learn one character. The test sets use descriptions that training did not use.
+**Many characters, no fixed character.** Four characters ship, and a change that the user
+approves in UC-24 changes a description. So the examples hold many different character
+descriptions. The model learns to follow a description, and it does not learn one character.
+The test sets use descriptions that training did not use.
 
 **Illustration.** Two examples have the same message and the same class, `good_news`. Only
 layer 2 differs.
@@ -2331,7 +2335,10 @@ The installer is one Inno Setup file (D-12). It does these things:
    (NFR-15).
 2. It installs for the current user, so it needs no administrator rights.
 3. It copies all artifacts. It downloads nothing (NFR-15).
-4. It adds the start entry of D-22.
+4. It shows a box for the start entry of D-22, ticked by default.
+5. It adds a Start Menu shortcut. It shows a box for a desktop shortcut, ticked by default.
+6. On its last page it shows a box that starts Cognia, ticked by default, because NFR-11 counts
+   from the end of the installer.
 
 An Inno Setup file holds at most 4.2 GB of compressed data without disk spanning. Disk spanning
 adds `.bin` files beside the installer, which breaks "one installer and nothing else". So the
@@ -2437,7 +2444,7 @@ because it runs before the installer exists.
 
 ## 10. Decisions and rationale
 
-The author made D-01 to D-14 and D-26 in the design review of 2026-10-30, and D-27 on 2026-10-31.
+The author made D-01 to D-14 and D-26 in the design review of 2026-10-30, and D-27 and D-28 on 2026-10-31.
 D-15 to D-25 are proposals. Each proposal states a recommended option, and the views in this document use that
 option. The author can change any proposal cheaply. Decisions with an ADR link are costly to reverse.
 
@@ -2475,12 +2482,20 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-19 | A new API key for each start | QA-01 | No key | None needed | Proposed |
 | D-20 | Windows account rights protect the data file | NFR-04 | SQLCipher, DPAPI | None needed | Proposed |
 | D-21 | A deterministic wording check | QA-08, BR-06 | Prompt only | None needed | Proposed |
-| D-22 | A per-user `Run` key | Spec: "starting with Windows" | Startup folder, Task Scheduler | None needed | Proposed |
+| D-22 | A per-user `Run` key, with a ticked box in the installer and a switch in the application | FR-36, UC-16 | Startup folder, Task Scheduler, an unticked box, no question | None needed | Decided |
 | D-23 | `QLockFile` and `QLocalSocket` | ADR 0001, UC-16 | A named mutex alone | None needed | Proposed |
 | D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Proposed |
 | D-25 | End the render process when hidden or paused | QA-05 | Freeze when hidden | None needed | Proposed |
 | D-26 | Own characters from VRoid Studio | FR-01, FR-05, UC-01 | Sample models, avatar registries, marketplaces | None needed | Decided |
 | D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-04 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
+| D-28 | Ministral 3 3B Reasoning replaces Gemma 4 E2B as the base model, with reasoning on for both jobs. D-28 takes precedence over each statement in this document that names Gemma 4 E2B as the candidate | A-02, section 8.3, NFR-06 | Gemma 4 E2B, Qwen3.5, SmolLM3-3B, Phi-4-mini, reasoning off | None needed | Decided |
+| D-29 | Two first-run screens: the character, then desk awareness | UC-01, UC-04, NFR-11 | One screen, a full wizard | None needed | Decided |
+| D-30 | The close button hides the window, and the tray menu quits | FR-37, UC-16 | The close button quits, ask at the first close | None needed | Decided |
+| D-31 | The companion first appears at the bottom right of the primary screen | UC-20 | Beside the main window, placed in first run, hidden until asked | None needed | Decided |
+| D-32 | The model loads at the first need | NFR-06, NFR-07, D-18 | Load at sign-in, load after a fixed delay | None needed | Decided |
+| D-33 | Four characters: Yuna, Rin, Mira, Shiori | UC-01, FR-01 | The four mockups, the four tones of version 1.0, wait for the VRM files | None needed | Decided |
+| D-34 | The companion asks what to call the user in its first greeting | UC-01, FR-14, C-05 | Never ask, a first-run field, the Windows account name | None needed | Decided |
+| D-35 | Remove UC-02. UC-03 changes between the four characters | FR-03, D-27 | Keep the text editor, no change after first run | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -2805,18 +2820,28 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 **Reason.** A proactive message waits for its words, so a check costs nothing that the user can see. A
 streamed reply cannot pass this check before it appears, so this applies to proactive messages only.
 
-### 10.24 D-22: starting with Windows (proposed)
+### 10.24 D-22: starting with Windows
 
-**Question.** How does Cognia start with Windows? UC-16 says that it does, but no use case sets this.
+**Question.** How does Cognia start with Windows? UC-16 says that it does, and FR-36 lets the user
+change this.
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`** (recommended) | Per user, no administrator rights, and simple to remove | The user sees it only in the Windows settings until a setting exists |
+| **A. `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`** (chosen) | Per user, no administrator rights, and simple to remove | None after the switch of FR-36 exists |
 | B. A shortcut in the Startup folder | Easy for a person to see | Simple to break by accident |
 | C. Task Scheduler | Precise conditions | Far more than this needs |
 
+**How the user sets it.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A ticked box in the installer, and a switch in the application** (chosen) | Agrees with UC-16, and the user sees it before the install | A user who does not read adds one start entry |
+| B. An unticked box, and a switch | No program starts that the user did not ask for | Most users keep the default, so the companion is present only when opened |
+| C. No question, and a switch | The shortest installer | The installer adds a start entry and says nothing |
+| D. A question in first run | The question has context | One more choice in first run, against D-29 |
+
 **Reason.** A start with Windows passes `--background`, so no window appears and no opening counts
-(UC-16). Section 12 records the missing user setting.
+(UC-16). The `Run` key is the only store of this state, so `settings` has no column for it.
 
 ### 10.25 D-23: one running copy (proposed)
 
@@ -2893,7 +2918,7 @@ specification weakens?
 | **A. Voice and interpretation, in one model** (chosen) | Helps A-02 and the correctness of feelings. One file serves both ports | The largest dataset, and two sets of measurements |
 | B. Voice only | Aims directly at A-02 | In one file, `Interpreter` also runs on the changed weights, so it needs measurement anyway |
 | C. Interpretation only | Simple labels, and a direct measure | No change to the voice, so A-02 keeps its risk |
-| D. One adapter for each ready-made character | The strongest voice for those four | A character that the user writes gets nothing (UC-02). The four characters do not exist yet |
+| D. One adapter for each ready-made character | The strongest voice for those four | A change that the user approves in UC-24 moves a description away from the training. Four adapters cost more than one (D-35 keeps this rejection) |
 
 **Second part: how the weights ship.**
 
@@ -2918,7 +2943,7 @@ specification weakens?
 | **A. A rented GPU, at build time** (chosen) | The user's machine does nothing new. The cost falls once | The author pays for GPU time. The author's own GPU is too small for this model |
 | B. On the user's machine, from their conversations | A voice that adapts to one user | It needs a GPU that the user may not have. The weights would hold personal data that UC-14 cannot erase and UC-17 cannot explain (NFR-04, G-06) |
 
-**Fifth part: the base model.** Licences and sizes come from each model card. Video memory comes from
+**Fifth part: the base model.** D-28 replaces this choice. Licences and sizes come from each model card. Video memory comes from
 Unsloth. These are published figures, and this project did not measure them.
 
 | Option | Licence | Size | LoRA video memory | Note |
@@ -2943,11 +2968,254 @@ merged file keeps the run-time design of ADR 0002 unchanged. The choice of base 
 
 **Why no ADR.** The author decided that this design needs no separate record.
 
+### 10.30 D-28: the base model of the tuned chat model
+
+**Question.** Which small model gives the lowest cost of fine-tuning, and keeps the design of D-27?
+
+**First part: the base model.** Licences and file sizes come from each model card and from the file
+list on Hugging Face. This project did not measure them. The video memory for Ministral 3 3B and
+SmolLM3-3B comes from the general Unsloth table for 3B models.
+
+| Option | Licence | GGUF at Q4_K_M | LoRA video memory | Note |
+|---|---|---|---|---|
+| **A. [Ministral 3 3B Reasoning](https://huggingface.co/mistralai/Ministral-3-3B-Reasoning-2512)** (chosen) | Apache-2.0 | 2.15 GB | 8 GB | A separate reasoning model. Its card states strong adherence to system prompts. Its card aims at STEM tasks, and it does not mention role-play |
+| B. [SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) | Apache-2.0 | 1.92 GB | 8 GB | The smallest file with reasoning. The Unsloth catalog does not list it |
+| C. [Gemma 4 E2B](https://huggingface.co/google/gemma-4-E2B-it) | Apache-2.0 | 3.11 GB | 8 to 10 GB | The lowest risk from the tools, because Unsloth has a guide for it. It has the largest file |
+| D. [Phi-4-mini](https://huggingface.co/microsoft/Phi-4-mini-instruct) | MIT | 2.49 GB | 8 GB | Its card aims at reasoning, and it states no reasoning mode |
+| E. Qwen3.5-0.8B or Qwen3.5-2B | Apache-2.0 | 533 MB or 1.28 GB | 3 GB or 5 GB | The author rejected this family. Their cards warn of reasoning loops |
+
+**Second part: reasoning.** This part closes item 13 of section 12.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. On for voice and interpretation** (chosen) | One mode for both jobs. It can improve the interpretation | Each example needs reasoning text. The time before the first word grows, because D-04 runs two model calls before the reply |
+| B. On for voice only | No risk from the `json_schema` option | The model must learn two modes |
+| C. Off | The earliest first word, and simple examples | The model loses any quality that reasoning gives |
+
+**Reason.** Each option fits a free 16 GB GPU, so the price of the GPU does not separate them. The
+author's review time does not change with the model. The remaining differences are the file size, the
+limit in section 8.3, the support in the tools, and reasoning.
+
+**Trade-off accepted.**
+
+- No source shows that this model can hold a character. The baseline measurement of section 8.6 must show
+  this before training.
+- The `json_schema` option forces JSON from the first token. This can stop the `[THINK]` block. A short
+  test must show the result before training (item 22 of section 12). If the test fails, the author decides
+  about reasoning for interpretation again.
+- Reasoning can make the first word later than the 3 seconds of NFR-06. NFR-06 then needs the working
+  indicator.
+- The model card recommends that reasoning stays in the history. The examples hold reasoning in the last
+  answer only, because this keeps the prompt short.
+
+**Why no ADR.** D-27 has no ADR, and D-28 changes one part of D-27.
+
+### 10.31 D-29: the first-run flow
+
+**Question.** Which steps does the user complete in the application after the installer?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Two screens: the character, then desk awareness** (chosen) | UC-04 step 1 names setup. UC-04-A1 forbids a second question, so this is the only time that Cognia can ask | One screen of text before the first conversation (NFR-11). The privacy question comes before the user trusts the application |
+| B. One screen: the character | The fastest route | A user who does not find the desk screen gets no UC-05, UC-07, UC-22 or UC-24, and FR-31 does not occur |
+| C. A full wizard | Each default is visible | It reads as a form, it puts NFR-11 at risk, and it is against the idea of BR-01 |
+
+**Reason.** Turn on and Not now have equal weight. Phase 1 has no desk awareness, so phase 1 shows
+the character screen only. All other defaults stay as the specification states them.
+
+### 10.32 D-30: the close button
+
+**Question.** What does the close button of the main window do?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Hide the window, and add "Quit Cognia" to the tray menu** (chosen) | Agrees with UC-16 | A user can think that Cognia has stopped. So the first close shows one line of explanation |
+| B. Quit | The simplest to understand | Each close removes the companion, and UC-16 stops being true |
+| C. Ask at the first close, and remember | The user decides | One more dialog and one more setting |
+
+**Reason.** `close_hint_shown` in the ERD records the explanation. The application shows the line
+inside its own window, so it is not a Windows notification (BR-04).
+
+### 10.33 D-31: the first position of the companion
+
+**Question.** Where and when does the companion first appear?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. After Confirm, at the bottom right of the primary screen, 24 pixels from the edges** (chosen) | Easy to predict, and near the tray icon | It can cover content in that corner |
+| B. Beside the main window | The user sees the link between the two | The position can be in the middle of the screen |
+| C. The user places it in first run | The closest to UC-20 | One more first-run step |
+| D. Hidden until the user asks | The safest | FR-25 becomes a feature that the user must find |
+
+**Reason.** One line tells the user to drag it. UC-20 still holds: this is a start point, and the
+user decides the position. The companion does not appear before a character is in force.
+
+### 10.34 D-32: when the model loads
+
+**Question.** When does the chat model load after a start with Windows?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. At the first need** (chosen) | Sign-in stays fast | The greeting of the day waits for the load, so NFR-06 needs the working indicator |
+| B. At sign-in | A fast greeting | The machine is slow when the user arrives |
+| C. After a fixed delay | A balance of A and B | The delay needs a measured value |
+
+**Reason.** D-18 lets the server sleep when idle. So a load at sign-in gives no lasting benefit.
+
+### 10.35 D-33: the four characters
+
+**Question.** Who are the four ready-made characters? This closes item 9 of section 12.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The author's four characters** (chosen) | Each has one clear type, and the author wrote the voices | Temperaments have no trial data yet |
+| B. Wren, Otto, Mira and Kes from the mockup | Already drawn in the mockup | Their sample lines need memory or desk awareness, which a new installation does not have |
+| C. The four tones of version 1.0 | Clear differences | Dispositions, not characters (UC-01) |
+| D. Wait for the VRM files | Words and appearance agree | It waits for item 8 of section 12 |
+
+| | Yuna | Rin | Mira | Shiori |
+|---|---|---|---|---|
+| **Role** | The Gentle Companion | The Teasing Companion | The Energetic Companion | The Quiet Observer |
+| **Voice** | Warm and gentle. Says little. Shows care through small details | Smart, confident and a little proud. Likes to tease the user. A little tsundere, but not a stereotype | Curious and lively. Gets carried away by what the user tells her. Reacts faster and with more expression than the other characters | Calm, mature and observant, with a little mystery. Does not react strongly, but what she says carries weight |
+| **Reactivity** | 0.4 | 0.4 | 0.6 | 0.3 |
+| **Feeling half-life, minutes** | 30 | 30 | 45 | 60 |
+| **Mood half-life, minutes** | 720 | 480 | 720 | 1440 |
+| **Resting mood (P, A, D)** | 0.10, -0.05, 0.00 | 0.00, 0.05, 0.25 | 0.25, 0.20, 0.05 | 0.10, -0.20, -0.05 |
+| **Appearance** | Light pink hair to the shoulders, grey-blue eyes, beige cardigan | Dark red ponytail, amber eyes, white shirt, loose tie | Short, untidy orange hair, green eyes, yellow hoodie, sports shoes | Long silver hair, pale blue eyes, long black coat |
+| **Line on the card** | Just... me, being here. ♡ | Not that I wouldn't notice. | Tell me something I don't know about you. | Let's just take our time and get to know each other. |
+
+**Sample answers.** Each character answers "What should I expect from you?", so the user can compare
+the voices. This question needs no memory and no desk awareness. The author wrote these texts. They
+stay exact, and they do not follow ASD-STE100.
+
+Yuna:
+
+```text
+Hmm... I think you can expect me to stay here with you.
+
+I'll listen when you feel like talking, laugh with you when something's funny, and maybe tease you a little when you deserve it.
+
+I won't always know what to say... but I'll try to be someone you can feel comfortable talking to.
+
+So... I guess you don't have to expect anything too grand from me.
+
+Just... me, being here. ♡
+```
+
+Rin:
+
+```text
+What should you expect from me?
+
+Don't get your hopes up. I'm not here to spoil you.
+
+I'll listen, though. I'll argue with you when you're wrong, make fun of you when you deserve it, and... occasionally be nice to you.
+
+Occasionally.
+
+And if you disappear for a while, don't expect some dramatic welcome when you come back.
+
+I'll probably just say, "Oh. You're back."
+
+...
+
+Not that I wouldn't notice.
+```
+
+Mira:
+
+```text
+What should you expect from me?
+
+Ooh, that's a big question!
+
+Okay, okay... I'll try to behave.
+
+You can expect someone who's curious about basically everything. I'll probably ask too many questions, get way too excited when you tell me something interesting, and occasionally drag you into some completely random conversation.
+
+I'll listen when you need someone to listen, too. Promise.
+
+I can be quiet when I need to be.
+
+...Well, I can *try* to be quiet.
+
+Hehe.
+
+Anyway! Enough about me. Tell me something I don't know about you.
+```
+
+Shiori:
+
+```text
+What should you expect from me...?
+
+I suppose I'm not particularly good at making grand promises.
+
+I'm usually a quiet person. I prefer listening, observing, and taking my time before saying something. But that doesn't mean I have nothing to say.
+
+We can talk about all sorts of things. Your thoughts, your interests, the little things that happened during your day... or even those questions that keep you awake at night.
+
+I might occasionally challenge your perspective. And sometimes, I may notice things you haven't quite put into words yourself.
+
+I won't pretend to understand everything, though. There's always something new to learn about someone.
+
+So, there's no need to rush anything.
+
+Let's just take our time and get to know each other.
+
+...I think that would be rather nice, don't you?
+```
+
+**Reason.** A card shows one line, because a card is about 208 pixels wide. The full text appears when
+the user picks the character, with the live answer of UC-01 step 4. Each sample is an introduction:
+a normal reply stays short for all four characters. The temperament values are start values, and
+trial use sets them (item 18 of section 12).
+
+**Trade-off accepted.** Rin's sample speaks about an absence. BR-04 forbids a reproach. The author
+keeps the text, because it is a joke in an introduction. BR-04 still binds each real reply.
+
+### 10.36 D-34: what the companion calls the user
+
+**Question.** How does the companion learn what to call the user?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. It asks in its first greeting** (chosen) | No new kind of data. The answer is a `told` memory item, so UC-13 and UC-14 cover it | It needs FR-14. A user who ignores the question gives no name |
+| B. It never asks | The specification needs no change | The first days feel distant |
+| C. A first-run field | The name is ready for the first greeting | A new column of personal data outside memory. NFR-04, UC-12 to UC-14 and the ERD need changes |
+
+**Rejected without a table row.** The Windows account name is a fifth fact from the operating system.
+C-05 forbids it.
+
+### 10.37 D-35: removing UC-02
+
+**Question.** After UC-02 goes, what remains of UC-03, and does D-27 change?
+
+**First part: UC-03.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Change between the four characters, and keep the history** (chosen) | It agrees with the removal. UC-24 can still make a new version | The user has no free edit. UC-10 remains for small changes |
+| B. Keep the text editor | Flexible | A user can write a new character over an old one, so FR-04 and FR-05 still need checks on user text |
+| C. No change after first run | The simplest | A wrong choice is hard to undo |
+
+**Second part: D-27.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Keep D-27** (chosen) | No change to the tools or to the held-out test sets. The model tolerates a change from UC-24 | The voice of the four is not as strong as with training on them only |
+| B. Train on the four characters | A stronger voice | D-27 opens again, and the split in `generate.py` stops working |
+| C. Decide later | No work now | A question stays open before example generation |
+
+**Reason.** The user's text is no longer an input, so the temperament needs no interpretation step:
+the author sets it by hand (D-33). The numbers UC-02 and FR-02 stay reserved, so an older reference
+does not point to another item.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
 |---|---|---|
-| FR-01 to FR-05, UC-01 to UC-03 | Module | `domain/character`, `domain/safety`, `resources/companion/` |
+| FR-01, FR-03 to FR-05, UC-01, UC-03 | Module | `domain/character`, `domain/safety`, `resources/companion/` |
 | FR-06, UC-04, C-05, NFR-03 | Module, C&C | `infrastructure/presence`, `PresenceSample`, sampler_thread, C11 |
 | FR-07 to FR-11, FR-33, UC-05, UC-07 | Module | `domain/sessions`, `domain/awareness`, `domain/initiative` |
 | FR-12, NFR-05, UC-15 | C&C | Stop flag, `paused` event, section 7.9 |
@@ -3003,7 +3271,7 @@ These items are outside this design, or need a decision before implementation.
    specification, or frames rendered in advance from the same VRM files (D-08, second table, option D).
 8. **VRoid Studio terms.** A person must read the full terms. The question is whether a VRM file with pixiv
    base content can go into a public repository and an installer. Until then, D-26 option B or C is the fallback.
-9. **The four characters.** They need names, roles, temperaments and sample exchanges (UC-01).
+9. **The four characters.** Closed by D-33. Trial use sets their temperaments (item 18).
 10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-10 stay
     unproven until they do.
 11. **Move the code.** The code does not match this design yet. The work is:
@@ -3019,8 +3287,7 @@ These items are outside this design, or need a decision before implementation.
 14. **Outside AI service.** NFR-02 and C-03 allow it, but no use case describes how the user enables it. This
     design provides the ports and `outbound_sends`, and no adapter. The ADR that adds the service decides how the
     user names it and where its credential stays.
-15. **A user setting for starting with Windows.** UC-16 assumes the behaviour, and no use case lets the user change
-    it (D-22).
+15. **A user setting for starting with Windows.** Closed by FR-36 and D-22.
 16. **Code signing.** An unsigned installer triggers a Windows warning, which works against NFR-11. The project has
     no sponsor and no certificate. The author decides.
 17. **Start-up fold.** The core thread folds the whole log at start. If the time becomes a problem, a snapshot table
@@ -3044,6 +3311,7 @@ These items are outside this design, or need a decision before implementation.
     - the `json_schema` option works on the merged file
     - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
       the quality of an exported model
-23. **Write the module.** `desktop/training/` holds stubs only. Rules 11 and 12 of section 6.2 join the script of
-    D-14 when that script exists.
+23. **Finish the module.** `desktop/training/` holds the tools, and `desktop/training/GUIDE.md` gives the steps.
+    `train_lora` and `merge_and_quantise` have not run. `make_examples` needs a generating model, and `measure`
+    needs `LlamaClient`. Rules 11 and 12 of section 6.2 join the script of D-14 when that script exists.
 

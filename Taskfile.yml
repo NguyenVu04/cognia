@@ -45,3 +45,15 @@ tasks:
     dir: '{{.APP_DIR}}'
     cmds:
       - uv run ruff check src tests
+
+  train:test:
+    desc: Run the tests of the training tools
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run --project training pytest training/tests
+
+  train:lint:
+    desc: Check the training tools with Ruff
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run --project training ruff check training

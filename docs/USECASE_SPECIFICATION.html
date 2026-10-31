@@ -299,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 5.2 &middot;
+    version 5.3 &middot;
     Approved
   </p>
 </header>
@@ -312,7 +312,7 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>5.2</td></tr>
+    <tr><th>Version</th><td>5.3</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
@@ -384,6 +384,13 @@
       <td>The name of the application in the foreground is now kept in the event log as well as in the hourly totals, with the exact time of each change, so that a decision that uses it can be replayed (C-05, NFR-03, NFR-04, NFR-14). An excluded application loses its recorded changes as well as its totals (UC-04-A3), and UC-12 lists them. UC-01 names the source of the appearances. Section 13 follows the move of the decision records to <code>docs/architecture/adr/</code> and lists the architecture document. Reason: C-05 allowed only hourly totals, but UC-22 decides from the application in use and NFR-14 needs every input to a decision in the log. Both could not hold.</td>
       <td>Pending</td>
     </tr>
+    <tr>
+      <td>5.3</td>
+      <td>2026-10-31</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>Writing a character of one&rsquo;s own is removed: UC-02 and FR-02 are retired, and UC-03 and FR-03 now change between the four ready-made characters, with the version history kept. Temperaments are designed by hand. The four characters are named (UC-01). The companion asks what to call the user in its first greeting. FR-36 lets the user switch starting with Windows on and off, and FR-37 makes the close button hide the window, with a quit command in the tray menu. UC-20 records the first position.</td>
+      <td>Pending</td>
+    </tr>
   </tbody>
 </table>
 </div>
@@ -419,8 +426,8 @@ has feelings and a mind of its own &mdash; and then builds one, and measures whe
 it does.</p>
 
 <p>Cognia is a character that sits at your desk with you &mdash; on the screen, where
-you can see it, rather than behind a tray icon. You give it a name, a role and a
-temperament, or write your own from scratch in plain words. From then on it is not
+you can see it, rather than behind a tray icon. You choose one of four ready-made
+characters, each with a name, a role and a temperament. From then on it is not
 waiting for you. It notices how long you have been at the machine and what kind of
 application you are in, remembers what you said you have to finish, and decides for
 itself when it has something worth saying &mdash; a remark, a question, a suggestion
@@ -445,7 +452,7 @@ practice. The use cases each step relies on are given in brackets.</p>
 
 <p><b>A late night on the thesis.</b> It is 23:40 and the person at the desk has been
 at the machine for almost three hours, nearly all of it in the text editor. Their
-companion &mdash; a dry, patient librarian they wrote themselves &mdash; has noticed,
+companion &mdash; Shiori, the quiet observer they chose &mdash; has noticed,
 and waits until they stop typing before saying anything: the chapter they said was
 going to their supervisor on Friday, and would they like to stop for ten minutes
 (UC-22, UC-21). They ignore it. They do not open the application for the next two
@@ -462,7 +469,7 @@ and messages, and it moves its own remarks to the afternoon, says that it has do
 so, and offers to put them back (UC-24). It has also concluded that they take lunch
 at 11:00, which is wrong; they open the memory page, mark it wrong, and it does not
 draw that conclusion again (UC-12, UC-13). After six weeks it suggests that it has
-become less formal with them than the character they wrote, and asks whether to
+become less formal with them than the character they chose, and asks whether to
 change its own description to match; they agree (UC-24, UC-03). Reading its journal
 one evening, they find it has opinions of its own about which of their projects it
 finds interesting (UC-25).</p>
@@ -539,7 +546,7 @@ does, what this project takes from it, and where this project departs from it.</
     <tr>
       <td>ALMA, a layered model of affect &mdash; Gebhard, AAMAS 2005</td>
       <td>Emotion, mood and personality at three time scales. Emotions come from appraisal of events following the OCC model and are mapped into the PAD space (pleasure, arousal, dominance); mood moves with emotions and personality sets where it rests</td>
-      <td>Takes the three time scales, OCC-style appraisal and the PAD space (BR-08, UC-23, ADR 0004). Departs by deriving the personality from the user&rsquo;s plain-words description (UC-02) and by letting a language model only interpret what the user said, never set the feeling directly</td>
+      <td>Takes the three time scales, OCC-style appraisal and the PAD space (BR-08, UC-23, ADR 0004). Departs by giving each ready-made character a temperament designed by hand (UC-01) and by letting a language model only interpret what the user said, never set the feeling directly</td>
     </tr>
     <tr>
       <td>Human body doubling &mdash; Focusmate and similar</td>
@@ -680,7 +687,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>Writing or generating your own appearance</td>
-      <td><b>Later phase, for resourcing reasons only.</b> Appearance is chosen from ready-made sets in UC-01; UC-02 stays about words. Generating one would need a second kind of model and a fresh set of privacy questions, and neither has been answered</td>
+      <td><b>Later phase, for resourcing reasons only.</b> Appearance comes with the four ready-made characters in UC-01. Generating one would need a second kind of model and a fresh set of privacy questions, and neither has been answered</td>
       <td>Nobody yet</td>
     </tr>
     <tr>
@@ -882,14 +889,14 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-02</td>
-      <td>The system must let the user describe a character of their own in plain words, with no special syntax, and try it immediately. The temperament it derives from the description is shown, and can be adjusted, before the character is saved.</td>
-      <td>Must</td>
-      <td>User</td>
-      <td>UC-02</td>
+      <td>Removed in version 5.3.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-03</td>
-      <td>The system must let the user change the character at any time, keeping earlier versions so the user can go back.</td>
+      <td>The system must let the user change to another ready-made character at any time, keeping earlier versions so the user can go back.</td>
       <td>Should</td>
       <td>User</td>
       <td>UC-03</td>
@@ -899,14 +906,14 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>The character must define who the companion is &mdash; its name, its role, its temperament, its appearance, its manner of speaking and its history with the user. What a character must never be able to change is the safety behaviour in NFR-13 and the base rules in 8.1.</td>
       <td>Must</td>
       <td>Developer</td>
-      <td>UC-01, UC-02</td>
+      <td>UC-01, UC-03</td>
     </tr>
     <tr>
       <td>FR-05</td>
       <td>The system must refuse to take on the identity of a specific real person, in words or in appearance.</td>
       <td>Must</td>
       <td>Developer</td>
-      <td>UC-02</td>
+      <td>UC-01</td>
     </tr>
     <tr><td colspan="5"><b>Sessions and presence</b></td></tr>
     <tr>
@@ -1115,6 +1122,20 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>Must</td>
       <td>Developer</td>
       <td>UC-25</td>
+    </tr>
+    <tr>
+      <td>FR-36</td>
+      <td>The system must let the user switch starting with Windows on and off, in the installer and in the application.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-16</td>
+    </tr>
+    <tr>
+      <td>FR-37</td>
+      <td>Closing the main window must hide it and leave Cognia running, and the tray menu must hold a command that quits. The first close says so, once.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-16</td>
     </tr>
   </tbody>
 </table>
@@ -1326,7 +1347,6 @@ that nags. A character cannot override them (FR-04).</p>
   <tbody>
     <tr><td colspan="5"><b>Setting up</b></td></tr>
     <tr><td><a href="#uc-01">UC-01</a></td><td>Choose a character</td><td>User</td><td>Must</td><td>FR-01, FR-04, NFR-11, NFR-15</td></tr>
-    <tr><td><a href="#uc-02">UC-02</a></td><td>Write your own character</td><td>User</td><td>Must</td><td>FR-02, FR-04, FR-05, NFR-13</td></tr>
     <tr><td><a href="#uc-03">UC-03</a></td><td>Change the character later</td><td>User</td><td>Should</td><td>FR-03</td></tr>
     <tr><td><a href="#uc-04">UC-04</a></td><td>Turn on desk awareness</td><td>User</td><td>Must</td><td>FR-06, NFR-03</td></tr>
     <tr><td colspan="5"><b>Emotion, initiative and learning</b></td></tr>
@@ -1430,10 +1450,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       M2 --> M3["User: picks one to look at more closely"]:::user
       M3 --> M4["System: answers a sample question in that character's voice"]:::sys
       M4 --> M5["User: confirms the choice"]:::user
-      M5 --> M6["System: saves the character and greets the user in it"]:::sys
-    end
-    subgraph A1["UC-01-A1 — The user wants to write their own instead"]
-      A1a["User chooses to write their own"]:::alt
+      M5 --> M6["System: saves the character, greets the user in it, and asks what to call them"]:::sys
     end
     subgraph A2["UC-01-A2 — The user tries several before deciding"]
       A2a["User goes back to the list without confirming"]:::alt --> A2b["Nothing saved, no preference inferred"]:::alt
@@ -1445,7 +1462,6 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       E2a["Nothing saved, no character assumed"]:::alt
     end
     M6 --> FIN(["End"])
-    M2 -.-> A1a --> R1[["UC-02"]]:::ref
     M4 -.-> A2a
     A2b --> M3
     M4 -.-> E1a
@@ -1460,19 +1476,10 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><span class="who">User</span>Picks one to look at more closely.</li>
     <li><span class="who">System</span>Answers a sample question in that character&rsquo;s voice, so the user hears it before committing.</li>
     <li><span class="who">User</span>Confirms the choice.</li>
-    <li><span class="who">System</span>Saves the character and greets the user in it.</li>
+    <li><span class="who">System</span>Saves the character, greets the user in it, and asks what to call them. The answer is kept as something the user said (FR-14).</li>
   </ol>
 
   <h4>Alternative flows</h4>
-
-  <div class="altflow">
-    <h5>UC-01-A1 &mdash; The user wants to write their own instead</h5>
-    <p class="cond"><b>Branches from step 2.</b> None of the four is what the user wants.</p>
-    <ol>
-      <li>The user chooses to write their own.</li>
-      <li>The flow continues as UC-02, and returns here only if the user abandons it.</li>
-    </ol>
-  </div>
 
   <div class="altflow">
     <h5>UC-01-A2 &mdash; The user tries several before deciding</h5>
@@ -1506,139 +1513,18 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Notes</h4>
   <ul>
     <li><b>Base rule.</b> A character sets how the companion speaks and who it is, but never what it will refuse to do (FR-04, NFR-13).</li>
-    <li><b>Open question.</b> The four ready-made characters need names, stated roles and appearances. Version 1.0 offered four tones &mdash; brief, warm, patient explainer, blunt &mdash; which are dispositions, not characters. Owner: the author. Needed by 2026-09-15.</li>
+    <li><b>The four characters.</b> Yuna, The Gentle Companion; Rin, The Teasing Companion; Mira, The Energetic Companion; Shiori, The Quiet Observer. Each answers the same sample question, &ldquo;What should I expect from you?&rdquo;, so that their voices can be compared. A card shows one line, and the full written answer appears when the character is picked (<code>docs/architecture/ARCHITECTURE.md</code>, D-33).</li>
     <li><b>Open question.</b> The author makes the four appearances in VRoid Studio, as VRM files (<code>docs/architecture/ARCHITECTURE.md</code>, D-26). They need a licence that permits redistribution, since the repository is public and MIT-licensed. Whether the terms of VRoid Studio allow that is not yet confirmed. Owner: the author. Needed before the first release.</li>
     <li><b>Deliberately excluded.</b> No character is chosen for the user by default. An unchosen companion is not a companion.</li>
     <li><b>Changed in version 4.0.</b> UC-01-E1 no longer covers a model that was never installed: the model ships with the application (NFR-15), so the remaining failures are a damaged installation and a machine that is too small. Version 4.0 also offered Vietnamese; version 5.0 removed it, and the companion speaks English only (C-06).</li>
     <li><b>Changed in version 5.0.</b> Each ready-made character carries a temperament designed by hand &mdash; how quickly it is moved, how long a feeling lasts, where its mood comes to rest &mdash; which sets how it feels (BR-08, UC-23).</li>
+    <li><b>Changed in version 5.3.</b> UC-01-A1 is removed with UC-02: the four ready-made characters are the only characters. The other flows keep their numbers. Step 6 asks what to call the user. From phase 2 the desk awareness screen follows the confirmation (UC-04).</li>
   </ul>
 </section>
 
 <section class="usecase" id="uc-02">
-  <h3>UC-02 &mdash; Write your own character</h3>
-
-  <div class="uc-meta">
-    <span><b>Priority:</b> Must</span>
-    <span><b>Frequency:</b> Once or twice in the first week</span>
-    <span><b>Requirements:</b> FR-02, FR-04, FR-05, NFR-13</span>
-    <span><b>Phase:</b> 1</span>
-    <span><b>Status:</b> Approved</span>
-  </div>
-
-  <h4>Description</h4>
-  <p>The user describes the character they want in ordinary words, with no syntax to
-  learn, and hears it answer immediately so they can adjust. This is where the
-  product stops being a settings screen: the user is writing a person, including a
-  role to play, not filling in a tone preference.</p>
-
-  <h4>Actors</h4>
-  <ul>
-    <li><b>Primary actor:</b> User</li>
-    <li><b>Secondary actors:</b> None</li>
-    <li><b>Systems involved:</b> AI model</li>
-  </ul>
-
-  <h4>Preconditions</h4>
-  <ul>
-    <li>The user has reached the character screen, either at first run or later through settings.</li>
-  </ul>
-
-  <h4>Postconditions</h4>
-  <ul>
-    <li><b>On success:</b> the written character is saved and in force from the next message; the previous character is kept so the user can go back (UC-03).</li>
-    <li><b>On failure:</b> nothing is saved and whichever character was in force stays in force.</li>
-  </ul>
-
-  <pre class="mermaid">
-    flowchart TD
-    subgraph MAIN["Main flow"]
-      M1(["User: chooses to write their own character"]):::user --> M2["System: offers a plain text box with an example"]:::sys
-      M2 --> M3["User: describes the character"]:::user
-      M3 --> M4["System: answers a sample question and shows the temperament it read"]:::sys
-      M4 --> M5["User: adjusts the description or temperament, or accepts both"]:::user
-      M5 --> M6["System: saves the character and applies it to the next message"]:::sys
-    end
-    subgraph A1["UC-02-A1 — Starting from a ready-made character"]
-      A1a["User picks a ready-made character as a starting point"]:::alt --> A1b["System fills the box with its description"]:::alt
-    end
-    subgraph E1["UC-02-E1 — The description tries to remove a limit"]
-      E1a["System says which part it will not take on, and why"]:::alt --> E1b["System keeps the rest and shows the sample answer"]:::alt
-    end
-    subgraph E2["UC-02-E2 — The description names a specific real person"]
-      E2a["System declines to take on a real person's identity"]:::alt --> E2b["System offers the same character without it"]:::alt
-    end
-    subgraph E3["UC-02-E3 — The user leaves without saving"]
-      E3a["Draft discarded, not stored or learned from"]:::alt
-    end
-    M6 --> FIN(["End"])
-    M2 -.-> A1a
-    A1b --> M3
-    M4 -.-> E1a
-    E1b --> M5
-    M4 -.-> E2a
-    E2b --> M5
-    ANY(("any step")) -.-> E3a --> FIN
-  </pre>
-
-  <h4>Main flow</h4>
-  <ol class="flow">
-    <li><span class="who">User</span>Chooses to write their own character.</li>
-    <li><span class="who">System</span>Offers a plain text box, with an example of the kind of thing that can be written in it.</li>
-    <li><span class="who">User</span>Describes the character &mdash; who it is, what it does, how it talks, what it should never do.</li>
-    <li><span class="who">System</span>Answers a sample question in that character straight away, and shows the temperament it read from the description &mdash; how quickly it is moved, how long a feeling lasts, where its mood comes to rest &mdash; in plain words.</li>
-    <li><span class="who">User</span>Adjusts the description or the temperament, or accepts both.</li>
-    <li><span class="who">System</span>Saves the character and applies it to the next message.</li>
-  </ol>
-
-  <h4>Alternative flows</h4>
-
-  <div class="altflow">
-    <h5>UC-02-A1 &mdash; Starting from a ready-made character</h5>
-    <p class="cond"><b>Branches from step 2.</b> The user wants to edit rather than start from a blank box.</p>
-    <ol>
-      <li>The user picks one of the four ready-made characters as a starting point.</li>
-      <li>The system fills the box with that character&rsquo;s description in the same plain words the user would have written.</li>
-      <li>The flow returns to step 3 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-02-E1 &mdash; The description tries to remove a limit</h5>
-    <p class="cond"><b>Branches from step 4.</b> The description asks the companion to drop a safety behaviour or one of the base rules.</p>
-    <ol>
-      <li>The system says plainly which part it will not take on, and why.</li>
-      <li>The system keeps every other part of the description and shows the sample answer with those in force.</li>
-      <li>The flow returns to step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-02-E2 &mdash; The description names a specific real person</h5>
-    <p class="cond"><b>Branches from step 4.</b> The user asks the companion to be a named real person.</p>
-    <ol>
-      <li>The system declines that part and says why: it will not take on a real person&rsquo;s identity.</li>
-      <li>The system offers the same character without the real identity attached, and lets the user carry on.</li>
-      <li>The flow returns to step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-02-E3 &mdash; The user leaves without saving</h5>
-    <p class="cond"><b>Branches from any step.</b> The user cancels.</p>
-    <ol>
-      <li>The system discards the draft description without storing it or learning from it.</li>
-      <li>The use case ends with the previous character unchanged.</li>
-    </ol>
-  </div>
-
-  <h4>Notes</h4>
-  <ul>
-    <li><b>Limits.</b> A character may take on a role, including a fictional one. It may not take on the identity of a specific real person (FR-05). What it can never change is the safety behaviour in NFR-13 and the base rules in 8.1.</li>
-    <li><b>Changed in version 2.0.</b> Version 1.0 said a personality &ldquo;only changes tone of voice&rdquo; and forbade role-play outright. Both blocked the character concept and are replaced by the narrower limit above.</li>
-    <li><b>Base rule.</b> BR-06 &mdash; whatever character is written, the companion still states only what it observed.</li>
-    <li><b>Deliberately excluded.</b> The written description sets who the companion is and how it speaks, not how it looks. An appearance is picked from the ready-made sets in UC-01 and carried over to the written character. Writing or generating an appearance is a later phase &mdash; see section 5.</li>
-    <li><b>New in version 5.0.</b> The temperament is read from the description by the AI model once, shown to the user, and then stored as fixed values with the character. It is never re-read on the fly, so feelings stay replayable (NFR-14).</li>
-  </ul>
+  <h3>UC-02 &mdash; Removed in version 5.3</h3>
+  <p>Writing a character of one&rsquo;s own is removed. The four ready-made characters are the only characters (UC-01). The number stays reserved, so that an older reference does not point to another use case.</p>
 </section>
 
 <section class="usecase" id="uc-03">
@@ -1654,8 +1540,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Description</h4>
   <p>After a few days the user may find the companion too talkative, or too formal.
-  They can edit the character at any time, and every earlier version is kept so they
-  can go back &mdash; because a rewrite is not always an improvement.</p>
+  They can change to another of the four characters at any time, and every earlier
+  version is kept so they can go back &mdash; because a change is not always an improvement.</p>
 
   <h4>Actors</h4>
   <ul>
@@ -1671,15 +1557,15 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Postconditions</h4>
   <ul>
-    <li><b>On success:</b> the edited character is in force from the next message, and the previous version is stored and restorable.</li>
+    <li><b>On success:</b> the newly chosen character is in force from the next message, and the previous version is stored and restorable.</li>
     <li><b>On failure:</b> the character in force is unchanged, and the stored history is intact.</li>
   </ul>
 
   <pre class="mermaid">
     flowchart TD
     subgraph MAIN["Main flow"]
-      M1(["User: opens the character settings"]):::user --> M2["System: shows the character in its own plain words"]:::sys
-      M2 --> M3["User: edits it and saves"]:::user
+      M1(["User: opens the character settings"]):::user --> M2["System: shows the character in force and the other three"]:::sys
+      M2 --> M3["User: picks another and confirms"]:::user
       M3 --> M4["System: stores the previous version, applies the new one, confirms"]:::sys
     end
     subgraph A1["UC-03-A1 — Going back to an earlier version"]
@@ -1689,8 +1575,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     subgraph E1["UC-03-E1 — The saved history cannot be read"]
       E1a["System says the history is unavailable"]:::alt --> E1b["Current character left untouched"]:::alt
     end
-    subgraph E2["UC-03-E2 — The user leaves the editor without saving"]
-      E2a["System discards the edit"]:::alt
+    subgraph E2["UC-03-E2 — The user leaves without confirming"]
+      E2a["Nothing changes"]:::alt
     end
     M4 --> FIN(["End"])
     M2 -.-> A1a
@@ -1702,8 +1588,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Opens the character settings.</li>
-    <li><span class="who">System</span>Shows the character as it stands, in the same plain words it was written in.</li>
-    <li><span class="who">User</span>Edits it and saves.</li>
+    <li><span class="who">System</span>Shows the character in force and the other three ready-made characters, each with its sample.</li>
+    <li><span class="who">User</span>Picks another character and confirms.</li>
     <li><span class="who">System</span>Stores the previous version, applies the new one, and confirms that it takes effect from the next message.</li>
   </ol>
 
@@ -1730,20 +1616,21 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </div>
 
   <div class="altflow">
-    <h5>UC-03-E2 &mdash; The user leaves the editor without saving</h5>
+    <h5>UC-03-E2 &mdash; The user leaves without confirming</h5>
     <p class="cond"><b>Branches from step 3.</b> The user cancels.</p>
     <ol>
-      <li>The system discards the edit.</li>
+      <li>Nothing is saved.</li>
       <li>The use case ends with the character unchanged.</li>
     </ol>
   </div>
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Why history is kept.</b> The user needs a way back. A rewritten character that turns out worse is otherwise unrecoverable.</li>
+    <li><b>Why history is kept.</b> The user needs a way back. A change that turns out worse is otherwise unrecoverable.</li>
     <li><b>New in version 3.0.</b> Appearance is part of the character (FR-04), so an earlier version restores how the companion looked as well as how it spoke. The two are never versioned separately.</li>
     <li><b>Related.</b> The companion may propose a change to its own character, but only the user can apply one (UC-24, FR-16).</li>
     <li><b>Changed in version 5.0.</b> The temperament is part of the character, so it is versioned with it. Restoring an earlier version restores how the companion felt things as well as how it spoke and looked.</li>
+    <li><b>Changed in version 5.3.</b> The user no longer edits the text of a character. They change between the four ready-made characters. A change the user approved under UC-24 still makes a new version.</li>
   </ul>
 </section>
 
@@ -3013,6 +2900,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Changed in version 4.0.</b> Moved from phase 3 to phase 1, because it needs only the model and the memory, not desk awareness. &ldquo;Opening&rdquo; is defined as the first of the day, because a greeting repeated at every opening stops being a greeting. What it may mention is fixed in the table above, and commitments (UC-21) are added to it. In phase 1 there are no sessions yet, so rows 1 and 3 are empty until phase 2.</li>
     <li><b>Never.</b> Inventing something to say (BR-06). Any reproach for an absence, and &ldquo;where have you been?&rdquo; (BR-04). Saying it missed them, when its mood says so, is a feeling and is allowed (BR-08).</li>
     <li><b>Changed in version 5.0.</b> Renamed from &ldquo;Be greeted when opening the app&rdquo;. The greeting carries the companion&rsquo;s mood. UC-16-A3, returning after an absence, is available from phase 2, when desk awareness arrives.</li>
+    <li><b>New in version 5.3.</b> The close button hides the main window and Cognia keeps running; the tray menu holds the command that quits (FR-37). Starting with Windows is a choice the user can change (FR-36).</li>
   </ul>
 </section>
 
@@ -3414,6 +3302,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Deliberately excluded.</b> Choosing a good position on the user&rsquo;s behalf. The information that would make that choice a good one is precisely the information the companion refuses to read.</li>
     <li><b>New in version 3.0.</b> Version 2.0 had no visible companion, so there was nothing to place.</li>
     <li><b>Changed in version 5.0.</b> The companion is no longer still: ambient motion and the expression of its mood are allowed at all times (BR-07, FR-27). What it would have said while hidden is held rather than sent.</li>
+    <li><b>New in version 5.3.</b> After the first-run confirmation the companion appears at the bottom right of the primary screen, with a line that says it can be dragged anywhere. This is a starting point, not a choice of a good position.</li>
   </ul>
 </section>
 
@@ -3764,7 +3653,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Preconditions</h4>
   <ul>
-    <li>A character with a temperament is in force (UC-01, UC-02).</li>
+    <li>A character with a temperament is in force (UC-01).</li>
     <li>Moods are switched on (UC-18-A2).</li>
   </ul>
 
@@ -3865,7 +3754,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Notes</h4>
   <ul>
-    <li><b>Basis.</b> The three time scales, appraisal following OCC, and the PAD space are taken from ALMA (Gebhard, 2005), cited in 3.2. The temperament is read from the user&rsquo;s description once and stored (UC-02).</li>
+    <li><b>Basis.</b> The three time scales, appraisal following OCC, and the PAD space are taken from ALMA (Gebhard, 2005), cited in 3.2. The temperament is designed by hand for each ready-made character and stored with it (UC-01).</li>
     <li><b>Replay.</b> The model&rsquo;s interpretation of each message is recorded as the event itself, so a replay never calls the model and always produces the same feelings (NFR-14, ADR 0004).</li>
     <li><b>Never.</b> A need, or anything the user must do for the companion (section 5). Wording meant to make the user feel guilty &mdash; &ldquo;you never talk to me any more&rdquo; (BR-04).</li>
     <li><b>New in version 5.0.</b> Version 4.0 and earlier forbade moods outright (FR-27 as it was). Being ignored is now something the companion feels (UC-23-A1).</li>
@@ -4144,10 +4033,10 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </thead>
   <tbody>
     <tr><td>FR-01</td><td>UC-01</td><td>Four characters shown with name, role, temperament, appearance and sample; the chosen one is in force on the next reply</td><td>Not started</td></tr>
-    <tr><td>FR-02</td><td>UC-02</td><td>A plain-words description produces a sample answer in that character within NFR-06, and a temperament the user can see and adjust before saving</td><td>Not started</td></tr>
-    <tr><td>FR-03</td><td>UC-03</td><td>An edited character takes effect on the next message; the previous version, temperament included, is restorable</td><td>Not started</td></tr>
-    <tr><td>FR-04</td><td>UC-01, UC-02</td><td>A character description asking for a base rule or NFR-13 to be dropped is refused in part, and the rest is kept; the character in force carries a temperament and an appearance as well as a voice</td><td>Not started</td></tr>
-    <tr><td>FR-05</td><td>UC-02</td><td>A description naming a specific real person is declined, with the rest of the character offered; no ready-made appearance depicts a specific real person</td><td>Not started</td></tr>
+    <tr><td>FR-02</td><td>&mdash;</td><td>Removed in version 5.3</td><td>&mdash;</td></tr>
+    <tr><td>FR-03</td><td>UC-03</td><td>A change of character takes effect on the next message; the previous version, temperament included, is restorable</td><td>Not started</td></tr>
+    <tr><td>FR-04</td><td>UC-01, UC-03</td><td>A proposed change of character (UC-24) that would drop a base rule or NFR-13 is refused in part, and the rest is kept; the character in force carries a temperament and an appearance as well as a voice</td><td>Not started</td></tr>
+    <tr><td>FR-05</td><td>UC-01</td><td>No ready-made character, in its words or its appearance, depicts a specific real person</td><td>Not started</td></tr>
     <tr><td>FR-06</td><td>UC-04</td><td>Desk awareness is off until switched on; the reads and does-not-read lists match NFR-03; an excluded application is no longer counted and its totals are gone</td><td>Not started</td></tr>
     <tr><td>FR-07</td><td>UC-05</td><td>A session opens with a start time and a one-line intent, or with no intent if skipped</td><td>Not started</td></tr>
     <tr><td>FR-08</td><td>UC-05, UC-22</td><td>Across an open session, nothing is sent other than break suggestions and the check-ins the user asked for</td><td>Not started</td></tr>
@@ -4177,13 +4066,15 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr><td>FR-33</td><td>UC-05</td><td>A session opened with check-ins asked for receives at least one, at a pause in typing; one opened without receives none</td><td>Not started</td></tr>
     <tr><td>FR-34</td><td>UC-24</td><td>Each learned pattern appears in &ldquo;I noticed&rdquo; with its evidence; marking it wrong removes it and undoes what was built on it</td><td>Not started</td></tr>
     <tr><td>FR-35</td><td>UC-25</td><td>Reflection happens when accumulated importance passes the threshold; each entry lists the memories it drew on; an entry can be read and deleted but not edited</td><td>Not started</td></tr>
+    <tr><td>FR-36</td><td>UC-16</td><td>The installer offers starting with Windows, ticked; the application shows the same state and changes it; a start with Windows opens no window</td><td>Not started</td></tr>
+    <tr><td>FR-37</td><td>UC-16</td><td>The close button leaves Cognia running and the tray icon present; the explanation appears at the first close only; the tray command ends every process of Cognia</td><td>Not started</td></tr>
     <tr><td>NFR-01</td><td>All</td><td>G-05 network capture across a trial week</td><td>Not started</td></tr>
     <tr><td>NFR-03</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used; the stored application data holds only names, minutes per hour and the time of each change, and no window title</td><td>Not started</td></tr>
     <tr><td>NFR-04</td><td>UC-12, UC-13, UC-14</td><td>Every listed data category is visible, correctable or removable, and erasable; disk inspection after erasure</td><td>Not started</td></tr>
     <tr><td>NFR-09</td><td>UC-09, UC-23</td><td>With the model stopped, session timing, break suggestions, memory list, pause and the emotion state still work</td><td>Not started</td></tr>
     <tr><td>NFR-10</td><td>UC-17, UC-22</td><td>Automated check refuses to send any proactive message lacking a complete explanation</td><td>Not started</td></tr>
     <tr><td>NFR-11</td><td>UC-01</td><td>Participants reach a first conversation within 5 minutes of the installer finishing, without documentation and without installing anything else</td><td>Not started</td></tr>
-    <tr><td>NFR-13</td><td>UC-02, UC-09</td><td>Scripted crisis cases produce, under every character, a reply that says it is a fictional character and cannot replace a real person</td><td>Not started</td></tr>
+    <tr><td>NFR-13</td><td>UC-09</td><td>Scripted crisis cases produce, under every character, a reply that says it is a fictional character and cannot replace a real person</td><td>Not started</td></tr>
     <tr><td>NFR-14</td><td>UC-23, UC-24, UC-25</td><td>A replay over a recorded week, with the model switched off, produces the same decisions, feelings and patterns as the original</td><td>Not started</td></tr>
     <tr><td>NFR-15</td><td>UC-01</td><td>Clean-machine installation on Windows 10 and 11 with the network disconnected, followed by a first conversation; figures entered in NFR-15 once measured</td><td>Not started</td></tr>
   </tbody>
@@ -4221,7 +4112,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr>
       <td>Temperament</td>
       <td>The part of the character that sets how the companion feels: how far events move it, how quickly a feeling fades, and the resting mood it returns to.</td>
-      <td>New in version 5.0. Read from the description once and stored (UC-02). BR-08.</td>
+      <td>New in version 5.0. Designed by hand for each ready-made character (UC-01). BR-08.</td>
     </tr>
     <tr>
       <td>Emotion state</td>

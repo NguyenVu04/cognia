@@ -25,6 +25,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 import src.app.local_only  # noqa: F401  - must precede any LangChain import
 from src.app import config
 from src.app.chat_worker import ChatWorker
+from src.domain.conversation import rules
 from src.domain.conversation.models import COMPANION, USER, Message
 from src.infrastructure.ai.ollama_agent import OllamaAgent
 from src.infrastructure.storage.sqlite_store import (
@@ -39,6 +40,15 @@ from src.ui.windows.companion_window import CompanionWindow
 from src.ui.windows.main_window import MainWindow
 
 _PAUSE_LABELS = {option.id: option.paused_label for option in sample_data.PAUSE_OPTIONS}
+
+
+def _character_text(name: str, role: str) -> str:
+    """Layer 2. Temporary: the character is mockup copy until UC-01."""
+    return (
+        f"You are {name}, {role}. Talk the way a friend does: warm, brief, "
+        "curious. One or two short paragraphs at most, usually less. Ask about "
+        "them more than you talk about yourself."
+    )
 
 
 class Cognia(QObject):
@@ -61,9 +71,11 @@ class Cognia(QObject):
         self.tray = QSystemTrayIcon(icons.icon("chat-circle", 32, theme.ACCENT))
         self.tray.setToolTip("Cognia")
 
-        # The character is still mockup copy; FR-02 will give it an owner.
+        # The character is still mockup copy; UC-01 will give it an owner.
         self.character = sample_data.CHARACTERS[0]
-        self.prompt = config.system_prompt(self.character.name, self.character.role)
+        self.prompt = rules.system_text(
+            _character_text(self.character.name, self.character.role)
+        )
 
         self.store = SqliteConversationStore(config.database_path())
         self.conversation = self.store.latest() or self.store.create(
