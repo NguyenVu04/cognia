@@ -356,22 +356,26 @@ callers.
 cognia/
 ├── desktop/                         everything runnable
 │   ├── pyproject.toml, uv.lock      dependencies (uv)
-│   └── src/
-│       ├── __main__.py              entry point: python -m src
-│       ├── app/                     wiring: QApplication, surfaces, worker thread, config
-│       ├── ui/                      windows, dialogs, widgets, views, theme
-│       ├── core/                    models and ports (pure), moving to domain/
-│       ├── domain/                  feature packages, service stubs today
-│       ├── infrastructure/          SQLite storage and the model adapter
-│       ├── resources/               vendored fonts and the QSS style sheet
-│       └── utils/                   paths
+│   ├── src/
+│   │   ├── __main__.py              entry point: python -m src
+│   │   ├── config.json              shipped defaults
+│   │   ├── app/                     wiring: QApplication, surfaces, worker thread, config
+│   │   ├── ui/                      windows, dialogs, widgets, views, theme
+│   │   ├── core/                    models and ports (pure), moving to domain/
+│   │   ├── domain/                  feature packages, service stubs today
+│   │   ├── infrastructure/          SQLite storage and the model adapter
+│   │   ├── resources/               vendored fonts and the QSS style sheet
+│   │   └── utils/                   paths
+│   ├── tests/                       empty, no test suite exists
+│   ├── data/                        the development database, not in git
+│   └── training/                    planned, not created: builds the tuned chat model (D-27)
 ├── docs/
 │   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.2
 │   ├── ERD.md                       the database design
 │   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability
-├── CLAUDE.md                        working agreement for AI assistance
+├── CLAUDE.md                        working agreement for AI assistance, local, not in git
 ├── Taskfile.yml                     task runner
 ├── LICENSE                          MIT
 └── README.md                        this file
