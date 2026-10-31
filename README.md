@@ -240,7 +240,7 @@ flowchart TB
 |---|---|---|---|
 | QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
-| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-09) | Which models ship is decided by measurement (ADR 0002, ADR 0007); `qwen3.5:2b` is the first candidate for chat |
+| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-09) | Measurement decides which models ship (ADR 0002, ADR 0007). Gemma 4 E2B, fine-tuned at build time and merged into one file, is the candidate for chat (D-27). `qwen3.5:2b` runs in the code today |
 | An outside AI service | Optional replacement for the local model, off unless the user switches it on. Every send is warned about beforehand and recorded (NFR-02) | Optional | Chosen by the user |
 
 ## Getting started
@@ -417,6 +417,7 @@ of the specification.
 | Safety behaviour cannot be written away by a character | Scripted crisis cases under every character, reviewed by a person each release; the reply says it is a fictional character and cannot replace a real person | NFR-13, FR-04 |
 | One installer, no download at first run | Clean Windows 10 and 11 installs with the network disconnected, then a first conversation | NFR-15, NFR-11 |
 | The resource cost of running all day | Resource monitoring across an 8-hour idle run, once hidden and once on screen | NFR-05 to NFR-07 |
+| The tuned chat model is better than its base model | Measure both models on the same test sets, in `llama-server`. The tuned model ships only if it meets the thresholds and it beats the base model | A-02, G-03 |
 
 > [!IMPORTANT]
 > The figures in NFR-05, NFR-06 and NFR-07 are targets, not measurements, and NFR-15
@@ -471,6 +472,7 @@ own account boundary and nothing further. This follows from C-02.
 | **Retention** | Held until the user deletes it. A closed commitment is deleted, not kept as history. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
 | **Residency** | The user's own disk. No second copy anywhere (NFR-04) |
 | **Sub-processors** | None, unless the user switches on an outside AI service — warned about beforehand, every send recorded (NFR-02) |
+| **Model training** | User data never trains a model. Training uses reviewed synthetic examples before the installer exists, and the user's machine never trains (D-27). If a user's words trained the weights, UC-14 could not erase them |
 | **Subject access / erasure** | UC-12 shows everything held, in three groups; UC-13 corrects or removes one item; UC-14 erases. Target: any item reachable in 2 clicks and deletable in 2 more (G-04) |
 | **Audit logging** | The local event journal, on the user's disk and erasable by them like anything else |
 
@@ -521,6 +523,16 @@ Open questions recorded against UC-01, owned by the author: the four ready-made
 characters need names, stated roles and appearances. The author makes the appearances
 in VRoid Studio, and whether its terms allow redistribution from a public MIT-licensed
 repository is not yet confirmed (D-26 in `docs/architecture/ARCHITECTURE.md`).
+
+The fine-tuned chat model (D-27) is not started. Its work has this order:
+
+1. Measure Gemma 4 E2B as published.
+2. Set the acceptance thresholds.
+3. Train on reviewed synthetic examples.
+4. Measure the tuned file against the published model.
+
+The file size puts the limit of the installer at risk. The thresholds, the model that generates the
+examples, and the Gemma terms are open. Section 12 of `docs/architecture/ARCHITECTURE.md` lists these items.
 
 ## Contributing
 

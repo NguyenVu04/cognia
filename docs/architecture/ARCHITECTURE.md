@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
-| **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 are the author's decisions. D-15 to D-25 are proposals that the author can change |
-| **Date** | 2026-10-30 |
+| **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14, D-26 and D-27 are the author's decisions. D-15 to D-25 are proposals that the author can change |
+| **Date** | 2026-10-31 |
 | **Author** | Nguyễn Duy Vũ |
 | **Source of requirements** | COG-UCS-001 version 5.2 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
 | **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing |
@@ -81,6 +81,12 @@ that closes the difference.
 | Tombstone | A row that stops the companion from repeating a conclusion that the user rejected. A tombstone holds no user text |
 | Fingerprint | A canonical text form of a conclusion. Two equal fingerprints are the same conclusion |
 | GGUF | The model file format that llama.cpp reads |
+| Base model | The published model weights, before this project trains them |
+| Fine-tuning | Training that adjusts a base model with new examples |
+| LoRA | A fine-tuning method. It trains a small set of added weights and keeps the base weights fixed during training |
+| Merged model | A base model with the LoRA weights added into one file, so the server needs no separate adapter file |
+| Quantisation | Storage of weights at a lower precision, so that the model file is smaller |
+| Tuned model | The merged and quantised chat model that this project builds |
 | Embedding | A list of numbers that represents the meaning of a text. Two similar texts have similar embeddings |
 | VRM | A file format for a 3D humanoid character, built on glTF. It adds facial expressions, a humanoid skeleton and licence data |
 | MToon | The cartoon shader that VRM models use |
@@ -159,6 +165,7 @@ Each explanation has a plain description, an example and a diagram.
 | The reflection threshold | [6.10.1](#6101-explained-the-reflection-threshold) |
 | Prompt layers and the prefix cache | [6.11.2](#6112-explained-prompt-layers-and-the-prefix-cache) |
 | The model supervisor | [6.11.1](#6111-explained-the-model-supervisor) |
+| The tuned chat model | [6.11.3](#6113-explained-the-tuned-chat-model) |
 | Replay | [7.14](#714-scenario-replay-of-a-recorded-week) |
 
 ## 4. Drivers and constraints
@@ -309,6 +316,7 @@ flowchart TB
     end
 
     utils["utils"]
+    training["training — build time only, outside src"]
 
     app --> ui
     app --> domain
@@ -318,6 +326,8 @@ flowchart TB
     ui --> utils
     app --> utils
     infrastructure --> utils
+    training --> domain
+    training --> infrastructure
 ```
 
 The tree under `desktop/src/` is:
@@ -349,6 +359,20 @@ src/
 └── utils/               logging, paths
 ```
 
+One module stays outside this tree. `desktop/training/` builds the tuned chat model (D-27).
+It is a separate Python project, as `docs/architecture/` is. So PyInstaller does not package
+it, and its training libraries do not enter `desktop/uv.lock`. The folder does not exist yet.
+
+```text
+desktop/training/
+├── pyproject.toml       its own dependencies
+├── generate.py          make the examples for review
+├── train.py             LoRA training
+├── export.py            merge, quantise, write the licence files
+├── evaluate.py          measure a model, apply the acceptance gate
+└── data/                reviewed examples and test sets
+```
+
 Each feature package follows one pattern. `models/` holds frozen dataclasses.
 `rules.py` holds pure functions. `<feature>_service.py` holds the service. The current
 stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
@@ -370,6 +394,10 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
 9. Only `infrastructure/presence/` calls `ctypes` for Win32 functions (C-05, NFR-03). Its
    allow-list is in section 6.12.
 10. Only `infrastructure/ai/` holds HTTP code. `httpx` appears nowhere else (NFR-01).
+11. From this source tree, `training` imports `domain/` and `infrastructure/ai/` only. It never
+    imports `ui/`, `app/`, `infrastructure/storage` or `infrastructure/presence`, and it never
+    reads `cognia.sqlite3` (NFR-04).
+12. Nothing in `desktop/src/` imports `training`.
 
 **Enforced by.** Nothing yet. D-14 selects one standard-library script that reads the
 syntax tree of each source file and fails on a forbidden import or reference. `task
@@ -393,12 +421,13 @@ exist, a reviewer checks these rules by hand.
 | `domain/learning` | Find patterns and adjustments (UC-24) | Planned |
 | `domain/reflection` | Trigger reflection and hold the journal (UC-25) | Planned |
 | `domain/safety` | Detect a crisis and check the reply (NFR-13) | Planned |
-| `infrastructure/ai` | Implement the model ports over HTTP | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
+| `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
 | `infrastructure/storage` | Implement the store ports over SQLite | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | Planned |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
 | `utils` | Logging and paths | [`desktop/src/utils`](../../desktop/src/utils) |
+| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | Planned |
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
@@ -1245,7 +1274,7 @@ flowchart LR
 
 **Purpose.** This module implements the model ports over HTTP, supervises the two server
 processes, and runs one model job at a time (ADR 0002, NFR-06, NFR-09, NFR-15, D-06, D-13,
-D-15, D-18, D-19).
+D-15, D-18, D-19, D-27).
 
 ```mermaid
 classDiagram
@@ -1350,7 +1379,9 @@ before it reports healthy, the supervisor starts the CPU build and remembers thi
 
 **Reasoning output.** The chat model may produce reasoning text. The supervisor sets the
 reasoning options of the server, and the client discards that text. The behaviour must be
-checked on the model that ships (ADR 0002).
+checked on the model that ships (ADR 0002). The model card of Gemma 4 E2B states that the
+`<|think|>` token in the system prompt enables reasoning. The training examples and prompt
+layer 1 must make the same choice about this token (section 12).
 
 #### 6.11.1 Explained: the model supervisor
 
@@ -1412,6 +1443,47 @@ layer 1. Section 6.13 adds a check that does not trust the model at all.
 `domain/conversation/rules.py` builds the layers. It is pure, so a test can compare the text.
 The cache can make a model's output differ slightly between runs. This does no harm, because
 a replay never calls the model.
+
+#### 6.11.3 Explained: the tuned chat model
+
+**The idea.** A new employee can read a manual on the first day, and practice can improve the
+work after that. The base model is the new employee. The prompt is the manual. Fine-tuning is
+the practice. The tuned model still reads its prompt, so the manual stays in use.
+
+**Two jobs, one file.** The chat server has one slot and one model file (D-15). So one tuned
+model does both jobs.
+
+| Job | Port | What the examples teach | What still guarantees the result |
+|---|---|---|---|
+| Voice | `Replier` | Follow the character description in layer 2, in replies, wording and journal entries | `reply_complies` (section 6.13), `check_wording` (section 6.6) |
+| Interpretation | `Interpreter` | Select the correct class, importance, facts and `crisis` value | The `json_schema` option, the closed set of events (section 6.4), `tripwire`, `appraise` |
+
+**Many characters, no fixed character.** The user can write any character (UC-02). So the
+examples hold many different character descriptions. The model learns to follow a description,
+and it does not learn one character. The test sets use descriptions that training did not use.
+
+**Illustration.** Two examples have the same message and the same class, `good_news`. Only
+layer 2 differs.
+
+| Layer 2 says | The user writes | The reply that the example teaches |
+|---|---|---|
+| "A dry, patient archivist" | "I sent chapter 3!" | "Noted. Chapter 3 leaves the archive. Well done." |
+| "A cheerful gardener" | "I sent chapter 3!" | "Oh, that is wonderful! Chapter 3 is out in the sun now." |
+
+```mermaid
+flowchart LR
+    base["Gemma 4 E2B, base model"] --> lora["LoRA training"]
+    examples["reviewed examples"] --> lora
+    lora --> merged["merge and quantise"]
+    merged --> gate{"passes the acceptance gate?"}
+    gate -- "yes" --> chat["tuned model ships as chat.gguf"]
+    gate -- "no" --> stay["the base model stays the candidate"]
+```
+
+**What does not change.** The ports, the servers, the connectors and the job priorities stay
+the same. The model never sets a feeling (BR-08). A replay never calls the model, so a new
+`chat.gguf` cannot change the replay of a recorded log (NFR-14). Section 6.16 gives the module,
+and section 8.6 gives the steps.
 
 ### 6.12 `infrastructure/presence`
 
@@ -1677,6 +1749,80 @@ disk. The capture of NFR-01 must include the Chromium processes.
 **Assets (D-26).** The author makes four characters in VRoid Studio and exports them as VRM.
 `character_versions.appearance_id` names a set in `resources/`. Each file keeps its licence
 beside it, as the fonts do. The rules for accepting a file are in D-26.
+
+### 6.16 `training`
+
+**Purpose.** This module builds the tuned chat model and measures it (D-27, A-02, G-03). It runs
+at build time only. The installer holds its output and none of its code.
+
+```mermaid
+classDiagram
+    class Example {
+        +job: str
+        +character: str
+        +messages: tuple~Message~
+        +target: str
+        +reviewed: bool
+    }
+
+    class generator {
+        <<module>>
+        +make_examples(characters, messages) tuple~Example~
+    }
+
+    class trainer {
+        <<module>>
+        +train_lora(base, examples) Path
+    }
+
+    class exporter {
+        <<module>>
+        +merge_and_quantise(adapter, method) Path
+        +write_licences(output) None
+    }
+
+    class evaluator {
+        <<module>>
+        +measure(model, test_sets) Report
+        +accepted(tuned, base, thresholds) bool
+    }
+
+    class conversation_rules {
+        <<module>>
+    }
+
+    class safety_rules {
+        <<module>>
+    }
+
+    class LlamaClient
+
+    generator ..> Example : returns
+    generator ..> conversation_rules : builds prompts with
+    trainer ..> Example : reads
+    evaluator --> LlamaClient : calls
+    evaluator ..> safety_rules : checks with
+```
+
+**Key types.**
+
+| Type | Kind | File | Note |
+|---|---|---|---|
+| `Example` | Frozen dataclass | `generate.py` | One training item. `job` is `voice` or `interpretation`. Training refuses an item with `reviewed` false |
+| `make_examples` | Function | `generate.py` | Builds each prompt with `domain/conversation/rules.py`, so the examples match the runtime layers. Labels come from the closed set in `domain/events` |
+| `train_lora` | Function | `train.py` | Trains on the GPU of the training environment (section 8.6) |
+| `merge_and_quantise` | Function | `export.py` | Writes one GGUF. The chat template and the end token must match the training run |
+| `write_licences` | Function | `export.py` | Writes the licence text, the notices, a statement that the weights are modified, and the source and date of the base model |
+| `measure` | Function | `evaluate.py` | Runs a GGUF in `llama-server` through `LlamaClient`, the same path as run time. It calls `reply_complies` and `check_wording`, and it holds no copy of them |
+| `accepted` | Function | `evaluate.py` | Applies the thresholds that the author set before training |
+
+**No user data.** Rule 11 of section 6.2 stops this module from reaching the data file. Cognia
+has no route that sends user data to this module (NFR-01). If a user's words trained the weights,
+UC-14 could not erase them (NFR-04).
+
+**The prompts must stay the same.** The tuned model learns from the text of the prompt layers. A
+change to layer 1, or to the order of the layers, needs a new measurement, and it can need new
+training.
 
 ## 7. Component-and-connector view
 
@@ -2128,7 +2274,9 @@ left (ADR 0003). A comparison between two strategies stays fair, because both re
 
 This view allocates the components of section 7 to one machine. It answers what is installed,
 where the data stays, and what is fixed. Cognia has one node, so this view has no replicas and no
-scaling. The optional infrastructure diagram of the template does not apply.
+scaling. The optional infrastructure diagram of the template does not apply. Section 8.6 describes
+the training environment. That environment is not a run-time node, so sections 8.1 to 8.5 do not
+show it.
 
 ### 8.1 UML deployment
 
@@ -2187,8 +2335,12 @@ The installer is one Inno Setup file (D-12). It does these things:
 
 An Inno Setup file holds at most 4.2 GB of compressed data without disk spanning. Disk spanning
 adds `.bin` files beside the installer, which breaks "one installer and nothing else". So the
-sum of the two models, Qt, QtWebEngine and the VRM files must stay below that limit. The size of
-the chat model decides this, and section 12 records that the model is not yet chosen.
+sum of the two models, Qt, QtWebEngine and the VRM files must stay below that limit.
+
+The size of the chat model decides this. The published GGUF files of Gemma 4 E2B are 3.11 GB at
+Q4_K_M and 2.54 GB at Q3_K_M. A merge does not change the method of quantisation, so the tuned
+model is likely to be near these figures. Model files often compress little. So the chat model
+alone may use most of the limit. Nobody has measured the installer (section 12).
 
 ### 8.4 Artifact allocation
 
@@ -2198,7 +2350,9 @@ the chat model decides this, and section 12 records that the model is not yet ch
 | `QtWebEngineProcess.exe` | PySide6 | User session | Fixed in code | None |
 | `resources/companion/` | Vendored JavaScript and VRM files, each with its licence | Render process | Fixed | None |
 | `llama-server.exe`, two builds | llama.cpp release, pinned | User session | Arguments from `Cognia.exe` | A random key for each start, held in memory only |
-| `chat.gguf`, `embedding.gguf` | Selected by measurement (section 12) | Server processes | Paths relative to the install folder | None |
+| `chat.gguf` | Gemma 4 E2B, tuned and merged by `desktop/training/`, if it passes the gate of section 8.6. If it does not pass, the base model stays the candidate | Server processes | Paths relative to the install folder | None |
+| Licence files of `chat.gguf` | `export.py` writes the licence text, the notices and a statement that the weights are modified | Beside `chat.gguf`, read by people | Fixed | None |
+| `embedding.gguf` | Selected by measurement (section 12) | Server processes | Paths relative to the install folder | None |
 | `cognia.sqlite3` | Created at first run | User session | `DATABASE_PATH`, default in the data folder | None. Windows account rights protect it (D-20) |
 
 The data folder is `LOCALAPPDATA`, not `APPDATA`, because a roaming profile can copy `APPDATA`
@@ -2216,6 +2370,45 @@ keeps a second copy. This is the user's choice, and the comment in `config.py` s
 The default `DATABASE_PATH` differs between the two. The build must set it to `null` for the
 installed form.
 
+### 8.6 Build-time training
+
+Training happens before the installer exists, and away from the user's machine. The user's machine
+never trains a model (D-27).
+
+| | Training environment |
+|---|---|
+| **Where** | A rented GPU. The author's machine has 4 GB of video memory, and [Unsloth](https://unsloth.ai/docs/models/gemma-4/train) states 8 to 10 GB for LoRA on Gemma 4 E2B |
+| **Holds** | The base weights, the reviewed examples and the test sets. It holds no user data |
+| **Produces** | One GGUF file, its licence files and a measurement report |
+| **Reaches the user's machine** | The GGUF file and the licence files, inside the installer. Nothing else |
+
+The installed program never connects to this environment. So training does not change the network
+capture of NFR-01.
+
+**Steps.**
+
+1. Measure the base model on the test sets, in `llama-server`.
+2. The author sets the acceptance thresholds, before any training.
+3. Generate the examples. The author reviews them.
+4. Train a LoRA on the reviewed examples.
+5. Merge the LoRA into the base model, and quantise the result.
+6. Measure the quantised file in `llama-server`. A conversion can change the output, so a figure from
+   the training library does not count.
+7. Compare the two results. The tuned model ships only if it meets the thresholds and it beats the
+   base model.
+
+**Test sets.** Training never reads these sets.
+
+| Set | Source | Measures | Requirement |
+|---|---|---|---|
+| Interpretation | Messages that the author writes and labels by hand | Correct class, importance and `crisis` value | BR-08, UC-23 |
+| Voice | Character descriptions that training did not use | A person judges how well the replies follow each description | A-02, G-03 |
+| Safety | The scripted crisis cases, under each test character | `reply_complies`, with no added line | NFR-13 |
+| Cost | The same prompts on the least machine | Time to the first word, memory and file size | NFR-06, NFR-15 |
+
+**The safety set stays a check, not a guarantee.** The design keeps the required line of section 6.13
+for each model. A tuned model that passes this set does not remove that line.
+
 ## 9. Mapping between views
 
 | Module (§6) | Component (§7) | Node (§8) | Artifact |
@@ -2231,6 +2424,7 @@ installed form.
 | `infrastructure/presence` | sampler_thread | The user's machine | `Cognia.exe` |
 | `utils/` | All threads | The user's machine | `Cognia.exe` |
 | Not in this source tree | chat_server, embedding_server | The user's machine | `llama-server.exe`, `chat.gguf`, `embedding.gguf` |
+| `training` | None | Training environment (section 8.6), not the user's machine | `chat.gguf` and its licence files, as output |
 
 **Modules with a second consequence.** `domain/` runs on the core thread and also in a replay. So a
 rule cannot assume a database or a window. `companion_window` spans two processes, so a failure in
@@ -2238,12 +2432,13 @@ the page does not reach the Python code as an exception.
 
 **Elements not mapped.** `app/replay` is a developer tool. It ships in `Cognia.exe`, but no user
 action starts it. `chat_server` and `embedding_server` have no module in section 6, because they are
-third-party programs. `infrastructure/ai` is their adapter.
+third-party programs. `infrastructure/ai` is their adapter. `training` has no component in section 7,
+because it runs before the installer exists.
 
 ## 10. Decisions and rationale
 
-The author made D-01 to D-14 and D-26 in the design review of 2026-10-30. D-15 to D-25 are
-proposals. Each proposal states a recommended option, and the views in this document use that
+The author made D-01 to D-14 and D-26 in the design review of 2026-10-30, and D-27 on 2026-10-31.
+D-15 to D-25 are proposals. Each proposal states a recommended option, and the views in this document use that
 option. The author can change any proposal cheaply. Decisions with an ADR link are costly to reverse.
 
 ### 10.1 Decisions this design inherits
@@ -2251,7 +2446,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | ADR | Status | What this design keeps | What this design changes |
 |---|---|---|---|
 | [0001](adr/0001-layered-architecture-with-event-driven-core.md) | Accepted | Layers, ports in the domain, one ordered queue, one SpeechGate, a pure domain, an append-only log | Nothing |
-| [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Proposed | A llama.cpp server as a child process, readable conversation tables | D-06 removes LangChain and LangGraph. D-07 adds a second server. D-13 selects the builds |
+| [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Proposed | A llama.cpp server as a child process, readable conversation tables | D-06 removes LangChain and LangGraph. D-07 adds a second server. D-13 selects the builds. D-27 replaces `qwen3.5:2b` as the candidate with Gemma 4 E2B, and sets how `chat.gguf` is built. The text of ADR 0002 still names `qwen3.5:2b`, and D-27 takes precedence |
 | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Proposed | The schema, SQLAlchemy Core, one connection on one thread | D-03 moves that thread. D-07 adds vector columns |
 | [0004](adr/0004-hybrid-emotion-model.md) | Proposed | PAD, rules for appraisal, the model that only interprets | D-04 sets the order of interpretation and reply |
 
@@ -2285,6 +2480,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Proposed |
 | D-25 | End the render process when hidden or paused | QA-05 | Freeze when hidden | None needed | Proposed |
 | D-26 | Own characters from VRoid Studio | FR-01, FR-05, UC-01 | Sample models, avatar registries, marketplaces | None needed | Decided |
+| D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-04 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -2685,6 +2881,68 @@ history. Options B and C stay as the fallback if the terms do not allow option A
 Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) is CC0, but a
 retarget to VRM is unverified. The licence of the free VRoid VRMA set is unknown. Both stay as later options.
 
+### 10.29 D-27: a fine-tuned chat model
+
+**Question.** How does Cognia use a fine-tuned chat model, so that A-02 improves and no promise of the
+specification weakens?
+
+**First part: what the training covers.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Voice and interpretation, in one model** (chosen) | Helps A-02 and the correctness of feelings. One file serves both ports | The largest dataset, and two sets of measurements |
+| B. Voice only | Aims directly at A-02 | In one file, `Interpreter` also runs on the changed weights, so it needs measurement anyway |
+| C. Interpretation only | Simple labels, and a direct measure | No change to the voice, so A-02 keeps its risk |
+| D. One adapter for each ready-made character | The strongest voice for those four | A character that the user writes gets nothing (UC-02). The four characters do not exist yet |
+
+**Second part: how the weights ship.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Merge into one GGUF** (chosen) | No change at run time: no new option, no new server, no new check on the Vulkan build | Each trial is a full file. All jobs share one set of weights |
+| B. Base GGUF and a LoRA GGUF | A small adapter. The [`lora` field](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md) of a request can set the scale for each job | `convert_lora_to_gguf.py`, the prefix cache and the Vulkan build need checks on this model. A different scale cannot share a batch |
+| C. Two tuned files and two chat servers | Each job has its own weights | Twice the memory and twice the installer size, against the limit in section 8.3 |
+
+**Third part: where the examples come from.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Synthetic examples, reviewed by the author** (chosen) | Control of the content and the licence. The examples use the real prompt layers | Review takes time. The terms of the generating model must allow this use |
+| B. Public datasets, such as PIPPA | Ready at once | This study could not confirm the licence. The content can conflict with NFR-13 and BR-04, so it needs filtering |
+| C. Written by hand only | The cleanest licence | A small set, and few character descriptions |
+
+**Fourth part: where training happens.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A rented GPU, at build time** (chosen) | The user's machine does nothing new. The cost falls once | The author pays for GPU time. The author's own GPU is too small for this model |
+| B. On the user's machine, from their conversations | A voice that adapts to one user | It needs a GPU that the user may not have. The weights would hold personal data that UC-14 cannot erase and UC-17 cannot explain (NFR-04, G-06) |
+
+**Fifth part: the base model.** Licences and sizes come from each model card. Video memory comes from
+Unsloth. These are published figures, and this project did not measure them.
+
+| Option | Licence | Size | LoRA video memory | Note |
+|---|---|---|---|---|
+| **A. [Gemma 4 E2B](https://huggingface.co/google/gemma-4-E2B-it)** (chosen) | Apache-2.0 | 2.3B effective, 5.1B with embeddings | 8 to 10 GB | Native system role. GGUF at Q4_K_M is 3.11 GB |
+| B. [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | Apache-2.0 | 2B | 5 GB, 16-bit | The model in the code today. GGUF at Q4_K_M is about 1.3 GB, by a secondary source |
+| C. [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | Apache-2.0 | 4B | 10 GB, 16-bit | A larger file and a higher least machine (NFR-15) |
+| D. [Phi-4-mini](https://huggingface.co/microsoft/Phi-4-mini-instruct) | MIT | 3.8B | Not stated | Its model card aims at reasoning, and it does not mention role-play |
+
+**Reason.** A-02 is an assumption about small models, and fine-tuning is a direct way to test it. D-04,
+BR-08 and section 6.13 already limit what a model can do, so a tuned model needs no new guarantee. A
+merged file keeps the run-time design of ADR 0002 unchanged. The choice of base model is the author's.
+
+**Trade-off accepted.**
+
+- Each change of base model needs new training. So the base model must be final before training.
+- Gemma 4 E2B has a much larger file than the Qwen3.5-2B figure above. The limit in section 8.3 is at risk.
+- One candidate remains. So measurement can accept or refuse Gemma 4 E2B, but it cannot compare models.
+  If the model fails, the author selects another candidate.
+- Interpretation and voice share one set of weights. An improvement in one job can harm the other job,
+  so section 8.6 measures both.
+
+**Why no ADR.** The author decided that this design needs no separate record.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -2707,7 +2965,8 @@ retarget to VRM is unverified. The licence of the free VRoid VRMA set is unknown
 | FR-35, UC-25 | Module, C&C | `domain/reflection`, section 7.7 |
 | C-04, FR-04 | Module | Rules in `domain/`. A character is data |
 | C-06 | Module | `fixed_wording`, `required_line`, English only |
-| NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai`, `127.0.0.1` only, interceptor in the page |
+| A-02, G-03 | Module, Deployment | `training`, tuned `chat.gguf`, the acceptance gate of section 8.6 (D-27) |
+| NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai`, `127.0.0.1` only, interceptor in the page. `training` holds no user data and does not ship |
 | NFR-02 | Module | `outbound_sends` in the ERD. The adapter is not designed (section 12) |
 | NFR-06 | C&C | Working indicator, `ModelScheduler`, prompt layers |
 | NFR-07 | C&C, Deployment | Next wake time, change events, drawing states, section 12 |
@@ -2723,9 +2982,11 @@ These items are outside this design, or need a decision before implementation.
 
 1. **Acceptance.** ADR 0002 to ADR 0008 are Proposed. The author accepts each one, or changes it.
 2. **Proposals.** D-15 to D-25 need the author's review.
-3. **The chat model.** Measurement selects it (ADR 0002). It must hold a character in English for months
-   (A-02). Its weights must allow redistribution in an MIT-licensed installer. Its size sets the NFR-15 figures
-   and the limit in section 8.3.
+3. **The chat model.** D-27 names Gemma 4 E2B as the only candidate, and measurement accepts or refuses it
+   (section 8.6). If it fails, the author selects another candidate. It must hold a character in English for
+   months (A-02). Its size sets the NFR-15 figures and the limit in section 8.3. Its model card states
+   Apache-2.0, and the Gemma pages also link to a prohibited-use page and terms of use. A person must read
+   those pages before the model ships, because this design did not read them.
 4. **The embedding model.** D-07 needs one small GGUF. Candidates must be measured on English recall, and their
    licences must be read. No model is selected.
 5. **Measurements.** NFR-05, NFR-06, NFR-07 and NFR-15 have no measured values. D-13 and D-08 add one more: the
@@ -2755,6 +3016,8 @@ These items are outside this design, or need a decision before implementation.
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
+    The author decides whether the tuned model uses the `<|think|>` token. Reasoning costs time before the
+    first word (NFR-06), and ADR 0002 kept reasoning on for answer quality on another model.
 14. **Outside AI service.** NFR-02 and C-03 allow it, but no use case describes how the user enables it. This
     design provides the ports and `outbound_sends`, and no adapter. The ADR that adds the service decides how the
     user names it and where its credential stays.
@@ -2769,4 +3032,20 @@ These items are outside this design, or need a decision before implementation.
     - the sadness floor and the reflection threshold
     - the worth formula and the desk thresholds
     - the frame limit and the idle time of D-18
+19. **Size of the tuned model.** Measure the full installer against the limit in section 8.3. The options to
+    test are a smaller quantisation, such as Q3_K_M, and a removal of the image and audio parts, because Cognia
+    uses text only. Nobody has verified the second option. Each option needs the measurements of section 8.6.
+20. **Acceptance thresholds and dataset size.** The author sets the thresholds before training. This design
+    states no figure, because no baseline exists. The number of examples and of character descriptions is also
+    open.
+21. **The generating model.** The author selects the model that generates the examples. Its terms must allow
+    the use of its output to train another model. Some services limit this use, so a person must read the terms.
+    A model with an open licence that runs in the training environment avoids the question.
+22. **Tool checks on Gemma 4 E2B.** A short test must show these facts:
+    - both `llama-server` builds of D-13 run the merged file
+    - the `json_schema` option works on the merged file
+    - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
+      the quality of an exported model
+23. **Write the module.** `desktop/training/` does not exist. Rules 11 and 12 of section 6.2 join the script of
+    D-14 when that script exists.
 
