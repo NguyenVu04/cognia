@@ -25,11 +25,11 @@ from pathlib import Path
 from sqlalchemy import Row, delete, insert, literal_column, select, update
 
 from src.domain.conversation.models import COMPANION, USER, Conversation, Message
+from src.infrastructure.storage import orm
 from src.infrastructure.storage.database import open_database
-from src.infrastructure.storage.orm import ConversationRow, MessageRow
 
-conversations = ConversationRow.__table__
-messages = MessageRow.__table__
+conversations = orm.Conversation.__table__
+messages = orm.Message.__table__
 
 UNTITLED = "New conversation"
 TITLE_LENGTH = 40

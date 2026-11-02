@@ -5,21 +5,20 @@ from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from sqlalchemy import Connection, Engine, delete, insert, inspect, select, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, configure_mappers
+from sqlalchemy.orm import configure_mappers
 
 from src.infrastructure.storage.database import open_database
 from src.infrastructure.storage.orm import (
     Base,
-    CharacterProposalRow,
-    CharacterVersionRow,
-    ConversationRow,
-    EventRow,
-    MemoryItemRow,
-    MessageRow,
-    PatternEvidenceRow,
-    PatternRow,
-    SessionRow,
-    SpeechDecisionRow,
+    CharacterProposal,
+    CharacterVersion,
+    Conversation,
+    Event,
+    MemoryItem,
+    Message,
+    Pattern,
+    PatternEvidence,
+    SpeechDecision,
 )
 
 NOW = "2026-10-31T12:00:00.000+00:00"
@@ -43,7 +42,7 @@ def engine(tmp_path: Path):
 
 def add_version(db: Connection, **columns) -> None:
     db.execute(
-        insert(CharacterVersionRow).values(
+        insert(CharacterVersion).values(
             **{
                 "id": "v1",
                 "number": 1,
@@ -68,10 +67,10 @@ def add_version(db: Connection, **columns) -> None:
 
 def add_message(db: Connection, **columns) -> None:
     db.execute(
-        insert(ConversationRow).values(id="c1", title="t", last_active_at=NOW)
+        insert(Conversation).values(id="c1", title="t", last_active_at=NOW)
     )
     db.execute(
-        insert(MessageRow).values(
+        insert(Message).values(
             **{
                 "id": "m1",
                 "conversation_id": "c1",
@@ -86,7 +85,7 @@ def add_message(db: Connection, **columns) -> None:
 
 def add_event(db: Connection, **columns) -> int:
     result = db.execute(
-        insert(EventRow).values(
+        insert(Event).values(
             **{
                 "occurred_at": NOW,
                 "utc_offset_min": 420,
@@ -101,7 +100,7 @@ def add_event(db: Connection, **columns) -> int:
 
 def add_decision(db: Connection, id: str, message_id: str | None) -> None:
     db.execute(
-        insert(SpeechDecisionRow).values(
+        insert(SpeechDecision).values(
             id=id, kind="break", decided_at=NOW, outcome="sent", message_id=message_id
         )
     )
@@ -109,7 +108,7 @@ def add_decision(db: Connection, id: str, message_id: str | None) -> None:
 
 def add_proposal(db: Connection, id: str, result_version_id: str) -> None:
     db.execute(
-        insert(CharacterProposalRow).values(
+        insert(CharacterProposal).values(
             id=id,
             base_version_id="v1",
             summary="s",
@@ -146,16 +145,10 @@ def test_mappers_configure() -> None:
     configure_mappers()
 
 
-def test_second_open_session_refused(engine: Engine) -> None:
-    with pytest.raises(IntegrityError), engine.begin() as db:
-        db.execute(insert(SessionRow).values(id="s1", started_at=NOW))
-        db.execute(insert(SessionRow).values(id="s2", started_at=NOW))
-
-
 def test_noticed_item_needs_reason(engine: Engine) -> None:
     with pytest.raises(IntegrityError), engine.begin() as db:
         db.execute(
-            insert(MemoryItemRow).values(
+            insert(MemoryItem).values(
                 id="n1", kind="noticed", text="x", reason=None, recorded_at=NOW
             )
         )
@@ -196,7 +189,7 @@ def test_delete_event_cascades_evidence(engine: Engine) -> None:
     with engine.begin() as db:
         seq = add_event(db)
         db.execute(
-            insert(PatternRow).values(
+            insert(Pattern).values(
                 id="p1",
                 rule_id="regular_absence",
                 parameters="{}",
@@ -205,18 +198,18 @@ def test_delete_event_cascades_evidence(engine: Engine) -> None:
                 found_at=NOW,
             )
         )
-        db.execute(insert(PatternEvidenceRow).values(pattern_id="p1", event_seq=seq))
-        db.execute(delete(EventRow).where(EventRow.seq == seq))
+        db.execute(insert(PatternEvidence).values(pattern_id="p1", event_seq=seq))
+        db.execute(delete(Event).where(Event.seq == seq))
 
-        assert db.execute(select(PatternEvidenceRow)).all() == []
-        assert len(db.execute(select(PatternRow)).all()) == 1
+        assert db.execute(select(PatternEvidence)).all() == []
+        assert len(db.execute(select(Pattern)).all()) == 1
 
 
 def test_delete_conversation_keeps_memory(engine: Engine) -> None:
     with engine.begin() as db:
         add_message(db)
         db.execute(
-            insert(MemoryItemRow).values(
+            insert(MemoryItem).values(
                 id="i1",
                 kind="told",
                 text="x",
@@ -224,9 +217,9 @@ def test_delete_conversation_keeps_memory(engine: Engine) -> None:
                 recorded_at=NOW,
             )
         )
-        db.execute(delete(ConversationRow).where(ConversationRow.id == "c1"))
+        db.execute(delete(Conversation).where(Conversation.id == "c1"))
 
-        kept = db.execute(select(MemoryItemRow.source_message_id)).one()
+        kept = db.execute(select(MemoryItem.source_message_id)).one()
     assert kept.source_message_id is None
 
 
@@ -234,10 +227,10 @@ def test_decision_outlives_its_message(engine: Engine) -> None:
     with engine.begin() as db:
         add_message(db)
         add_decision(db, "d1", "m1")
-        db.execute(delete(ConversationRow).where(ConversationRow.id == "c1"))
+        db.execute(delete(Conversation).where(Conversation.id == "c1"))
 
         kept = db.execute(
-            select(SpeechDecisionRow.outcome, SpeechDecisionRow.message_id)
+            select(SpeechDecision.outcome, SpeechDecision.message_id)
         ).one()
     assert kept.outcome == "sent"
     assert kept.message_id is None
@@ -289,17 +282,3 @@ def test_embedding_is_last_column(engine: Engine) -> None:
 
     for table in ("memory_items", "commitments", "journal_entries"):
         assert columns(table)[-1]["name"] == "embedding"
-
-
-def test_embedding_is_deferred(engine: Engine) -> None:
-    with Session(engine) as session:
-        session.add(
-            MemoryItemRow(
-                id="i1", kind="told", text="x", recorded_at=NOW, embedding=b"\0"
-            )
-        )
-        session.commit()
-
-    with Session(engine) as session:
-        item = session.get(MemoryItemRow, "i1")
-        assert "embedding" in inspect(item).unloaded

@@ -1,6 +1,6 @@
 """Measure a model and apply the acceptance gate (ARCHITECTURE.md, section 8.6).
 
-``LlamaClient`` and ``reply_complies`` do not exist yet. So a caller passes the
+``LlamaClient`` does not exist yet. So a caller passes the
 call to the model and the safety check in, and this module holds no HTTP code
 (section 6.2, rule 10). ``check_wording`` also waits for ``domain/speech``.
 

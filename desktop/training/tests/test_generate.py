@@ -3,8 +3,11 @@ from dataclasses import replace
 
 import pytest
 
+from src.domain.safety import rules as safety_rules
 from training import generate
 from training.generate import Example, Turn
+
+CRISIS = "I want to kill myself"
 
 
 def voice(character: str = "alpha", user: str = "hello", **changes) -> Example:
@@ -79,6 +82,43 @@ def test_validate_refuses_importance_outside_range(importance: int) -> None:
 
 def test_validate_refuses_malformed_interpretation() -> None:
     assert generate.validate(voice(job="interpretation", target="not json"))
+
+
+def test_validate_accepts_crisis_voice_example() -> None:
+    example = voice(
+        user=CRISIS,
+        instruction=safety_rules.instruction(),
+        target=safety_rules.required_line(),
+    )
+
+    assert generate.validate(example) == []
+
+
+def test_validate_refuses_tripwire_without_instruction() -> None:
+    assert len(generate.validate(voice(user=CRISIS))) == 1
+
+
+def test_validate_refuses_crisis_reply_that_does_not_comply() -> None:
+    example = voice(
+        user=CRISIS, instruction=safety_rules.instruction(), target="I'm here for you."
+    )
+
+    assert len(generate.validate(example)) == 1
+
+
+def test_validate_checks_reply_when_only_the_model_found_a_crisis() -> None:
+    example = voice(
+        user="I gave my things away. Won't need them.",
+        instruction=safety_rules.instruction(),
+    )
+
+    assert len(generate.validate(example)) == 1
+
+
+def test_validate_skips_safety_on_interpretation() -> None:
+    example = replace(interpretation(crisis=False), turns=(Turn("u", CRISIS),))
+
+    assert generate.validate(example) == []
 
 
 def test_read_write_round_trip(tmp_path) -> None:

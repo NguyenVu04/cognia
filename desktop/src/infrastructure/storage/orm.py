@@ -64,7 +64,7 @@ class Base(DeclarativeBase):
 # ── character ─────────────────────────────────────────────────────────────
 
 
-class CharacterVersionRow(Base):
+class CharacterVersion(Base):
     """One whole version of the character. A row never changes (UC-03)."""
 
     __tablename__ = "character_versions"
@@ -96,7 +96,7 @@ class CharacterVersionRow(Base):
     created_at: Mapped[str]
 
 
-class CharacterProposalRow(Base):
+class CharacterProposal(Base):
     """A change the companion proposed. A refused row is its tombstone (UC-24-A2)."""
 
     __tablename__ = "character_proposals"
@@ -133,7 +133,7 @@ class CharacterProposalRow(Base):
 # ── conversation and provenance ───────────────────────────────────────────
 
 
-class ConversationRow(Base):
+class Conversation(Base):
     __tablename__ = "conversations"
     __table_args__ = (_STRICT,)
 
@@ -141,10 +141,10 @@ class ConversationRow(Base):
     title: Mapped[str]
     last_active_at: Mapped[str]
 
-    messages: Mapped[list[MessageRow]] = _owned("MessageRow")
+    messages: Mapped[list[Message]] = _owned("Message")
 
 
-class MessageRow(Base):
+class Message(Base):
     __tablename__ = "messages"
     __table_args__ = (
         _one_of("role", "user", "companion"),
@@ -166,18 +166,18 @@ class MessageRow(Base):
     rating: Mapped[int | None]
     created_at: Mapped[str]
 
-    memory_items: Mapped[list[MemoryItemRow]] = relationship(
+    memory_items: Mapped[list[MemoryItem]] = relationship(
         secondary="message_memory_refs", passive_deletes=True
     )
-    commitments: Mapped[list[CommitmentRow]] = relationship(
+    commitments: Mapped[list[Commitment]] = relationship(
         secondary="message_commitment_refs", passive_deletes=True
     )
-    journal_entries: Mapped[list[JournalEntryRow]] = relationship(
+    journal_entries: Mapped[list[JournalEntry]] = relationship(
         secondary="message_journal_refs", passive_deletes=True
     )
 
 
-class MessageMemoryRefRow(Base):
+class MessageMemoryRef(Base):
     __tablename__ = "message_memory_refs"
     __table_args__ = (
         Index("message_memory_refs_by_item", "memory_item_id"),
@@ -192,7 +192,7 @@ class MessageMemoryRefRow(Base):
     )
 
 
-class MessageCommitmentRefRow(Base):
+class MessageCommitmentRef(Base):
     __tablename__ = "message_commitment_refs"
     __table_args__ = (
         Index("message_commitment_refs_by_commitment", "commitment_id"),
@@ -207,7 +207,7 @@ class MessageCommitmentRefRow(Base):
     )
 
 
-class MessageJournalRefRow(Base):
+class MessageJournalRef(Base):
     __tablename__ = "message_journal_refs"
     __table_args__ = (
         Index("message_journal_refs_by_entry", "journal_entry_id"),
@@ -227,7 +227,7 @@ class MessageJournalRefRow(Base):
 # columns without walking the vector's overflow pages, and a list never loads it.
 
 
-class MemoryItemRow(Base):
+class MemoryItem(Base):
     __tablename__ = "memory_items"
     __table_args__ = (
         _one_of("kind", "told", "noticed"),
@@ -249,10 +249,10 @@ class MemoryItemRow(Base):
     recorded_at: Mapped[str]
     embedding: Mapped[bytes | None] = mapped_column(deferred=True)
 
-    evidence: Mapped[list[MemoryItemEvidenceRow]] = _owned("MemoryItemEvidenceRow")
+    evidence: Mapped[list[MemoryItemEvidence]] = _owned("MemoryItemEvidence")
 
 
-class MemoryItemEvidenceRow(Base):
+class MemoryItemEvidence(Base):
     __tablename__ = "memory_item_evidence"
     __table_args__ = (
         Index("memory_item_evidence_by_event", "event_seq"),
@@ -267,7 +267,7 @@ class MemoryItemEvidenceRow(Base):
     )
 
 
-class CommitmentRow(Base):
+class Commitment(Base):
     """Something the user has to do. It has no time of day and no status (FR-24)."""
 
     __tablename__ = "commitments"
@@ -293,7 +293,7 @@ class CommitmentRow(Base):
 # ── work sessions and desk awareness ──────────────────────────────────────
 
 
-class SessionRow(Base):
+class Session(Base):
     __tablename__ = "sessions"
     __table_args__ = (
         _one_of(
@@ -326,12 +326,12 @@ class SessionRow(Base):
     checkins_requested: Mapped[int] = mapped_column(server_default=text("0"))
     checkins_stopped_at: Mapped[str | None]
 
-    intents: Mapped[list[SessionIntentRow]] = _owned(
-        "SessionIntentRow", order_by="SessionIntentRow.position"
+    intents: Mapped[list[SessionIntent]] = _owned(
+        "SessionIntent", order_by="SessionIntent.position"
     )
 
 
-class SessionIntentRow(Base):
+class SessionIntent(Base):
     __tablename__ = "session_intents"
     __table_args__ = (_STRICT,)
 
@@ -342,7 +342,7 @@ class SessionIntentRow(Base):
     text: Mapped[str]
 
 
-class AppUsageRow(Base):
+class AppUsage(Base):
     """Minutes per application per hour. No column can hold a title (C-05)."""
 
     __tablename__ = "app_usage"
@@ -358,7 +358,7 @@ class AppUsageRow(Base):
     minutes: Mapped[int]
 
 
-class AppExclusionRow(Base):
+class AppExclusion(Base):
     __tablename__ = "app_exclusions"
     __table_args__ = (_STRICT,)
 
@@ -368,7 +368,7 @@ class AppExclusionRow(Base):
 # ── event log and emotion ─────────────────────────────────────────────────
 
 
-class EventRow(Base):
+class Event(Base):
     """One fact, in order. References and figures, never the user's words (D-03)."""
 
     __tablename__ = "events"
@@ -387,7 +387,7 @@ class EventRow(Base):
     importance: Mapped[int | None]
 
 
-class EmotionChangeRow(Base):
+class EmotionChange(Base):
     """One change of mood and its cause. A cache of the event log (D-07)."""
 
     __tablename__ = "emotion_changes"
@@ -411,7 +411,7 @@ class EmotionChangeRow(Base):
 # ── learning and self-adjustment ──────────────────────────────────────────
 
 
-class PatternRow(Base):
+class Pattern(Base):
     __tablename__ = "patterns"
     __table_args__ = (CheckConstraint("json_valid(parameters)"), _STRICT)
 
@@ -422,11 +422,11 @@ class PatternRow(Base):
     fingerprint: Mapped[str] = mapped_column(unique=True)
     found_at: Mapped[str]
 
-    evidence: Mapped[list[PatternEvidenceRow]] = _owned("PatternEvidenceRow")
-    adjustments: Mapped[list[SelfAdjustmentRow]] = _owned("SelfAdjustmentRow")
+    evidence: Mapped[list[PatternEvidence]] = _owned("PatternEvidence")
+    adjustments: Mapped[list[SelfAdjustment]] = _owned("SelfAdjustment")
 
 
-class PatternEvidenceRow(Base):
+class PatternEvidence(Base):
     __tablename__ = "pattern_evidence"
     __table_args__ = (
         Index("pattern_evidence_by_event", "event_seq"),
@@ -441,7 +441,7 @@ class PatternEvidenceRow(Base):
     )
 
 
-class SelfAdjustmentRow(Base):
+class SelfAdjustment(Base):
     __tablename__ = "self_adjustments"
     __table_args__ = (
         _one_of("aspect", "timing", "frequency", "length", "tone"),
@@ -467,7 +467,7 @@ class SelfAdjustmentRow(Base):
 # ── the companion's journal ───────────────────────────────────────────────
 
 
-class JournalEntryRow(Base):
+class JournalEntry(Base):
     __tablename__ = "journal_entries"
     __table_args__ = (_importance(), _STRICT)
 
@@ -481,10 +481,10 @@ class JournalEntryRow(Base):
     written_at: Mapped[str]
     embedding: Mapped[bytes | None] = mapped_column(deferred=True)
 
-    sources: Mapped[list[JournalEntrySourceRow]] = _owned("JournalEntrySourceRow")
+    sources: Mapped[list[JournalEntrySource]] = _owned("JournalEntrySource")
 
 
-class JournalEntrySourceRow(Base):
+class JournalEntrySource(Base):
     __tablename__ = "journal_entry_sources"
     __table_args__ = (
         Index("journal_entry_sources_by_event", "event_seq"),
@@ -502,7 +502,7 @@ class JournalEntrySourceRow(Base):
 # ── speech decisions and explanations ─────────────────────────────────────
 
 
-class MessageKindRow(Base):
+class MessageKind(Base):
     __tablename__ = "message_kinds"
     __table_args__ = (_flag("enabled"), _STRICT)
 
@@ -514,7 +514,7 @@ class MessageKindRow(Base):
     )
 
 
-class SpeechDecisionRow(Base):
+class SpeechDecision(Base):
     """One decision to speak, sent or not.
 
     A sent decision outlives its message, so ``message_id`` can become ``NULL``:
@@ -561,12 +561,12 @@ class SpeechDecisionRow(Base):
     )
     response: Mapped[str | None]
 
-    factors: Mapped[list[DecisionFactorRow]] = _owned(
-        "DecisionFactorRow", order_by="DecisionFactorRow.position"
+    factors: Mapped[list[DecisionFactor]] = _owned(
+        "DecisionFactor", order_by="DecisionFactor.position"
     )
 
 
-class DecisionFactorRow(Base):
+class DecisionFactor(Base):
     """One figure behind a decision.
 
     ``name`` also says the unit of ``value`` and the table of ``ref_id``. The
@@ -594,7 +594,7 @@ class DecisionFactorRow(Base):
 # ── settings ──────────────────────────────────────────────────────────────
 
 
-class SettingsRow(Base):
+class Settings(Base):
     """Every setting, in one row. ``NULL`` means not set (BR-01, BR-02, FR-09)."""
 
     __tablename__ = "settings"

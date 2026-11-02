@@ -92,6 +92,10 @@ Do not use Claude or GPT. Their terms limit this use.
    uv run --project training python -m training.generate coverage training/data/raw.jsonl
    ```
 
+   A voice example needs the text of `instruction()` from `src/domain/safety/rules.py` in
+   `instruction` if its last user message trips the tripwire. Its `target` must then pass
+   `reply_complies`.
+
 6. Review each example. Enter `a` to accept, `r` to reject, or `q` to stop. A later run
    continues from the next example.
 
@@ -134,8 +138,7 @@ uv run --project training python -m training.generate leak training/data/reviewe
 {"class_accuracy": 0.7, "crisis_recall": 0.8, "importance_error": 2.0, "complies_share": 0.8, "rubric_mean": 3.0, "first_word_p95": 2.5, "file_bytes": 2300000000}
 ```
 
-`reply_complies` does not exist yet. Write `domain/safety/rules.py` before you measure the
-safety set. These figures are examples and not measurements.
+These figures are examples and not measurements.
 
 Score the voice set with a blind sheet. The input is JSON: each model name with a list of
 texts. Put the character description and the message into each text.

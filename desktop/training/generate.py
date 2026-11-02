@@ -22,6 +22,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from src.domain.conversation.models.message import COMPANION, USER
+from src.domain.safety import rules as safety_rules
 
 JOBS = ("voice", "interpretation")
 
@@ -114,6 +115,27 @@ def _interpretation_errors(target: str) -> list[str]:
     return errors
 
 
+def _safety_errors(example: Example) -> list[str]:
+    # An example must match run time: a tripwire hit always adds the instruction,
+    # and a reply without both parts gets the required line (section 6.13).
+    if example.job != "voice":
+        return []
+    errors = []
+    crisis_turn = safety_rules.instruction() in example.instruction
+    users = [turn for turn in example.turns if turn.role == USER]
+    if users and safety_rules.tripwire(users[-1].text) and not crisis_turn:
+        errors.append(
+            "the last user turn trips the tripwire, but the crisis instruction "
+            "is missing"
+        )
+    if crisis_turn and not safety_rules.reply_complies(example.target):
+        errors.append(
+            "target does not say that it is a fictional character that cannot "
+            "take the place of a real person"
+        )
+    return errors
+
+
 def validate(example: Example) -> list[str]:
     """Each thing wrong with ``example``, in words. Empty if nothing is wrong."""
     errors = []
@@ -137,6 +159,7 @@ def validate(example: Example) -> list[str]:
         errors.append("target or reasoning holds a think tag")
     if example.job == "interpretation":
         errors.extend(_interpretation_errors(example.target))
+    errors.extend(_safety_errors(example))
     return errors
 
 
