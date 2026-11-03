@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import Row, delete, insert, literal_column, select, update
@@ -27,6 +27,7 @@ from sqlalchemy import Row, delete, insert, literal_column, select, update
 from src.domain.conversation.models import COMPANION, USER, Conversation, Message
 from src.infrastructure.storage import orm
 from src.infrastructure.storage.database import open_database
+from src.infrastructure.storage.times import to_text, to_utc
 
 conversations = orm.Conversation.__table__
 messages = orm.Message.__table__
@@ -56,7 +57,7 @@ class SqliteConversationStore:
     # ── conversations ─────────────────────────────────────────────────────
 
     def create(self, now: datetime) -> Conversation:
-        now = _utc(now)
+        now = to_utc(now)
         conversation = Conversation(
             id=uuid.uuid4().hex,
             title=UNTITLED,
@@ -67,7 +68,7 @@ class SqliteConversationStore:
                 insert(conversations).values(
                     id=conversation.id,
                     title=conversation.title,
-                    last_active_at=_text(now),
+                    last_active_at=to_text(now),
                 )
             )
         return conversation
@@ -98,7 +99,9 @@ class SqliteConversationStore:
 
     def delete(self, conversation_id: str) -> None:
         with self._engine.begin() as db:
-            db.execute(delete(conversations).where(conversations.c.id == conversation_id))
+            db.execute(
+                delete(conversations).where(conversations.c.id == conversation_id)
+            )
 
     # ── messages ──────────────────────────────────────────────────────────
 
@@ -109,7 +112,7 @@ class SqliteConversationStore:
         not lift its conversation to the top of the picker would be a message
         the user cannot find.
         """
-        message = replace(message, created_at=_utc(message.created_at))
+        message = replace(message, created_at=to_utc(message.created_at))
         with self._engine.begin() as db:
             db.execute(
                 insert(messages).values(
@@ -117,13 +120,13 @@ class SqliteConversationStore:
                     conversation_id=message.conversation_id,
                     role=_ROLE_TO_STORED[message.role],
                     text=message.text,
-                    created_at=_text(message.created_at),
+                    created_at=to_text(message.created_at),
                 )
             )
             db.execute(
                 update(conversations)
                 .where(conversations.c.id == message.conversation_id)
-                .values(last_active_at=_text(message.created_at))
+                .values(last_active_at=to_text(message.created_at))
             )
         return message
 
@@ -136,7 +139,8 @@ class SqliteConversationStore:
             else:
                 # Take the *last* n, then put them back in reading order.
                 rows = db.execute(
-                    query.order_by(messages.c.created_at.desc(), rowid.desc()).limit(limit)
+                    query.order_by(messages.c.created_at.desc(), rowid.desc())
+                    .limit(limit)
                 ).all()
                 rows.reverse()
         return [self._message(row) for row in rows]
@@ -163,13 +167,3 @@ class SqliteConversationStore:
             text=row.text,
             created_at=datetime.fromisoformat(row.created_at),
         )
-
-
-def _utc(moment: datetime) -> datetime:
-    """The same instant in UTC; a naive value is taken to be local time."""
-    return moment.astimezone(timezone.utc)
-
-
-def _text(moment: datetime) -> str:
-    """The stored form: fixed width, so text order is time order."""
-    return _utc(moment).isoformat(timespec="milliseconds")
