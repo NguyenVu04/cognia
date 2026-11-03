@@ -30,7 +30,6 @@ def interpretation(**answer) -> Example:
         "crisis": False,
         "facts": [],
         "commitments": [],
-        "closes_commitment": None,
         "style_request": None,
     }
     return voice(job="interpretation", target=json.dumps({**target, **answer}))
@@ -78,6 +77,25 @@ def test_validate_refuses_unknown_event_class() -> None:
 @pytest.mark.parametrize("importance", [0, 11])
 def test_validate_refuses_importance_outside_range(importance: int) -> None:
     assert generate.validate(interpretation(importance=importance))
+
+
+def test_validate_accepts_style_request_text() -> None:
+    assert generate.validate(interpretation(style_request="shorter")) == []
+
+
+def test_validate_refuses_style_request_not_text() -> None:
+    assert len(generate.validate(interpretation(style_request=3))) == 1
+
+
+def test_validate_refuses_blank_style_request() -> None:
+    assert len(generate.validate(interpretation(style_request="  "))) == 1
+
+
+def test_validate_refuses_unknown_answer_key() -> None:
+    errors = generate.validate(interpretation(closes_commitment=None))
+
+    assert len(errors) == 1
+    assert "closes_commitment" in errors[0]
 
 
 def test_validate_refuses_malformed_interpretation() -> None:

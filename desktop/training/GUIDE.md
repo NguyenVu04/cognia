@@ -23,6 +23,18 @@ has run them on Ministral 3.
 Do this step first. A failure here can change a decision. This step needs only a few
 fake examples, and a GPU with 16 GB of video memory is sufficient.
 
+Install the GPU tools. The `gpu` extra gets torch for CUDA 13.0 from the PyTorch index.
+
+```bash
+uv sync --project training --extra gpu
+```
+
+Make sure that torch finds the GPU. The last word must be `True`.
+
+```bash
+uv run --project training --extra gpu python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+```
+
 1. Write 10 fake examples, with at least two characters. Set `reviewed` to `true` on each
    example.
 2. Train an adapter.
@@ -80,7 +92,7 @@ Do not use Claude or GPT. Their terms limit this use.
    ```
 
    For an interpretation line, set `job` to `interpretation`. Then set `target` to a JSON
-   text with the eight fields of section 6.11.
+   text with the seven fields of section 6.11.
 
 5. Check the file, and count the cells.
 

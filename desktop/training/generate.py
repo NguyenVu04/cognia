@@ -42,7 +42,6 @@ _INTERPRETATION_FIELDS = {
     "crisis",
     "facts",
     "commitments",
-    "closes_commitment",
     "style_request",
 }
 # The tags are the tokenizer's job: reasoning has its own field (section 6.11).
@@ -98,6 +97,8 @@ def _interpretation_errors(target: str) -> list[str]:
     errors = []
     if missing := _INTERPRETATION_FIELDS - answer.keys():
         errors.append(f"target has no {', '.join(sorted(missing))}")
+    if unknown := answer.keys() - _INTERPRETATION_FIELDS:
+        errors.append(f"target has unknown key {', '.join(sorted(unknown))}")
     if "event_class" in answer and answer["event_class"] not in EVENT_CLASSES:
         errors.append(f"unknown event class {answer['event_class']!r}")
     importance = answer.get("importance", 1)
@@ -112,6 +113,10 @@ def _interpretation_errors(target: str) -> list[str]:
         errors.append("confidence is outside 0 to 1")
     if "crisis" in answer and not isinstance(answer["crisis"], bool):
         errors.append("crisis is not true or false")
+    # A request about how the companion talks, in a few words (UC-10).
+    style = answer.get("style_request")
+    if style is not None and (not isinstance(style, str) or not style.strip()):
+        errors.append("style_request is not text or null")
     return errors
 
 

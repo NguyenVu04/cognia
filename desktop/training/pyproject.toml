@@ -8,7 +8,21 @@ dependencies = []
 [project.optional-dependencies]
 gpu = [
     "unsloth>=2026.10.11",
+    "torch>=2.14.1",
+    "xformers>=0.0.35",
 ]
+
+# PyPI has only a CPU build of torch for Windows, and its xformers is built for
+# another torch. uv applies a source to a declared dependency only, so both are
+# named above.
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+xformers = { index = "pytorch-cu130" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

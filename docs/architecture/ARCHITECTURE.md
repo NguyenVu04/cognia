@@ -1365,7 +1365,6 @@ Low confidence still raises no event (UC-23-A3). Here is the shape of the answer
   "crisis": false,
   "facts": ["Sent chapter 3 to their supervisor"],
   "commitments": [],
-  "closes_commitment": "b3f0",
   "style_request": null
 }
 ```
