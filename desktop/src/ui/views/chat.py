@@ -117,7 +117,9 @@ class ChatView(QWidget):
         self.draft = QLineEdit()
         self.draft.setPlaceholderText("Say something…")
         self.draft.setFont(theme.font(14))
-        self.draft.setStyleSheet("QLineEdit { border-radius: 9px; padding: 12px 15px; }")
+        self.draft.setStyleSheet(
+            "QLineEdit { border-radius: 9px; padding: 12px 15px; }"
+        )
         self.draft.returnPressed.connect(self._send)
         row.addWidget(self.draft, 1)
 

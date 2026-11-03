@@ -113,7 +113,9 @@ class TextButton(LayoutButton):
 
         # Icon buttons carry their own labels so the gap is exact.
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(hpad - inset, vpad - inset, hpad - inset, vpad - inset)
+        layout.setContentsMargins(
+            hpad - inset, vpad - inset, hpad - inset, vpad - inset
+        )
         layout.setSpacing(gap)
         self._icon_label = icons.icon_label(icon_name, icon_px, fg)
         layout.addWidget(self._icon_label)
@@ -239,7 +241,9 @@ def dashed_button(
     )
 
 
-def small_button(text: str, *, radius: int = 6, padding: Padding = (5, 9)) -> TextButton:
+def small_button(
+    text: str, *, radius: int = 6, padding: Padding = (5, 9)
+) -> TextButton:
     """The 11.5px Edit / Delete / Wrong / Restore controls."""
     return TextButton(
         text,

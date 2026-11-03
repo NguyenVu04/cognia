@@ -23,7 +23,9 @@ WIDTH = 214
 class NavButton(LayoutButton):
     """One destination. Selected state changes fill, colour and weight."""
 
-    def __init__(self, item: sample_data.NavItem, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, item: sample_data.NavItem, parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
         self.item = item
         self.setCursor(Qt.CursorShape.PointingHandCursor)
