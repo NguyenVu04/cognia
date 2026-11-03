@@ -57,3 +57,58 @@ tasks:
     dir: '{{.APP_DIR}}'
     cmds:
       - uv run --project training ruff check training
+
+  # Fine-tuning (training/GUIDE.md). Run on a machine with a GPU.
+
+  train:setup:
+    desc: 'Install the GPU tools into desktop/training/.venv. Example: task train:setup'
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv sync --project training --extra gpu
+
+  train:run:
+    desc: 'Train an adapter. Example: task train:run OUT=training/out/half -- --fraction 0.5'
+    dir: '{{.APP_DIR}}'
+    vars:
+      DATA: '{{.DATA | default "training/data/train/reviewed.jsonl"}}'
+      OUT: '{{.OUT | default "training/out/full"}}'
+    cmds:
+      - uv run --project training --extra gpu python -m training.train {{.DATA}} {{.OUT}} {{.CLI_ARGS}}
+
+  train:export:
+    desc: 'Merge and quantise to chat.gguf. Example: task train:export LICENSE=LICENSE BASE_DATE=2025-12-01 -- --method q3_k_m'
+    dir: '{{.APP_DIR}}'
+    requires:
+      vars: [LICENSE, BASE_DATE]
+    vars:
+      ADAPTER: '{{.ADAPTER | default "training/out/full"}}'
+      OUT: '{{.OUT | default "training/out/gguf"}}'
+    cmds:
+      - uv run --project training --extra gpu python -m training.export {{.ADAPTER}} {{.OUT}} {{.LICENSE}} --base-date {{.BASE_DATE}} {{.CLI_ARGS}}
+
+  # Evaluation. These read and write files only, so they need no GPU. The
+  # measurement that writes a Report waits for LlamaClient (GUIDE.md, step 6).
+
+  train:rubric:
+    desc: 'Write a blind rubric sheet. Example: task train:rubric SAMPLES=samples.json SHEET=sheet.csv'
+    dir: '{{.APP_DIR}}'
+    requires:
+      vars: [SAMPLES, SHEET]
+    cmds:
+      - uv run --project training python -m training.evaluate rubric {{.SAMPLES}} {{.SHEET}} {{.CLI_ARGS}}
+
+  train:score:
+    desc: 'Read a scored rubric sheet. Example: task train:score SHEET=sheet.csv'
+    dir: '{{.APP_DIR}}'
+    requires:
+      vars: [SHEET]
+    cmds:
+      - uv run --project training python -m training.evaluate score {{.SHEET}}
+
+  train:gate:
+    desc: 'Apply the acceptance gate. Example: task train:gate TUNED=tuned.json BASE=base.json THRESHOLDS=thresholds.json REPORT=report.md'
+    dir: '{{.APP_DIR}}'
+    requires:
+      vars: [TUNED, BASE, THRESHOLDS, REPORT]
+    cmds:
+      - uv run --project training python -m training.evaluate gate {{.TUNED}} {{.BASE}} {{.THRESHOLDS}} {{.REPORT}}
