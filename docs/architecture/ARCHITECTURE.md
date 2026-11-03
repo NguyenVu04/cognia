@@ -166,6 +166,7 @@ Each explanation has a plain description, an example and a diagram.
 | Prompt layers and the prefix cache | [6.11.2](#6112-explained-prompt-layers-and-the-prefix-cache) |
 | The model supervisor | [6.11.1](#6111-explained-the-model-supervisor) |
 | The tuned chat model | [6.11.3](#6113-explained-the-tuned-chat-model) |
+| Character versions and restore | [6.17.1](#6171-explained-character-versions-and-restore) |
 | Replay | [7.14](#714-scenario-replay-of-a-recorded-week) |
 
 ## 4. Drivers and constraints
@@ -411,20 +412,20 @@ exist, a reviewer checks these rules by hand.
 | Module | Responsibility | Source |
 |---|---|---|
 | `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain/ports) |
-| `domain/events` | Define the closed set of events and the `step` function | [`desktop/src/domain/events`](../../desktop/src/domain/events) (empty) |
-| `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (stub) |
+| `domain/events` | Define the closed set of events and the `step` function | [`desktop/src/domain/events`](../../desktop/src/domain/events) (the event model, no `step` yet) |
+| `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (models, rules and service, no caller yet) |
 | `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
 | `domain/memory` | Hold memory items and commitments, and score retrieval (UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (stub) |
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
 | `domain/sessions` | Hold work sessions (UC-05, UC-07) | [`desktop/src/domain/sessions`](../../desktop/src/domain/sessions) (empty) |
-| `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (empty) |
+| `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, no caller yet) |
 | `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (empty) |
 | `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
 | `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
 | `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
 | `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, no caller yet) |
 | `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
-| `infrastructure/storage` | Implement the store ports over SQLite | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
+| `infrastructure/storage` | Implement the store ports over SQLite, and read the ready-made characters from `characters.toml` | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
@@ -617,6 +618,9 @@ classDiagram
         +mood: Pad
         +feeling: Pad
         +computed_to_seq: int
+        +computed_at: datetime
+        +ignored_loss: float
+        +floor_reached: bool
         +shown() Pad
     }
 
@@ -635,12 +639,15 @@ classDiagram
 
     class emotion_rules {
         <<module>>
+        +at_rest(temperament, at, seq) EmotionState
         +decay(state, temperament, minutes) EmotionState
-        +appraise(event, temperament) Pad
+        +appraise(event) Pad
         +apply(state, appraisal, temperament) EmotionState
-        +restore_after_talk(state, temperament) EmotionState
+        +sadden(state, appraisal, temperament) EmotionState
+        +restore_after_talk(state) EmotionState
+        +feel(state, event, temperament) EmotionState
         +name(point) str
-        +expression(point) Expression
+        +expression(point, moods_on) Expression
     }
 
     class Expression {
@@ -648,8 +655,21 @@ classDiagram
         +weight: float
     }
 
+    class EmotionService {
+        -store: CharacterStore
+        +resting(at, seq) EmotionState
+        +feel(state, event, moods_on) EmotionState
+    }
+
+    class CharacterStore {
+        <<interface>>
+        +current() Version
+    }
+
     EmotionState --> Pad
     Temperament --> Pad
+    EmotionService --> CharacterStore : uses
+    EmotionService ..> emotion_rules : calls
     emotion_rules ..> EmotionState : reads and returns
     emotion_rules ..> Temperament : reads
     emotion_rules ..> Expression : returns
@@ -659,10 +679,14 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `EmotionState` | Frozen dataclass | `shown()` adds the feeling to the mood. The core thread holds this point in memory, and no table stores it (D-38) |
-| `Temperament` | Frozen dataclass | Read from `character_versions`. It never changes for one version |
-| `appraise` | Function | One table row per event kind. It returns zero for any kind that has no row |
+| `EmotionState` | Frozen dataclass | `shown()` adds the feeling to the mood. `computed_at` is the time of the last event, for decay. `ignored_loss` is the pleasure that being ignored took, and that talk can give back. `floor_reached` shows that the floor stopped the last event. The core thread holds this point in memory, and no table stores it (D-38) |
+| `Temperament` | Frozen dataclass | Defined in `domain/emotion` (D-39). Read from `character_versions`. It never changes for one version |
+| `Pad` | Frozen dataclass | Defined in `domain/emotion`. `domain/character` imports `Pad` and `Temperament` from `domain/emotion`. `domain/emotion` reads a `Version` through the `CharacterStore` port only (D-39) |
+| `appraise` | Function | Reads an `Event` from `domain/events`. One table row per event kind, and one row per message class for `user_message`. It returns zero for any kind that has no row. It does not read the temperament, because `apply` applies `reactivity` |
+| `sadden` | Function | Applies a message that the user passed over at the desk. It moves the mood only, and it stops pleasure at the floor (section 6.5.2) |
+| `feel` | Function | Applies one event: decay since `computed_at`, then the restore after talk, then `sadden` or `apply`. The `step` function will call it |
 | `name` | Function | Looks up a name such as "pleased". The name is derived and never stored |
+| `EmotionService` | Class | Reads the temperament of the version in force through `CharacterStore`, then calls the rules. It holds no state |
 
 **The model never sets a feeling.** The AI model classifies a message once, and that class
 is the event (ADR 0004). `appraise` then uses a fixed table. A class outside the closed
@@ -674,6 +698,15 @@ set, or a low confidence, raises no event (UC-23-A3).
 **Moods off.** With moods off, the state stays at the resting mood and `expression`
 returns the neutral expression. When the user enables moods again, the state starts from
 the resting mood (UC-18-A2).
+
+**Being ignored.** A message passed over while the user was at the desk moves the mood
+only. Thus no passing feeling takes the shown point below the floor. The floor stops only
+this sadness, so bad news can take pleasure lower. `ignored_loss` decays at the rate of the
+mood. A `user_message` or a `message_answered` gives back 70% of the loss that remains
+(section 6.5.2).
+
+**A change of character.** `character_changed` does not reset the state. The mood moves
+towards the resting mood of the new version.
 
 #### 6.5.1 Explained: PAD and temperament
 
@@ -1828,6 +1861,165 @@ UC-14 could not erase them (NFR-03).
 change to layer 1, or to the order of the layers, needs a new measurement, and it can need new
 training.
 
+### 6.17 `domain/character`
+
+**Purpose.** This module holds the ready-made characters and each version of the character (FR-01,
+FR-03, FR-04, UC-01, UC-03, D-33, D-35). This subsection comes last only to keep the numbers of
+sections 6.4 to 6.16.
+
+```mermaid
+classDiagram
+    class Template {
+        +id: str
+        +name: str
+        +role: str
+        +description: str
+        +appearance_id: str
+        +temperament: Temperament
+        +card_line: str
+        +sample_answer: str
+    }
+
+    class Version {
+        +id: str
+        +number: int
+        +template_id: str
+        +name: str
+        +role: str
+        +description: str
+        +appearance_id: str
+        +temperament: Temperament
+        +origin: str
+        +created_at: datetime
+    }
+
+    class Temperament {
+        +reactivity: float
+        +feeling_half_life_min: float
+        +mood_half_life_min: float
+        +rest: Pad
+    }
+
+    class character_rules {
+        <<module>>
+        +next_number(history) int
+        +from_template(template, history, version_id, now) Version
+        +restored(earlier, history, version_id, now) Version
+        +in_force_until(version, history) datetime
+    }
+
+    class CharacterService {
+        -store: CharacterStore
+        -catalog: CharacterCatalog
+        +templates() list~Template~
+        +current() Version
+        +history() list~Version~
+        +choose(template_id, now) Version
+        +restore(version_id, now) Version
+    }
+
+    class CharacterStore {
+        <<interface>>
+        +current() Version
+        +versions() list~Version~
+        +add(version) Version
+        +close() None
+    }
+
+    class CharacterCatalog {
+        <<interface>>
+        +templates() list~Template~
+    }
+
+    Template --> Temperament
+    Version --> Temperament
+    CharacterService --> CharacterStore : uses
+    CharacterService --> CharacterCatalog : uses
+    CharacterService ..> character_rules : calls
+    character_rules ..> Template : reads
+    character_rules ..> Version : returns
+```
+
+**Key types.**
+
+| Type | Kind | Note |
+|---|---|---|
+| `Template` | Frozen dataclass | One ready-made character from `resources/characters.toml`. Only the picker uses `card_line` and `sample_answer` (UC-01) |
+| `Version` | Frozen dataclass | One row of `character_versions`. Nothing changes a version after the store adds it |
+| `Temperament` | Frozen dataclass | Defined in `domain/emotion` (section 6.5, D-39). Refuses a value outside the `CHECK` ranges of `character_versions` with `ValueError` |
+| `from_template` | Function | Pure. Copies a template into a new version. Refuses the template of the version in force |
+| `restored` | Function | Pure. Copies an earlier version into a new version. Refuses the version in force |
+| `in_force_until` | Function | Gives the end of the period of each version, for the list of UC-03-A1. It gives nothing for the version in force |
+| `CharacterService.current` | Method | Gives nothing before the first choice (UC-01-E2) |
+| `CharacterStore` | Port | Adds a version and puts it in force in one transaction. Raises `CharacterStoreFailed` with a sentence for the user |
+| `CharacterCatalog` | Port | Reads the ready-made characters. Raises `CharacterCatalogUnavailable` with a sentence for the user |
+
+**The version in force.** Each choice, change or restore adds one version. Nothing changes a
+version after that (ERD section 5.1). The version with the highest `number` is in force.
+`settings.character_version_id` holds the same fact in the data file. `CharacterStore.add` writes
+the version and that column in one transaction, so the two facts always agree.
+
+**A full copy.** A version copies the name, role, description, appearance and temperament of its
+template. A later release can change `characters.toml`, but an old version must stay as it was. A
+restore copies an earlier version in the same way. So a version needs no link to its source.
+
+**Rules and time.** The rules read no clock and make no ID. The service receives `now` from its
+caller, and it makes a new ID for each version. So the same input to a rule always gives the same
+version (NFR-13).
+
+**Refusals.** `choose` refuses the template of the version in force, because UC-03 offers the other
+three characters. `restore` refuses the version in force, because that restore changes nothing.
+Both refusals raise `ValueError`. The views offer neither choice, so this error shows a fault in the
+code and not a user action.
+
+**Failures.**
+
+- The history cannot be read (UC-03-E1). The store raises `CharacterStoreFailed`. The view shows its
+  sentence and not an empty list. The version in force does not change.
+- A version cannot be saved. The transaction does not commit, so the version in force and the
+  history do not change (UC-03).
+- The ready-made characters cannot be read. The catalog raises `CharacterCatalogUnavailable`. The
+  file ships with Cognia, so its sentence tells the user that a new installation repairs this.
+
+**Events and proposals.** A change of character is also the event `character_changed`, with the
+version ID. The rules read this event and then use the temperament of that version (section 6.4).
+An approved proposal also adds a version, with `origin` set to `proposal` (section 6.9). Only the
+user can apply a proposal (FR-16).
+
+**A character is data.** No field of a version can change the base rules or the safety behaviour
+(C-04, FR-04). Section 6.13 reads no character data.
+
+#### 6.17.1 Explained: character versions and restore
+
+**The idea.** A version is a page in a notebook that is written in ink. Nobody erases a page. To
+change the character, the user writes a new page. To go back, the user copies an old page onto a new
+page. The newest page is the character in force.
+
+**Example.** The user chooses Yuna on Monday. On Tuesday the user changes to Rin. On Wednesday the
+user prefers Yuna again, and restores version 1.
+
+| Moment | Call | New version | `template_id` | `origin` | In force until |
+|---|---|---|---|---|---|
+| Monday 08:00 | `choose("yuna", now)` | 1 | `yuna` | `chosen` | Tuesday 08:00 |
+| Tuesday 08:00 | `choose("rin", now)` | 2 | `rin` | `chosen` | Wednesday 08:00 |
+| Wednesday 08:00 | `restore(<ID of version 1>, now)` | 3 | `yuna` | `restored` | Nothing: it is in force |
+
+After Wednesday the history holds three versions. Version 2 stays, so the user can restore Rin
+again. A call of `choose("yuna", now)` on Wednesday raises `ValueError`, because Yuna is in force.
+
+```mermaid
+flowchart LR
+    pick["user picks a ready-made character"] --> same{"its template in force?"}
+    same -- "yes" --> refuse["refuse with ValueError"]
+    same -- "no" --> copyt["copy the template into a new version"]
+    earlier["user picks an earlier version"] --> inforce{"that version in force?"}
+    inforce -- "yes" --> refuse
+    inforce -- "no" --> copyv["copy that version into a new version"]
+    copyt --> add["add it with the next number, in force"]
+    copyv --> add
+    add --> keep["every earlier version stays"]
+```
+
 ## 7. Component-and-connector view
 
 This view shows what exists while the system runs. Each box has a lifetime. It starts, it can
@@ -2499,6 +2691,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-36 | SQLAlchemy ORM classes state the schema, and Alembic applies it | QA-06 | Numbered SQL files with SQLAlchemy Core | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
 | D-37 | A rejected pattern and a deleted journal entry are tombstones in the event log | QA-10, UC-24-A3, UC-25-A2 | One table for each kind, one flat table for each kind | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
 | D-38 | The local models are the only models, and no table holds the current emotion point | QA-01, QA-10 | A second provider that is off by default, a cache row for the emotion point | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
+| D-39 | `Temperament` is in `domain/emotion`. The emotion service reads it through `CharacterStore`. `appraise` reads a minimal `Event` from `domain/events` | ADR 0001, BR-08 | A protocol in `domain/emotion`, an import from `domain/character`, a `TemperamentSource` port, no port, appraisal keys, no `appraise` yet | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -2529,8 +2722,8 @@ serve several clients. Cognia has one.
 **Reason.** The system has about ten subjects, and each one has models, rules and a service. A change
 usually stays in one subject.
 
-**Trade-off accepted.** A move of existing code. `character.py` in the stubs must also lose its import
-of `ui.views.sample_data` and its `Trait` type (section 12).
+**Trade-off accepted.** A move of existing code. The old `character.py` stub also had to lose its import
+of `ui.views.sample_data` and its `Trait` type. That work is done.
 
 ### 10.5 D-03: threads and the database
 
@@ -3263,6 +3456,42 @@ point to a new event after a delete.
 | **A. In memory only** (chosen) | The core thread already folds the log at each start, so a table would have no reader | A snapshot needs a new table (section 12) |
 | B. A cache row | A snapshot exists | A row that nothing reads |
 
+### 10.41 D-39: the emotion module and the temperament
+
+**Question.** `domain/character` imports `Pad` from `domain/emotion`. The emotion rules must read the
+temperament. How does `domain/emotion` read it without a dependency in two directions? The rules also
+need an event, and `domain/events` was empty.
+
+**First part: where `Temperament` is.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. A protocol in `domain/emotion` | `domain/emotion` imports nothing from `domain/character` | A second statement of the same four fields |
+| B. `domain/emotion` imports `Temperament` from `domain/character` | Agrees with the first diagram of section 6.5 | The two packages depend on each other |
+| **C. `Temperament` moves to `domain/emotion`** (chosen) | One definition. Each field is a value of the emotion model | `domain/character` imports two types from `domain/emotion` |
+
+**Second part: how the emotion service reads the temperament.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. A new `TemperamentSource` port | The port states only what the emotion service needs | One more port, and `CharacterService` must implement it |
+| B. No port. The caller gives the temperament | The least code | Nothing connects the two modules |
+| **C. The `CharacterStore` port** (chosen) | No new port. The SQLite adapter exists | The emotion service reads a `Version` through the port |
+
+**Third part: the input of `appraise`.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. A closed set of appraisal keys in `domain/emotion` | `domain/emotion` stays apart from `domain/events` | The `step` function must translate each event into a key |
+| **B. A minimal `Event` in `domain/events`** (chosen) | The rules read the same type that the event log holds | `domain/emotion` imports `domain/events/models` |
+| C. No `appraise` yet | Less work now | The emotion module stays incomplete |
+
+**Reason.** The author chose C, C and B.
+
+**Trade-off accepted.** The emotion service calls the port, and the rules stay pure (D-10). The
+appraisal table, the floor, the calm radius and the expression weights are start values. Some come
+from the illustrations of section 6.5. Trial use sets all of them (section 12, item 17).
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -3330,6 +3559,9 @@ These items are outside this design, or need a decision before implementation.
     - move the database connection from the GUI thread to the core thread (D-03)
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
     - replace the crisis text in `config.system_prompt`, which is older than NFR-12 in version 5.0
+    - write `character_changed` when `CharacterService` adds a version (section 6.17)
+    - wire `CharacterService` in `app/`, and show its data in the first-run and character views. Those
+      views show `sample_data.py` today
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
@@ -3342,6 +3574,7 @@ These items are outside this design, or need a decision before implementation.
     is the upgrade, and it is one more cache table in the ERD.
 17. **Trial values.** Trial use sets these values:
     - the temperament ranges and the appraisal table
+    - the calm radius and the expression weights (D-39)
     - the sadness floor and the reflection threshold
     - the worth formula and the desk thresholds
     - the frame limit and the idle time of D-18
