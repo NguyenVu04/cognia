@@ -4,9 +4,9 @@
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
 | **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-28 are the author's decisions. D-15 to D-25 are proposals that the author can change |
-| **Date** | 2026-10-31 |
+| **Date** | 2026-11-03 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.4 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
+| **Source of requirements** | COG-UCS-001 version 5.5 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
 | **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing |
 | **Related documents** | [`docs/ERD.md`](../ERD.md) for the data design, [`README.md`](../../README.md) for the operational summary |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |

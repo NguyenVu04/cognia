@@ -299,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 5.4 &middot;
+    version 5.5 &middot;
     Approved
   </p>
 </header>
@@ -312,13 +312,13 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>5.4</td></tr>
+    <tr><th>Version</th><td>5.5</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
     <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
-    <tr><th>Last updated</th><td>2026-10-30</td></tr>
+    <tr><th>Last updated</th><td>2026-11-03</td></tr>
     <tr><th>Next review</th><td>Not scheduled</td></tr>
     <tr><th>Classification</th><td>Public</td></tr>
     <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
@@ -382,20 +382,27 @@
       <td>2026-10-30</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>The name of the application in the foreground is now kept in the event log as well as in the hourly totals, with the exact time of each change, so that a decision that uses it can be replayed (C-05, NFR-02, NFR-03, NFR-13). An excluded application loses its recorded changes as well as its totals (UC-04-A3), and UC-12 lists them. UC-01 names the source of the appearances. Section 13 follows the move of the decision records to <code>docs/architecture/adr/</code> and lists the architecture document. Reason: C-05 allowed only hourly totals, but UC-22 decides from the application in use and NFR-13 needs every input to a decision in the log. Both could not hold.</td>
-      <td>Pending</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
     </tr>
     <tr>
       <td>5.3</td>
       <td>2026-10-31</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>Writing a character of one&rsquo;s own is removed: UC-02 and FR-02 are retired, and UC-03 and FR-03 now change between the four ready-made characters, with the version history kept. Temperaments are designed by hand. The four characters are named (UC-01). The companion asks what to call the user in its first greeting. FR-36 lets the user switch starting with Windows on and off, and FR-37 makes the close button hide the window, with a quit command in the tray menu. UC-20 records the first position.</td>
-      <td>Pending</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
     </tr>
     <tr>
       <td>5.4</td>
       <td>2026-10-31</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>Cognia uses the local AI model only. The option to use another AI service is removed, with its requirement, so the later non-functional requirements move down one number. C-03 and NFR-01 no longer have an exception.</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+    </tr>
+    <tr>
+      <td>5.5</td>
+      <td>2026-11-03</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>The delivery order in section 10.2 no longer lists UC-02, which version 5.3 removed. No requirement, rule or flow is changed.</td>
       <td>Pending</td>
     </tr>
   </tbody>
@@ -1387,7 +1394,7 @@ that nags. A character cannot override them (FR-04).</p>
   <tbody>
     <tr>
       <td><b>1</b></td>
-      <td>UC-01, 02, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25</td>
+      <td>UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25</td>
       <td>A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its current mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet</td>
     </tr>
     <tr>

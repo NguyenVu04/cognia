@@ -14,7 +14,7 @@ your own disk, where you can read it and delete it.
 
 | | |
 |---|---|
-| **Maturity** | Pre-alpha. The specification is approved; the interface from the design document runs, and conversation with a local model works. The domain — base rules, emotion model, learning, the decision to speak — is not built |
+| **Maturity** | Pre-alpha. Version 5.4 of the specification is approved. The interface from the design document runs, and conversation with a local model works. The domain has character versions, the emotion rules, the event model and the crisis rules, but the application does not call them yet. The base rules, learning and the decision to speak are not built |
 | **Owning team** | Single author — Nguyễn Duy Vũ |
 | **Contact** | nguyenvu04.work@gmail.com |
 | **On-call** | None. Cognia runs on one user's own machine; there is no hosted service to be on call for |
@@ -23,9 +23,10 @@ your own disk, where you can read it and delete it.
 
 > [!NOTE]
 > The specification ([`docs/USECASE_SPECIFICATION.html`](docs/USECASE_SPECIFICATION.html),
-> COG-UCS-001) is **approved** at version 5.1, together with all twenty-one of its use
-> cases. Versions 5.2 and 5.3 await the author's approval, and version 5.3 removes
-> UC-02, which leaves twenty. Anything below that describes
+> COG-UCS-001) is **approved** at version 5.4.
+> Version 5.3 removes UC-02, which leaves twenty, and version 5.4 removes the option to
+> use another AI service. Version 5.5 awaits approval and only removes UC-02 from
+> the delivery order. Anything below that describes
 > behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-04 to NFR-06 and NFR-14 are still
 > unmeasured, and are to be measured before the first release.
 
@@ -231,8 +232,8 @@ flowchart TB
 | Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. Every screen except the Companion conversation still shows mockup copy from `ui/views/sample_data.py` |
 | Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; streams replies on a worker thread (`ChatWorker`) | Built for conversation only |
 | Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia and removes LangChain and LangGraph, which is not yet done |
-| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md) | Every table of `docs/ERD.md` exists. Only conversations and messages are written |
-| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Not created. `desktop/src/domain/` holds the ports, the conversation models, and stubs or empty packages for the rest |
+| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations and messages only. The store for character versions and the reader for `characters.toml` exist, and nothing calls them yet |
+| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses the conversation models only. `character/` holds the versions and their rules, `emotion/` the emotion state, its rules and service (D-39), `events/` the event model with no `step` yet, and `safety/` the crisis rules. `memory/` and `awareness/` are stubs. `sessions/`, `speech/`, `initiative/`, `learning/` and `reflection/` are empty |
 | `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Not created |
 | Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | Table exists, nothing writes it |
 
@@ -319,6 +320,7 @@ All set by the user in the application and stored on their own disk:
 | Each kind of proactive message | On, each switchable — also from the message itself, in one press | FR-22, UC-18-A1 |
 | Moods | On. Off holds the feeling at the temperament's resting mood | BR-08, UC-18-A2 |
 | Break threshold | Optional. Without one, the companion uses what it has learned | FR-09, UC-22-A1 |
+| Start with Windows | On: the box in the installer is ticked. A switch in the application changes it | FR-36, D-22 |
 
 ## Usage
 
@@ -326,7 +328,13 @@ Today the application shows every screen of the design and holds a real conversa
 on the Companion screen. The rest is specified, not built. In outline:
 
 **First run** (UC-01). The user picks one of the four characters and hears it answer
-before confirming.
+before confirming. In its first greeting, the companion asks what to call the user.
+
+**Changing the character** (UC-03). The user changes to another of the four at any
+time. Each change adds a version and keeps every earlier one, so the user can go back.
+
+**Closing the window** (FR-37). The close button hides the main window, and Cognia
+keeps running. The tray menu holds the command that quits.
 
 **Talking** (UC-09). Replies come in character and in the companion's current mood.
 When the user says something about themselves, the exact stored line is shown back for
@@ -353,6 +361,7 @@ callers.
 
 ```
 cognia/
+├── .github/workflows/ci.yml         CI: lint, tests, coverage, SonarQube Cloud
 ├── desktop/                         everything runnable
 │   ├── pyproject.toml, uv.lock      dependencies (uv)
 │   ├── src/
@@ -360,21 +369,22 @@ cognia/
 │   │   ├── config.json              shipped defaults
 │   │   ├── app/                     wiring: QApplication, surfaces, worker thread, config
 │   │   ├── ui/                      windows, dialogs, widgets, views, theme
-│   │   ├── domain/                  ports and conversation models, stubs or empty packages for the rest
+│   │   ├── domain/                  ports, conversation, character, emotion, events, safety; stubs or empty packages for the rest
 │   │   ├── infrastructure/          SQLite storage and the model adapter, presence/ is empty
-│   │   ├── resources/               vendored fonts, the QSS style sheet, companion/ is empty
+│   │   ├── resources/               vendored fonts, the QSS style sheet, characters.toml, companion/ is empty
 │   │   └── utils/                   paths
 │   ├── tests/                       pytest suite, one folder for each module of src/
 │   ├── data/                        the development database, not in git
 │   └── training/                    tools that build the tuned chat model (D-27, D-28)
 ├── docs/
-│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.2
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.5
 │   ├── ERD.md                       the database design
 │   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability
 ├── CLAUDE.md                        working agreement for AI assistance, local, not in git
 ├── Taskfile.yml                     task runner
+├── sonar-project.properties         SonarQube Cloud settings
 ├── LICENSE                          MIT
 └── README.md                        this file
 ```
@@ -391,10 +401,15 @@ cognia/
 
 ### Local loop
 
-`task test` runs the pytest suite in `desktop/tests/`, which holds one simple test for
-each module today. `task lint` runs Ruff. The other checks are running the application
-(`task run`) and comparing every interface change against the design document, screen
-by screen.
+`task test` runs the pytest suite in `desktop/tests/`, and `task train:test` runs the
+tests of `desktop/training/`. `task lint` and `task train:lint` run Ruff. The other
+checks are running the application (`task run`) and comparing every interface change
+against the design document, screen by screen.
+
+CI runs the same lint and tests, with coverage, on `windows-latest` for each push to
+`main` and each pull request. Then it applies the SonarQube Cloud quality gate
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). The gate is "Sonar way": new
+code must have at least 80% test coverage.
 
 To inspect the interface without a display, set `QT_QPA_PLATFORM=offscreen` and call
 `widget.grab().save(path)`; every screen renders headless.
@@ -454,7 +469,7 @@ issue for a security problem.**
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
 | **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`). ADR 0002 removes LangChain, and this line goes with it |
 | **Dependency scanning** | Not set up |
-| **Static analysis** | Not set up |
+| **Static analysis** | SonarQube Cloud, from CI on each push to `main` and each pull request. A failed quality gate fails the check |
 
 The largest security property is structural: the exclusions in section 5 are enforced
 by absence. There is no mail port, so there is no way to read mail, and the presence
@@ -482,7 +497,7 @@ own account boundary and nothing further. This follows from C-02.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **No version has been released.** The first release will be 0.1.0, at the end of
-phase 1. The specification carries its own version, 5.4, recorded in its section 1.1.
+phase 1. The specification carries its own version, 5.5, recorded in its section 1.1.
 
 **When there is a release, the version contract will cover** the on-disk data format,
 because it is the user's own data and an upgrade must not lose it. Schema changes
@@ -504,7 +519,7 @@ of each message recorded as the event itself, so a replay never calls the model.
 | | |
 |---|---|
 | **Code owners** | Nguyễn Duy Vũ. No `CODEOWNERS` file exists; there is one author |
-| **Specification approval** | COG-UCS-001 version 5.1, approved by Nguyễn Duy Vũ. Version 5.2 is pending |
+| **Specification approval** | COG-UCS-001 version 5.4, approved by Nguyễn Duy Vũ |
 | **Decision records** | [`docs/architecture/adr/`](docs/architecture/adr/) — ADR 0000 and 0001 accepted; ADR 0002 to 0008 proposed |
 
 Architecturally significant changes need an ADR before implementation. See
@@ -517,7 +532,7 @@ demonstrated ends at phase 2.
 
 | Phase | Use cases | What exists at the end of it | Status |
 |---|---|---|---|
-| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet | Started — conversation (part of UC-09) works |
+| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet | Started. Conversation (part of UC-09) works. The domain code for character versions (UC-01, UC-03) and feelings (UC-23) exists, and the application does not call it yet |
 | **2** | UC-04, 05, 07, 15, 20, 22, 24 | Desk awareness, the companion on the screen, its own initiative, shared work sessions, and learning how the user works | Not started |
 
 Open question recorded against UC-01, owned by the author: the author makes the
