@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# Coverage reports for SonarQube Cloud
+.coverage
+coverage*.xml
+
 # uv virtual environment
 desktop/.venv/
 desktop/training/.venv/

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      # SonarQube Cloud needs the full history to find new code and the author
+      # of each line.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.11.30'
+
+      - name: Install the application dependencies
+        run: uv sync --locked
+
+      - name: Lint the application
+        run: uv run ruff check src tests
+
+      - name: Test the application
+        run: uv run pytest --cov=src --cov-report=xml:coverage.xml
+
+      - name: Install the training dependencies
+        run: uv sync --project training --locked
+
+      - name: Lint the training tools
+        run: uv run --project training ruff check training
+
+      - name: Test the training tools
+        run: uv run --project training pytest training/tests --cov=training --cov-report=xml:coverage-training.xml
+
+      # A pull request from a fork gets no secrets, so it cannot reach
+      # SonarQube Cloud.
+      - name: Analyse with SonarQube Cloud
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+        with:
+          args: -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

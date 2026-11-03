@@ -7,6 +7,8 @@ what actually happens between you, and that keeps everything it knows and thinks
 your own disk, where you can read it and delete it.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NguyenVu04_cognia&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=NguyenVu04_cognia)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=NguyenVu04_cognia&metric=coverage)](https://sonarcloud.io/summary/new_code?id=NguyenVu04_cognia)
 
 ## Status and ownership
 

@@ -101,9 +101,10 @@ A pull request is ready for review when:
 - [ ] breaking changes are labelled as such and explain the migration;
 - [ ] no secret, credential, or personal data appears in the diff.
 
-Once there is code, two more apply: tests cover the new behaviour and the suite
-passes, and coverage stays at or above the floor — which will be set with the first
-test suite rather than promised in advance here.
+Two more conditions apply to code. Tests cover the new behaviour and the suite passes.
+The CI check passes. The CI check runs Ruff and the tests of `desktop/` and
+`desktop/training/`, and then the SonarQube Cloud quality gate. The gate is "Sonar
+way": new code must have at least 80% test coverage.
 
 Link the issue it closes. Draft pull requests are welcome for early feedback.
 
