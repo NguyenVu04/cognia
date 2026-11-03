@@ -1,10 +1,21 @@
 name: CI
 
+# Only desktop/ holds code. The CI files are listed so that a change to them is
+# tested at once. A workflow skipped by this filter leaves a required check
+# pending, so do not make "quality" a required check without changing this.
 on:
   push:
     branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/ci.yml'
+      - 'sonar-project.properties'
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/ci.yml'
+      - 'sonar-project.properties'
 
 permissions:
   contents: read

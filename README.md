@@ -407,9 +407,11 @@ checks are running the application (`task run`) and comparing every interface ch
 against the design document, screen by screen.
 
 CI runs the same lint and tests, with coverage, on `windows-latest` for each push to
-`main` and each pull request. Then it applies the SonarQube Cloud quality gate
+`main` and each pull request that changes `desktop/` or the CI files. Then it applies
+the SonarQube Cloud quality gate
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). The gate is "Sonar way": new
-code must have at least 80% test coverage.
+code must have at least 80% test coverage. A change to the documents only does not
+start CI.
 
 To inspect the interface without a display, set `QT_QPA_PLATFORM=offscreen` and call
 `widget.grab().save(path)`; every screen renders headless.
@@ -469,7 +471,7 @@ issue for a security problem.**
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
 | **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`). ADR 0002 removes LangChain, and this line goes with it |
 | **Dependency scanning** | Not set up |
-| **Static analysis** | SonarQube Cloud, from CI on each push to `main` and each pull request. A failed quality gate fails the check |
+| **Static analysis** | SonarQube Cloud, from CI on each push to `main` and each pull request that changes `desktop/` or the CI files. A failed quality gate fails the check |
 
 The largest security property is structural: the exclusions in section 5 are enforced
 by absence. There is no mail port, so there is no way to read mail, and the presence
