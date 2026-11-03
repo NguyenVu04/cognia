@@ -40,7 +40,7 @@ class ChatWorker(QObject):
 
         Called from the GUI thread while the worker thread is inside the
         stream, so it only sets a flag; the worker notices between pieces.
-        UC-09 E2 asks that a discarded reply store nothing, which is why
+        A reply the user discarded must store nothing, which is why
         ``finished`` is not emitted afterwards.
         """
         self._cancelled = True

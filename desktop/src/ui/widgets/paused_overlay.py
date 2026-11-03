@@ -1,4 +1,4 @@
-"""The paused state — UC-15.
+"""The paused state.
 
 Covers everything below the title bar. The design blurs what is behind it, but
 the fill is already 92% opaque, so the blur is dropped rather than faked.

@@ -3,7 +3,7 @@
 Wordmark and the local-only line at the top, the six destinations in the
 middle, and — pinned to the bottom — the session status card and the pause
 control that the tray also offers, because the companion is never the only
-route to anything (FR-28).
+route to anything.
 """
 
 from __future__ import annotations

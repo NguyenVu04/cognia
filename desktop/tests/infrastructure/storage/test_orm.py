@@ -23,7 +23,7 @@ from src.infrastructure.storage.orm import (
 
 NOW = "2026-10-31T12:00:00.000+00:00"
 
-# The parent table of these is emptied only after its children (ERD section 14).
+# The parent table of these is emptied only after its children.
 UNINDEXED_FOREIGN_KEYS = {
     ("messages", "character_version_id"),
     ("journal_entries", "character_version_id"),

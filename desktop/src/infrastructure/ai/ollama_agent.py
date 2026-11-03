@@ -1,8 +1,8 @@
 """The companion's replies, from a model running on this machine.
 
 A LangGraph graph with one node. That looks like ceremony for a single call to
-a model, and today it is — but it is the seam the rest of UC-09 needs. Memory
-extraction (FR-14), the in-conversation adjustment (FR-15) and any tool the
+a model, and today it is — but it is the seam the rest of the conversation
+needs. Memory extraction, the in-conversation adjustment and any tool the
 companion is ever given are new nodes and edges here, not a rewrite of the call
 site. The graph is deliberately stateless: the conversation lives in the store,
 which is readable, rather than in a checkpointer, which would not be.
@@ -79,7 +79,7 @@ class OllamaAgent:
         return messages
 
     def _explain(self, error: Exception) -> str:
-        """UC-09 E1: say plainly what happened and what would fix it."""
+        """Say plainly what happened and what would fix it."""
         detail = str(error).lower()
         if "not found" in detail or "try pulling" in detail:
             return (

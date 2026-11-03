@@ -47,7 +47,7 @@ def test_every_character_has_every_field(character: dict) -> None:
     assert set(character) == FIELDS
 
 
-# The same ranges as the CHECK constraints on character_versions (ERD section 5.1).
+# The same ranges as the CHECK constraints on character_versions.
 @pytest.mark.parametrize("character", CHARACTERS, ids=lambda c: c["id"])
 def test_temperament_in_range(character: dict) -> None:
     assert 0 <= character["reactivity"] <= 1
@@ -64,7 +64,7 @@ def test_temperament_values_are_floats(character: dict) -> None:
         assert isinstance(character[column], float), column
 
 
-# A card shows one line of the sample answer (D-33).
+# A card shows one line of the sample answer.
 @pytest.mark.parametrize("character", CHARACTERS, ids=lambda c: c["id"])
 def test_card_line_is_in_sample_answer(character: dict) -> None:
     assert character["card_line"] in character["sample_answer"]

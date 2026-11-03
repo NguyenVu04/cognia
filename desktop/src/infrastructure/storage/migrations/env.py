@@ -1,4 +1,4 @@
-"""How Alembic reaches the database (ADR 0003).
+"""How Alembic reaches the database.
 
 The application hands in its own connection, so an upgrade runs in the
 transaction ``open_database`` holds. The ``alembic`` command has none, and takes

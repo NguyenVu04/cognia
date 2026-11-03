@@ -43,7 +43,7 @@ _PAUSE_LABELS = {option.id: option.paused_label for option in sample_data.PAUSE_
 
 
 def _character_text(name: str, role: str) -> str:
-    """Layer 2. Temporary: the character is mockup copy until UC-01."""
+    """Layer 2. Temporary: the character is mockup copy until first run picks one."""
     return (
         f"You are {name}, {role}. Talk the way a friend does: warm, brief, "
         "curious. One or two short paragraphs at most, usually less. Ask about "
@@ -71,7 +71,7 @@ class Cognia(QObject):
         self.tray = QSystemTrayIcon(icons.icon("chat-circle", 32, theme.ACCENT))
         self.tray.setToolTip("Cognia")
 
-        # The character is still mockup copy; UC-01 will give it an owner.
+        # The character is still mockup copy; the first-run choice will replace it.
         self.character = sample_data.CHARACTERS[0]
         self.prompt = rules.system_text(
             _character_text(self.character.name, self.character.role)
@@ -231,7 +231,7 @@ class Cognia(QObject):
         self.tray.show()
 
     def _shutdown(self) -> None:
-        """A reply in flight is abandoned and not written down (UC-09 E2)."""
+        """A reply in flight is abandoned and not written down."""
         self.worker.cancel()
         self.thread.quit()
         self.thread.wait(5000)

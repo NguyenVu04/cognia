@@ -3,8 +3,8 @@
 One connection, used only from the thread that opened it — the GUI thread.
 SQLAlchemy's default for a file is a pool with SQLite's same-thread check
 switched off, which would let the reply worker quietly open a second connection;
-``StaticPool`` with the check on keeps ADR 0002's promise that touching the
-store from the wrong thread fails loudly.
+``StaticPool`` with the check on makes touching the store from the wrong
+thread fail loudly.
 """
 
 from __future__ import annotations
@@ -20,12 +20,12 @@ _MIGRATIONS = Path(__file__).parent / "migrations"
 
 _PRAGMAS = (
     # WAL survives an abrupt shutdown; FULL means a committed row is on the
-    # platter before we say it was recorded. NFR-07 asks for both.
+    # platter before we say it was recorded. An abrupt shutdown loses nothing.
     "PRAGMA journal_mode=WAL",
     "PRAGMA synchronous=FULL",
     "PRAGMA foreign_keys=ON",
     # Deleted rows are overwritten, not left in free pages: a removed memory
-    # item is gone from the disk (NFR-03, UC-13, UC-14).
+    # item is gone from the disk.
     "PRAGMA secure_delete=ON",
 )
 
@@ -34,7 +34,7 @@ def open_database(path: Path) -> Engine:
     """Open (or create) the file, and bring it up to the newest schema.
 
     A file from before the Alembic baseline raises ``OperationalError`` and
-    stays as it was (ADR 0003).
+    stays as it was.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(

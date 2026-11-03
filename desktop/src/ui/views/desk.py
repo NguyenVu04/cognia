@@ -1,7 +1,7 @@
-"""Desk awareness — UC-04.
+"""Desk awareness, and turning it on.
 
 Off until switched on, and the two lists are the point of the screen: exactly
-the three facts C-05 permits on the left, and the things that are never read on
+the three facts that may be read on the left, and the things that are never read on
 the right.
 """
 
@@ -15,7 +15,7 @@ from src.ui.views import sample_data
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule
 from src.ui.widgets.toggle import PillToggle
-from src.ui.widgets.typography import eyebrow, heading, label, lede, paragraph
+from src.ui.widgets.typography import heading, label, lede, paragraph
 
 # max-width: 820px in the design, capped by the real content column.
 GRID_WIDTH = 716
@@ -32,8 +32,6 @@ class DeskView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-04"))
-        column.addSpacing(6)
         column.addWidget(heading("Desk awareness"))
         column.addSpacing(4)
         column.addWidget(

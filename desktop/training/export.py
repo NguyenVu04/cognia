@@ -1,4 +1,4 @@
-"""Merge, quantise, write the licence files (ARCHITECTURE.md, section 8.4).
+"""Merge, quantise, write the licence files.
 
 Run from ``desktop/``, on a machine with a GPU:
 

@@ -1,8 +1,9 @@
-"""Measure a model and apply the acceptance gate (ARCHITECTURE.md, section 8.6).
+"""Measure a model and apply the acceptance gate.
 
 ``LlamaClient`` does not exist yet. So a caller passes the
 call to the model and the safety check in, and this module holds no HTTP code
-(section 6.2, rule 10). ``check_wording`` also waits for ``domain/speech``.
+(only ``infrastructure/ai/`` may). ``check_wording`` also waits for
+``domain/speech``.
 
 Run from ``desktop/``:
 
@@ -61,7 +62,7 @@ class Report:
 
 @dataclass(frozen=True)
 class Thresholds:
-    """The limits that the author sets before training (section 12, item 20).
+    """The limits that the author sets before training.
     ``rubric_margin`` is how far the tuned rubric mean must exceed the base."""
 
     class_accuracy: float
@@ -172,8 +173,9 @@ def read_rubric_sheet(path: Path) -> dict[str, float]:
 def gates(
     tuned: Report, base: Report, thresholds: Thresholds
 ) -> tuple[Gate, ...]:
-    """The four checks of section 8.6. Each stands alone, because one set of
-    weights does both jobs and a gain in one job can harm the other (D-27)."""
+    """The four checks: voice, interpretation, safety and cost. Each stands
+    alone, because one set of weights does both jobs and a gain in one job can
+    harm the other."""
     voice_gain = tuned.rubric_mean - base.rubric_mean
     return (
         Gate(

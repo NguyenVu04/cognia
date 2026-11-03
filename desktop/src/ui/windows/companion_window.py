@@ -1,4 +1,4 @@
-"""The companion on the desktop — UC-20.
+"""The companion on the desktop.
 
 A frameless, always-on-top window holding the sprite and, above it, the break
 nudge. It can be dragged anywhere, hidden, and brought back, and it is never

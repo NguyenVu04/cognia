@@ -176,7 +176,7 @@ class ChatView(QWidget):
         self._settle()
 
     def beginReply(self) -> None:  # noqa: N802 - Qt naming
-        """Say that the companion is working. NFR-05: never a blank pause."""
+        """Say that the companion is working. Never a blank pause."""
         self._busy = True
         self.send.setEnabled(False)
         self._reply_row = None
@@ -205,7 +205,7 @@ class ChatView(QWidget):
         self._settle()
 
     def showError(self, text: str) -> None:  # noqa: N802 - Qt naming
-        """UC-09 E1 — said by the application, not put in the character's mouth.
+        """Said by the application, not put in the character's mouth.
 
         A half-finished reply is thrown away rather than left on screen looking
         like something the companion meant to say.

@@ -1,4 +1,4 @@
-"""First run — UC-01.
+"""First run: choosing a character.
 
 Four ready-made characters, and nothing chosen for the user: an unchosen
 companion is not a companion. This view takes the whole window, without the
@@ -105,7 +105,7 @@ class FirstRunView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("First run · UC-01"))
+        column.addWidget(eyebrow("First run"))
         column.addSpacing(10)
         column.addWidget(
             label(

@@ -1,4 +1,4 @@
-"""Sessions — UC-05 and UC-07.
+"""Sessions: starting one and closing it.
 
 One line at the start, one question at the end. The open-session card and the
 start-session card are alternates; only one is ever on screen.
@@ -14,7 +14,7 @@ from src.ui.views import sample_data
 from src.ui.widgets.buttons import accent_button, dashed_button, quiet_button
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule, fading_rule
-from src.ui.widgets.typography import body, eyebrow, heading, kicker, label, lede
+from src.ui.widgets.typography import body, heading, kicker, label, lede
 
 CARD_WIDTH = 660
 
@@ -31,8 +31,6 @@ class SessionsView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-05 · UC-07"))
-        column.addSpacing(6)
         column.addWidget(heading("Work session"))
         column.addSpacing(4)
         column.addWidget(
@@ -57,7 +55,7 @@ class SessionsView(QWidget):
 
         column.addSpacing(26)
         preview = dashed_button(
-            "Preview the break nudge (UC-06)", px=12.5, radius=7,
+            "Preview the break nudge", px=12.5, radius=7,
             padding=(9, 14), icon_name="coffee",
         )
         preview.clicked.connect(self.nudgeRequested)

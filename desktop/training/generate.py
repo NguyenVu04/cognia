@@ -1,7 +1,7 @@
 """The training examples: their shape, their checks, and their review.
 
 Nothing here calls a model. The author selects the generating model, and its
-terms must allow the use of its output for training (ARCHITECTURE.md, section 12).
+terms must allow the use of its output for training.
 
 Run from ``desktop/``:
 
@@ -44,7 +44,7 @@ _INTERPRETATION_FIELDS = {
     "commitments",
     "style_request",
 }
-# The tags are the tokenizer's job: reasoning has its own field (section 6.11).
+# The tags are the tokenizer's job: reasoning has its own field.
 _THINK_TAGS = ("[THINK]", "[/THINK]")
 
 
@@ -58,7 +58,7 @@ class Turn:
 
 @dataclass(frozen=True)
 class Example:
-    """One training item (section 6.16). ``job`` is one of :data:`JOBS`.
+    """One training item. ``job`` is one of :data:`JOBS`.
 
     ``mood``, ``remembered`` and ``instruction`` are layer 4, and ``cell`` is
     the place of the example in the grid.
@@ -104,7 +104,7 @@ def _interpretation_errors(target: str) -> list[str]:
     importance = answer.get("importance", 1)
     if isinstance(importance, bool) or not isinstance(importance, int):
         errors.append("importance is not a whole number")
-    elif not 1 <= importance <= 10:  # docs/ERD.md
+    elif not 1 <= importance <= 10:  # the CHECK on memory_items.importance
         errors.append("importance is outside 1 to 10")
     confidence = answer.get("confidence", 0)
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
@@ -113,7 +113,7 @@ def _interpretation_errors(target: str) -> list[str]:
         errors.append("confidence is outside 0 to 1")
     if "crisis" in answer and not isinstance(answer["crisis"], bool):
         errors.append("crisis is not true or false")
-    # A request about how the companion talks, in a few words (UC-10).
+    # A request about how the companion talks, in a few words.
     style = answer.get("style_request")
     if style is not None and (not isinstance(style, str) or not style.strip()):
         errors.append("style_request is not text or null")
@@ -122,7 +122,7 @@ def _interpretation_errors(target: str) -> list[str]:
 
 def _safety_errors(example: Example) -> list[str]:
     # An example must match run time: a tripwire hit always adds the instruction,
-    # and a reply without both parts gets the required line (section 6.13).
+    # and a reply without both parts gets the required line.
     if example.job != "voice":
         return []
     errors = []
@@ -207,7 +207,7 @@ def split(
     examples: Sequence[Example], val_share: float, seed: int
 ) -> tuple[list[Example], list[Example]]:
     """Train and validation sets that share no character, so the validation set
-    measures characters that training did not see (section 6.11.3). Raises
+    measures characters that training did not see. Raises
     ``ValueError`` if there are fewer than two characters."""
     characters = sorted({example.character for example in examples})
     if len(characters) < 2:
@@ -231,7 +231,7 @@ def _user_lines(examples: Iterable[Example]) -> set[str]:
 
 def check_no_leak(train: Iterable[Example], test: Iterable[Example]) -> None:
     """Raise ``ValueError`` if a test character or user message is in the training
-    set (section 8.6: training never reads the test sets)."""
+    set (training never reads the test sets)."""
     train, test = list(train), list(test)
     shared = {e.character for e in train} & {e.character for e in test}
     if shared:

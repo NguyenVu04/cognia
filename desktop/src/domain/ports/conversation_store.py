@@ -1,6 +1,6 @@
 """The port through which conversations are kept.
 
-ADR 0001: ports belong to the domain, and adapters implement them. This one
+Ports belong to the domain, and adapters implement them. This one
 says nothing about SQLite, files or paths — swapping the store is a change in
 ``infrastructure/`` and nowhere else.
 """

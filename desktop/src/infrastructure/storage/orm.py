@@ -1,10 +1,10 @@
-"""Every table of the data file, as ORM classes (ADR 0003, docs/ERD.md).
+"""Every table of the data file, as ORM classes.
 
 These classes are the truth about the schema. A change here reaches the file
 through a new revision in ``migrations/versions/``, and a test compares the two.
 
 Nothing outside ``infrastructure/storage`` sees a row: a store turns it into a
-frozen dataclass, so the domain stays free of SQLAlchemy (ADR 0001).
+frozen dataclass, so the domain stays free of SQLAlchemy.
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ class Base(DeclarativeBase):
 
 
 class CharacterVersion(Base):
-    """One whole version of the character. A row never changes (UC-03)."""
+    """One whole version of the character. A row never changes."""
 
     __tablename__ = "character_versions"
     __table_args__ = (
@@ -97,7 +97,7 @@ class CharacterVersion(Base):
 
 
 class CharacterProposal(Base):
-    """A change the companion proposed. A refused row is its tombstone (UC-24-A2)."""
+    """A change the companion proposed. A refused row is its tombstone."""
 
     __tablename__ = "character_proposals"
     __table_args__ = (
@@ -268,7 +268,8 @@ class MemoryItemEvidence(Base):
 
 
 class Commitment(Base):
-    """Something the user has to do. It has no time of day and no status (FR-24)."""
+    """Something the user has to do. It has no time of day and no status,
+    because Cognia keeps no task list and sets no alarm."""
 
     __tablename__ = "commitments"
     __table_args__ = (
@@ -306,7 +307,7 @@ class Session(Base):
         ),
         CheckConstraint("(ended_at IS NULL) = (closed_how IS NULL)"),
         _flag("checkins_requested"),
-        # At most one open session (UC-05-E2).
+        # At most one open session.
         Index(
             "one_open_session",
             text("(ended_at IS NULL)"),
@@ -319,7 +320,7 @@ class Session(Base):
     id: Mapped[str] = mapped_column(primary_key=True)
     started_at: Mapped[str]
     ended_at: Mapped[str | None]
-    # Time at the machine, not time worked (BR-06).
+    # Time at the machine, not time worked.
     at_machine_seconds: Mapped[int | None]
     closing_answer: Mapped[str | None]
     closed_how: Mapped[str | None]
@@ -343,7 +344,7 @@ class SessionIntent(Base):
 
 
 class AppUsage(Base):
-    """Minutes per application per hour. No column can hold a title (C-05)."""
+    """Minutes per application per hour. No column can hold a window title."""
 
     __tablename__ = "app_usage"
     __table_args__ = (
@@ -369,7 +370,7 @@ class AppExclusion(Base):
 
 
 class Event(Base):
-    """One fact, in order. References and figures, never the user's words (D-03)."""
+    """One fact, in order. References and figures, never the user's words."""
 
     __tablename__ = "events"
     __table_args__ = (
@@ -388,7 +389,7 @@ class Event(Base):
 
 
 class EmotionChange(Base):
-    """One change of mood and its cause. A cache of the event log (D-07)."""
+    """One change of mood and its cause. A cache of the event log."""
 
     __tablename__ = "emotion_changes"
     __table_args__ = (_flag("floor_reached"), _STRICT)
@@ -518,8 +519,8 @@ class SpeechDecision(Base):
     """One decision to speak, sent or not.
 
     A sent decision outlives its message, so ``message_id`` can become ``NULL``:
-    UC-17 still explains it, and the daily ceiling still counts it. The
-    SpeechGate requires a message when it records a send (ERD section 12.2).
+    it can still be explained on request, and the daily ceiling still counts it.
+    The SpeechGate requires a message when it records a send.
     """
 
     __tablename__ = "speech_decisions"
@@ -570,7 +571,7 @@ class DecisionFactor(Base):
     """One figure behind a decision.
 
     ``name`` also says the unit of ``value`` and the table of ``ref_id``. The
-    domain holds that lookup, so neither is stored (ERD section 12.3).
+    domain holds that lookup, so neither is stored.
     """
 
     __tablename__ = "decision_factors"
@@ -595,7 +596,7 @@ class DecisionFactor(Base):
 
 
 class Settings(Base):
-    """Every setting, in one row. ``NULL`` means not set (BR-01, BR-02, FR-09)."""
+    """Every setting, in one row. ``NULL`` means not set."""
 
     __tablename__ = "settings"
     __table_args__ = (
@@ -611,7 +612,7 @@ class Settings(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # NULL until the first-run choice is made (UC-01).
+    # NULL until the first-run choice is made.
     character_version_id: Mapped[str | None] = mapped_column(
         ForeignKey("character_versions.id", ondelete="SET NULL")
     )

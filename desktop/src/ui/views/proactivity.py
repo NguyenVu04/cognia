@@ -1,7 +1,7 @@
-"""Speaking up — UC-18.
+"""Speaking up: how the companion speaks up and feels.
 
 Everything the companion does uninvited, on one page. Movement counts as
-speech (BR-07), so it is governed here too.
+speech, so it is governed here too.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from src.ui.widgets.buttons import LayoutButton
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule
 from src.ui.widgets.toggle import PillToggle
-from src.ui.widgets.typography import body, eyebrow, heading, kicker, label, lede
+from src.ui.widgets.typography import body, heading, kicker, label, lede
 
 COLUMN_WIDTH = 660
 
@@ -69,14 +69,12 @@ class ProactivityView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-18"))
-        column.addSpacing(6)
         column.addWidget(heading("How much it speaks up"))
         column.addSpacing(4)
         column.addWidget(
             lede(
                 "Everything the companion does uninvited, on one page. "
-                "Movement counts as speech (BR-07).",
+                "Movement counts as speech.",
                 max_width=600,
             )
         )

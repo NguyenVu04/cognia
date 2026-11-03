@@ -1,4 +1,4 @@
-"""The tray popup — UC-15.
+"""The tray popup, with the pause control.
 
 A native ``QMenu`` cannot carry the design's 11px radius and drop shadow, so
 this is a frameless popup window instead. It closes when clicked away from,
@@ -44,7 +44,7 @@ class TrayMenu(ShadowWindow):
         content.setContentsMargins(8, 8, 8, 8)
         content.setSpacing(0)
 
-        heading = kicker("Pause — UC-15", alpha=0.38, px=10.5)
+        heading = kicker("Pause", alpha=0.38, px=10.5)
         holder = QWidget()
         holder_layout = QVBoxLayout(holder)
         holder_layout.setContentsMargins(12, 8, 12, 10)

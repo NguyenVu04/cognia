@@ -3,9 +3,9 @@
 Built the way :mod:`src.ui.dialogs.tray_menu` is, and for the same reason a
 native ``QMenu`` cannot carry the design's radius and drop shadow.
 
-This control is not in the design document. It exists because conversations now
-outlive the window and there has to be some way back to an earlier one; ADR
-0002 records the decision.
+This control was added beyond the designed screens. It exists because
+conversations now outlive the window and there has to be some way back to an
+earlier one.
 """
 
 from __future__ import annotations

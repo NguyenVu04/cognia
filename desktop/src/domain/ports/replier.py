@@ -2,8 +2,8 @@
 
 "Replying in character" is a domain capability; that it happens to be an AI
 model on the far side is an adapter's business. The domain never learns what
-runs behind this, which is what lets NFR-08 hold — the model failing is one
-adapter raising, not the application breaking.
+runs behind this, so a failing model is one adapter raising, not the
+application breaking: the parts that do not need it keep working.
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from src.domain.conversation.models import Message
 class ReplyFailed(Exception):
     """The companion could not answer, with a sentence saying what would fix it.
 
-    Carries user-facing text: UC-09 E1 asks the system to say plainly that it
-    cannot reply *and what would fix it*, not to print a stack trace.
+    Carries user-facing text: when the model is unavailable, the system says
+    plainly that it cannot reply *and what would fix it*, never a stack trace.
     """
 
 

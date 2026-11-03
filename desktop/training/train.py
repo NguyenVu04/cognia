@@ -1,4 +1,4 @@
-"""LoRA training on the reviewed examples (ARCHITECTURE.md, section 8.6).
+"""LoRA training on the reviewed examples.
 
 Run from ``desktop/``, on a machine with a GPU:
 
@@ -46,7 +46,7 @@ class TrainConfig:
 
 def load_reviewed(path: Path) -> list[Example]:
     """The examples of ``path``. Raises ``ValueError`` on an item that has not
-    been reviewed or that fails :func:`~training.generate.validate` (section 6.16)."""
+    been reviewed or that fails :func:`~training.generate.validate`."""
     examples = read_examples(path)
     for number, example in enumerate(examples, start=1):
         if not example.reviewed:
@@ -71,9 +71,9 @@ def take_fraction(
 def to_messages(example: Example) -> list[dict[str, str]]:
     """The chat messages of ``example``, with the layers in run-time order.
 
-    Layer 4 goes at the end of the last user turn, because it follows the history
-    (section 6.11.2). Only the answer holds reasoning, because a run-time history
-    holds none. The run-time client must build its messages the same way.
+    Layer 4 goes at the end of the last user turn, because it follows the history.
+    Only the answer holds reasoning, because a run-time history holds none. The
+    run-time client must build its messages the same way.
     """
     system = f"{rules.system_text(example.character)}\n\n{REASONING_RULE}"
     messages = [{"role": "system", "content": system}]

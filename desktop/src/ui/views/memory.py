@@ -1,4 +1,4 @@
-"""Memory — UC-12, UC-13, UC-14.
+"""Memory: review it, correct or remove an item, and erase everything.
 
 Two groups: what the user said, and what the companion noticed. Nothing
 appears in the second column without the evidence printed under it, and the
@@ -15,7 +15,7 @@ from src.ui.views import sample_data
 from src.ui.widgets.buttons import accent_button, quiet_button, small_button
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, StyledWidget
-from src.ui.widgets.typography import body, eyebrow, heading, kicker, lede, paragraph
+from src.ui.widgets.typography import body, heading, kicker, lede, paragraph
 
 # max-width: 900px in the design, but the content column is only this wide.
 COLUMNS_WIDTH = 716
@@ -104,8 +104,6 @@ class MemoryView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-12 · UC-13 · UC-14"))
-        column.addSpacing(6)
         column.addWidget(heading("What I remember"))
         column.addSpacing(4)
         column.addWidget(

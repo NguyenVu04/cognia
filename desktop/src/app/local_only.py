@@ -1,7 +1,7 @@
 """Switched off before anything gets the chance to switch it on.
 
-NFR-01 promises zero outbound connections the user did not ask for, and C-02
-says there is no account and no server. LangChain does not breach that on its
+Cognia promises zero outbound connections the user did not ask for, and has
+no account and no server. LangChain does not breach that on its
 own, but it ships with hosted tracing that turns itself on from an environment
 variable — and ``langsmith`` is a hard dependency of ``langchain-core``, so it
 is installed whether or not anything imports it.

@@ -1,4 +1,4 @@
-"""The whole schema (ADR 0003).
+"""The whole schema.
 
 Revision ID: 0001
 Revises:
@@ -107,7 +107,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sqlite_strict=True
     )
-    # Autogenerate skips an expression index, so this line is by hand (UC-05-E2).
+    # At most one open session. Autogenerate skips an expression index, so this
+    # line is by hand.
     op.create_index('one_open_session', 'sessions', [sa.text('(ended_at IS NULL)')], unique=True, sqlite_where=sa.text('ended_at IS NULL'))
     op.create_table('character_proposals',
     sa.Column('id', sa.Text(), nullable=False),
@@ -399,7 +400,7 @@ def upgrade() -> None:
         batch_op.create_index('self_adjustments_by_pattern', ['pattern_id'], unique=False)
 
     op.execute("INSERT INTO settings (id) VALUES (1)")
-    # The names on screen are interface copy (ERD section 12.1).
+    # The names on screen are interface copy.
     op.execute(
         "INSERT INTO message_kinds (id) VALUES ('remark'), ('question'), ('break'), "
         "('commitment'), ('checkin'), ('adjustment'), ('proposal'), ('greeting'), "

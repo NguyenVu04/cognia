@@ -2,7 +2,7 @@
 
 Pure data. The domain holds no clock of its own — ``last_active_at`` is handed
 in by whoever creates the record, so a replay over recorded input produces the
-same value it did the first time (NFR-13).
+same value it did the first time.
 """
 
 from __future__ import annotations

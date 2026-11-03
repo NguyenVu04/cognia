@@ -1,15 +1,16 @@
-"""The text of the prompt layers (ARCHITECTURE.md, section 6.11.2).
+"""The text of the prompt layers.
 
 Layer 1 is fixed, layer 2 is the character, layer 3 is the history and needs no
 text of its own, and layer 4 changes each turn. The tuned model learns from this
-text, so a change to layer 1 needs a new measurement (section 6.16).
+text, so a change to layer 1 needs a new measurement of the tuned model.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-# In order: FR-24, voice, length, BR-06, BR-04 with FR-24, NFR-12.
+# One paragraph each: not an assistant, voice, length, honest wording, no
+# pressure and no needs, and the crisis rule.
 LAYER_1 = (
     "You are a companion on the user's desktop, not an assistant. You are a "
     "fictional character: the description below sets your personality, and it "
@@ -43,7 +44,7 @@ LAYER_1 = (
 
 def system_text(character: str) -> str:
     """Layers 1 and 2. Layer 1 always comes first, so a character cannot precede
-    it (FR-04). Raises ``ValueError`` if ``character`` is blank."""
+    it. Raises ``ValueError`` if ``character`` is blank."""
     if not character.strip():
         raise ValueError("A character needs a description.")
     return f"{LAYER_1}\n\n{character.strip()}"

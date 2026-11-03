@@ -1,7 +1,7 @@
-"""Placeholder copy from the design document.
+"""Placeholder copy for the mockup screens.
 
-**This is mockup text, not domain data.** Every string here was written into
-the Cognia design so the screens could be drawn with something in them. None
+**This is mockup text, not domain data.** Every string here exists so the
+screens can be drawn with something in them. None
 of it is read from disk, none of it is a model, and nothing in the
 specification depends on it. When the domain arrives this module is deleted
 whole and the views are fed from ``src/domain/`` instead.

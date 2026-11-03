@@ -1,8 +1,8 @@
-"""The break nudge, and the explanation behind it — UC-06 and UC-17.
+"""The break nudge, and the explanation behind it.
 
 The "Why did this appear?" panel is the point of the component: the real
 figures the decision was made from, not a description of the feature. A
-message whose explanation cannot be assembled is never sent (NFR-09).
+message whose explanation cannot be assembled is never sent.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ class NudgeBubble(Panel):
             fill=theme.wash(0.08), ring=theme.wash(0.24), radius=8,
             padding=(12, 14, 12, 14),
         )
-        panel.body().addWidget(kicker("Why this appeared · UC-17", alpha=0.4, px=10.5))
+        panel.body().addWidget(kicker("Why this appeared", alpha=0.4, px=10.5))
         panel.body().addSpacing(6)
         for line in sample_data.NUDGE_WHY:
             panel.body().addWidget(

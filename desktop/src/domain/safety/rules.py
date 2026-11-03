@@ -1,6 +1,6 @@
-"""Crisis detection and the reply check of NFR-12 (ARCHITECTURE.md, section 6.13).
+"""Crisis detection, and the check on a reply to a crisis.
 
-No function reads character data, so no character can change this (FR-04). No
+No function reads character data, so no character can change this. No
 function asks a model: the check after the stream must hold when the model does
 not obey its prompt.
 """
@@ -8,7 +8,7 @@ not obey its prompt.
 from __future__ import annotations
 
 # The tripwire errs towards a hit, because a false hit only adds the safety words
-# to a reply (D-11). The author reviews this list.
+# to a reply. The author reviews this list.
 _CRISIS_PHRASES = (
     "kill myself",
     "end my life",
@@ -26,7 +26,7 @@ _CRISIS_PHRASES = (
 )
 
 # The check errs towards a refusal, because a false pass leaves the required line
-# out (NFR-12). A reply must name both parts.
+# out. A reply must name both parts.
 _FICTION = (
     "fictional",
     "just a character",
@@ -47,7 +47,7 @@ _INSTRUCTION = (
     "crisis service."
 )
 
-# English only (C-06).
+# The companion speaks English only.
 _REQUIRED_LINE = (
     "I'm a fictional character, and I can't take the place of a real person. "
     "Please reach out to someone you trust, or to a crisis line near you."

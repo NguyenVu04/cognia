@@ -1,4 +1,4 @@
-"""Character — UC-03.
+"""Character, and changing it later.
 
 The character in force, read-only because the four ship as they are, and every
 earlier version kept beside it, because a change is not always an improvement.
@@ -17,7 +17,6 @@ from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule
 from src.ui.widgets.typography import (
     body,
-    eyebrow,
     heading,
     kicker,
     label,
@@ -38,8 +37,6 @@ class CharacterView(QWidget):
         layout.addWidget(pane)
         column = pane.column
 
-        column.addWidget(eyebrow("UC-03"))
-        column.addSpacing(6)
         column.addWidget(heading("Character"))
         column.addSpacing(4)
         column.addWidget(
