@@ -58,7 +58,7 @@ tasks:
     cmds:
       - uv run --project training ruff check training
 
-  # Fine-tuning (training/GUIDE.md). Run on a machine with a GPU.
+  # Fine-tuning. Run on a machine with a GPU.
 
   train:setup:
     desc: 'Install the GPU tools into desktop/training/.venv. Example: task train:setup'
@@ -87,7 +87,7 @@ tasks:
       - uv run --project training --extra gpu python -m training.export {{.ADAPTER}} {{.OUT}} {{.LICENSE}} --base-date {{.BASE_DATE}} {{.CLI_ARGS}}
 
   # Evaluation. These read and write files only, so they need no GPU. The
-  # measurement that writes a Report waits for LlamaClient (GUIDE.md, step 6).
+  # measurement that writes a Report waits for LlamaClient.
 
   train:rubric:
     desc: 'Write a blind rubric sheet. Example: task train:rubric SAMPLES=samples.json SHEET=sheet.csv'
