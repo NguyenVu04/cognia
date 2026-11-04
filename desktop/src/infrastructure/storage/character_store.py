@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
-from pathlib import Path
 
 from sqlalchemy import Row, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,7 +17,7 @@ from src.domain.character.models import Version
 from src.domain.emotion.models import Pad, Temperament
 from src.domain.ports import CharacterStoreFailed
 from src.infrastructure.storage import orm
-from src.infrastructure.storage.database import open_database
+from src.infrastructure.storage.database import Database
 from src.infrastructure.storage.times import to_text, to_utc
 
 character_versions = orm.CharacterVersion.__table__
@@ -32,20 +31,19 @@ NOT_SAVED = "The character could not be saved. The one in force has not changed.
 
 
 class SqliteCharacterStore:
-    """A :class:`~src.domain.ports.CharacterStore` kept in one SQLite file."""
+    """A :class:`~src.domain.ports.CharacterStore` kept in the shared
+    :class:`Database`. ``close`` does nothing: the owner of the database closes
+    it."""
 
-    def __init__(self, path: Path) -> None:
-        try:
-            self._engine = open_database(path)
-        except SQLAlchemyError as error:
-            raise CharacterStoreFailed(UNREADABLE) from error
+    def __init__(self, db: Database) -> None:
+        self._db = db
 
     def current(self) -> Version | None:
         query = select(character_versions).join(
             settings, settings.c.character_version_id == character_versions.c.id
         )
         try:
-            with self._engine.connect() as db:
+            with self._db.transaction() as db:
                 row = db.execute(query).first()
             return _version(row) if row else None
         except (SQLAlchemyError, ValueError) as error:
@@ -54,7 +52,7 @@ class SqliteCharacterStore:
     def versions(self) -> list[Version]:
         query = select(character_versions).order_by(character_versions.c.number.desc())
         try:
-            with self._engine.connect() as db:
+            with self._db.transaction() as db:
                 rows = db.execute(query).all()
             return [_version(row) for row in rows]
         except (SQLAlchemyError, ValueError) as error:
@@ -63,7 +61,7 @@ class SqliteCharacterStore:
     def add(self, version: Version) -> Version:
         version = replace(version, created_at=to_utc(version.created_at))
         try:
-            with self._engine.begin() as db:
+            with self._db.transaction() as db:
                 db.execute(insert(character_versions).values(**_row(version)))
                 # The table holds exactly one row.
                 db.execute(update(settings).values(character_version_id=version.id))
@@ -72,7 +70,7 @@ class SqliteCharacterStore:
         return version
 
     def close(self) -> None:
-        self._engine.dispose()
+        pass
 
 
 def _row(version: Version) -> dict[str, object]:

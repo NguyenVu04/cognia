@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from src.domain.conversation.models import COMPANION, USER, Message
+from src.infrastructure.storage.database import Database
 from src.infrastructure.storage.sqlite_store import SqliteConversationStore
 
 START = datetime(2026, 10, 31, 12, 0)
@@ -17,9 +18,9 @@ def path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def store(path: Path):
-    store = SqliteConversationStore(path)
-    yield store
-    store.close()
+    db = Database.open(path)
+    yield SqliteConversationStore(db)
+    db.close()
 
 
 def test_latest_returns_created(store: SqliteConversationStore) -> None:

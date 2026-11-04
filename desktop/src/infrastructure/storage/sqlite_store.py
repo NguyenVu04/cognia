@@ -20,13 +20,12 @@ from __future__ import annotations
 import uuid
 from dataclasses import replace
 from datetime import datetime
-from pathlib import Path
 
 from sqlalchemy import Row, delete, insert, literal_column, select, update
 
 from src.domain.conversation.models import COMPANION, USER, Conversation, Message
 from src.infrastructure.storage import orm
-from src.infrastructure.storage.database import open_database
+from src.infrastructure.storage.database import Database
 from src.infrastructure.storage.times import to_text, to_utc
 
 conversations = orm.Conversation.__table__
@@ -49,10 +48,12 @@ def title_from(text: str) -> str:
 
 
 class SqliteConversationStore:
-    """A :class:`~src.domain.ports.ConversationStore` kept in one SQLite file."""
+    """A :class:`~src.domain.ports.ConversationStore` kept in the shared
+    :class:`Database`. ``close`` does nothing: the owner of the database closes
+    it."""
 
-    def __init__(self, path: Path) -> None:
-        self._engine = open_database(path)
+    def __init__(self, db: Database) -> None:
+        self._db = db
 
     # ── conversations ─────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ class SqliteConversationStore:
             title=UNTITLED,
             last_active_at=now,
         )
-        with self._engine.begin() as db:
+        with self._db.transaction() as db:
             db.execute(
                 insert(conversations).values(
                     id=conversation.id,
@@ -74,14 +75,14 @@ class SqliteConversationStore:
         return conversation
 
     def conversations(self) -> list[Conversation]:
-        with self._engine.connect() as db:
+        with self._db.transaction() as db:
             rows = db.execute(
                 select(conversations).order_by(conversations.c.last_active_at.desc())
             ).all()
         return [self._conversation(row) for row in rows]
 
     def latest(self) -> Conversation | None:
-        with self._engine.connect() as db:
+        with self._db.transaction() as db:
             row = db.execute(
                 select(conversations)
                 .order_by(conversations.c.last_active_at.desc())
@@ -90,7 +91,7 @@ class SqliteConversationStore:
         return self._conversation(row) if row else None
 
     def retitle(self, conversation_id: str, title: str) -> None:
-        with self._engine.begin() as db:
+        with self._db.transaction() as db:
             db.execute(
                 update(conversations)
                 .where(conversations.c.id == conversation_id)
@@ -98,7 +99,7 @@ class SqliteConversationStore:
             )
 
     def delete(self, conversation_id: str) -> None:
-        with self._engine.begin() as db:
+        with self._db.transaction() as db:
             db.execute(
                 delete(conversations).where(conversations.c.id == conversation_id)
             )
@@ -113,7 +114,7 @@ class SqliteConversationStore:
         the user cannot find.
         """
         message = replace(message, created_at=to_utc(message.created_at))
-        with self._engine.begin() as db:
+        with self._db.transaction() as db:
             db.execute(
                 insert(messages).values(
                     id=message.id,
@@ -133,7 +134,7 @@ class SqliteConversationStore:
     def history(self, conversation_id: str, limit: int | None = None) -> list[Message]:
         query = select(messages).where(messages.c.conversation_id == conversation_id)
         rowid = literal_column("rowid")
-        with self._engine.connect() as db:
+        with self._db.transaction() as db:
             if limit is None:
                 rows = db.execute(query.order_by(messages.c.created_at, rowid)).all()
             else:
@@ -146,7 +147,7 @@ class SqliteConversationStore:
         return [self._message(row) for row in rows]
 
     def close(self) -> None:
-        self._engine.dispose()
+        pass
 
     # ── rows ──────────────────────────────────────────────────────────────
 

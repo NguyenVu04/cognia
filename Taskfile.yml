@@ -82,7 +82,7 @@ tasks:
       vars: [LICENSE, BASE_DATE]
     vars:
       ADAPTER: '{{.ADAPTER | default "training/out/full"}}'
-      OUT: '{{.OUT | default "training/out/gguf"}}'
+      OUT: '{{.OUT | default "training/out/chat"}}'
     cmds:
       - uv run --project training --extra gpu python -m training.export {{.ADAPTER}} {{.OUT}} {{.LICENSE}} --base-date {{.BASE_DATE}} {{.CLI_ARGS}}
 

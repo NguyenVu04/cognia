@@ -28,6 +28,7 @@ from src.app.chat_worker import ChatWorker
 from src.domain.conversation import rules
 from src.domain.conversation.models import COMPANION, USER, Message
 from src.infrastructure.ai.ollama_agent import OllamaAgent
+from src.infrastructure.storage.database import Database
 from src.infrastructure.storage.sqlite_store import (
     UNTITLED,
     SqliteConversationStore,
@@ -77,7 +78,8 @@ class Cognia(QObject):
             _character_text(self.character.name, self.character.role)
         )
 
-        self.store = SqliteConversationStore(config.database_path())
+        self.database = Database.open(config.database_path())
+        self.store = SqliteConversationStore(self.database)
         self.conversation = self.store.latest() or self.store.create(datetime.now())
 
         self.thread = QThread()
@@ -235,7 +237,7 @@ class Cognia(QObject):
         self.worker.cancel()
         self.thread.quit()
         self.thread.wait(5000)
-        self.store.close()
+        self.database.close()
 
 
 def _palette() -> QPalette:

@@ -3,7 +3,10 @@
 Run from ``desktop/``, on a machine with a GPU:
 
     uv run --project training --extra gpu python -m training.export \\
-        ADAPTER OUTPUT LICENCE --base-date YYYY-MM-DD
+        training/out/full training/out/chat LICENCE --base-date YYYY-MM-DD
+
+OUTPUT receives the merged checkpoint. ``chat.gguf`` and the licence files land in
+the sibling ``OUTPUT_gguf``.
 """
 
 from __future__ import annotations
@@ -19,6 +22,11 @@ from training.train import BASE_MODEL
 CHAT_FILE = "chat.gguf"
 
 
+def _gguf_directory(output: Path) -> Path:
+    # Unsloth always writes the GGUF files into this sibling and has no option for it.
+    return output.with_name(output.name + "_gguf")
+
+
 def _name_chat_file(output: Path) -> Path:
     # A vision projector can sit beside the model, and Cognia does not load it.
     files = [path for path in output.glob("*.gguf") if "mmproj" not in path.name]
@@ -28,8 +36,9 @@ def _name_chat_file(output: Path) -> Path:
 
 
 def merge_and_quantise(adapter: Path, method: str, output: Path) -> Path:
-    """Merge ``adapter`` into its base, quantise by ``method``, and return the
-    path of ``chat.gguf`` in ``output``. Needs the ``gpu`` extra and a GPU."""
+    """Merge ``adapter`` into its base in ``output``, quantise by ``method``, and
+    return the path of ``chat.gguf`` in the sibling ``output_gguf``. Needs the
+    ``gpu`` extra and a GPU."""
     # Imported here so that the tests need no torch.
     from unsloth import FastModel
 
@@ -37,7 +46,7 @@ def merge_and_quantise(adapter: Path, method: str, output: Path) -> Path:
         model_name=str(adapter), load_in_4bit=False
     )
     model.save_pretrained_gguf(str(output), tokenizer, quantization_method=method)
-    return _name_chat_file(output)
+    return _name_chat_file(_gguf_directory(output))
 
 
 def write_licences(
@@ -70,7 +79,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     chat_file = merge_and_quantise(args.adapter, args.method, args.output)
-    write_licences(args.output, args.licence, args.base, args.base_date)
+    write_licences(chat_file.parent, args.licence, args.base, args.base_date)
     print(chat_file)
     return 0
 

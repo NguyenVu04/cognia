@@ -46,7 +46,7 @@ uv run --project training --extra gpu python -c "import torch; print(torch.__ver
 3. Export the adapter. Use the `LICENSE` file from the base model download.
 
    ```bash
-   uv run --project training --extra gpu python -m training.export training/out/fake training/out/fake-gguf LICENSE --base-date 2025-12-01
+   uv run --project training --extra gpu python -m training.export training/out/fake training/out/fake-chat LICENSE --base-date 2025-12-01
    ```
 
    Replace `2025-12-01` with the date of the base model.
@@ -198,11 +198,12 @@ These figures are examples. Use your own figures after the baseline.
 ## Step 9. Export
 
 ```bash
-uv run --project training --extra gpu python -m training.export training/out/full training/out/gguf LICENSE --base-date 2025-12-01
+uv run --project training --extra gpu python -m training.export training/out/full training/out/chat LICENSE --base-date 2025-12-01
 ```
 
 Replace `2025-12-01` with the date of the base model. The default method is `q4_k_m`. The
-command writes `chat.gguf`, `LICENSE.txt` and `NOTICE.txt`.
+command writes `chat.gguf`, `LICENSE.txt` and `NOTICE.txt` into `training/out/chat_gguf`.
+The folder `training/out/chat` holds only the merged checkpoint.
 
 ## Step 10. Measure and decide
 

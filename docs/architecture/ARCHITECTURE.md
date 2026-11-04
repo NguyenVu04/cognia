@@ -305,6 +305,7 @@ flowchart TB
     subgraph domain["domain — standard library only"]
         events["events"]
         ports["ports"]
+        companion["companion"]
         features["character, conversation, memory, awareness, sessions"]
         behaviour["emotion, speech, initiative, learning, reflection, safety"]
     end
@@ -338,7 +339,8 @@ src/
 ├── app/                 core_host, bridge, replay, single_instance, config
 ├── domain/
 │   ├── ports/           every interface the domain needs
-│   ├── events/          event kinds, payloads, the step function
+│   ├── events/          event kinds, payloads
+│   ├── companion/       the companion's state, the step function
 │   ├── character/       versions, temperament
 │   ├── conversation/    messages, prompt layers
 │   ├── memory/          memory items, commitments, retrieval score
@@ -412,7 +414,8 @@ exist, a reviewer checks these rules by hand.
 | Module | Responsibility | Source |
 |---|---|---|
 | `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain/ports) |
-| `domain/events` | Define the closed set of events and the `step` function | [`desktop/src/domain/events`](../../desktop/src/domain/events) (the event model, no `step` yet) |
+| `domain/events` | Define the closed set of events | [`desktop/src/domain/events`](../../desktop/src/domain/events) (the event model) |
+| `domain/companion` | Hold the companion's state, and apply each event to it with the `step` function | [`desktop/src/domain/companion`](../../desktop/src/domain/companion) (models, rules and service for the emotion state only, no caller yet) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (models, rules and service, no caller yet) |
 | `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
 | `domain/memory` | Hold memory items and commitments, and score retrieval (UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (stub) |
@@ -458,8 +461,10 @@ field for a window title, so no code above the adapter can ask for one (C-05).
 
 ### 6.4 `domain/events`
 
-**Purpose.** This module defines every event and the one function that applies an event
-to the companion's state (ADR 0001, NFR-13, D-09, D-10).
+**Purpose.** This module defines every event (ADR 0001, NFR-13, D-09). It imports nothing
+from another package of `domain/`, so each feature can read an event (D-40). The `step`
+function that applies an event to the companion's state is in `domain/companion` (section
+6.18).
 
 ```mermaid
 classDiagram
@@ -472,53 +477,23 @@ classDiagram
         +importance: int
     }
 
-    class CompanionState {
-        +presence: PresenceState
-        +emotion: EmotionState
-        +session: SessionState
-        +initiative: InitiativeState
-        +learning: LearningState
-        +reflection: ReflectionState
-    }
-
-    class StepResult {
-        +state: CompanionState
-        +effects: tuple~Effect~
-        +next_wake: datetime
-    }
-
-    class Effect {
-        <<interface>>
-    }
-
-    class step_rules {
-        <<module>>
-        +step(state, event, settings) StepResult
-        +initial_state(character) CompanionState
-    }
-
     class EventLog {
         <<interface>>
-        +append(event) int
+        +append(occurred_at, utc_offset_min, kind, payload, importance) Event
         +read_from(seq) Iterator~Event~
         +delete(seqs) None
+        +close() None
     }
 
-    step_rules ..> Event : reads
-    step_rules ..> CompanionState : reads and returns
-    step_rules ..> StepResult : returns
-    StepResult --> Effect : holds
+    EventLog ..> Event : returns
 ```
 
 **Key types.**
 
 | Type | Kind | Note |
 |---|---|---|
-| `Event` | Frozen dataclass | The `occurred_at` and `utc_offset_min` fields are the only clock that a rule sees |
-| `CompanionState` | Frozen dataclass | Everything the rules hold between events. It is a pure function of the log |
-| `StepResult` | Frozen dataclass | The new state, the effects, and the next time the rules want to run |
-| `Effect` | Union of dataclasses | For example `RequestWording`, `ShowExpression`, `RecordDecision`, `WatchForPause` |
-| `step` | Function | Calls the feature rules in a fixed order: awareness, sessions, emotion, learning, reflection, initiative, speech |
+| `Event` | Frozen dataclass | The `occurred_at` and `utc_offset_min` fields are the only clock that a rule sees. Its docstring lists each payload key that a rule reads. A payload value is a string, a number, a boolean or a tuple of seqs (D-42) |
+| `EventLog` | Port | In `domain/ports`. `append` receives the fields and returns the stored event with its seq, because the log gives the seq. Each method raises `EventLogFailed` with a sentence for the user. No adapter exists yet |
 
 **The closed set of events.** A new kind needs a change here. This table replaces the
 examples in section 9.1 of the ERD, and it closes ERD open item 4.
@@ -657,13 +632,12 @@ classDiagram
 
     class EmotionService {
         -store: CharacterStore
-        +resting(at, seq) EmotionState
-        +feel(state, event, moods_on) EmotionState
+        +temperaments() dict~str, Temperament~
     }
 
     class CharacterStore {
         <<interface>>
-        +current() Version
+        +versions() list~Version~
     }
 
     EmotionState --> Pad
@@ -684,9 +658,9 @@ classDiagram
 | `Pad` | Frozen dataclass | Defined in `domain/emotion`. `domain/character` imports `Pad` and `Temperament` from `domain/emotion`. `domain/emotion` reads a `Version` through the `CharacterStore` port only (D-39) |
 | `appraise` | Function | Reads an `Event` from `domain/events`. One table row per event kind, and one row per message class for `user_message`. It returns zero for any kind that has no row. It does not read the temperament, because `apply` applies `reactivity` |
 | `sadden` | Function | Applies a message that the user passed over at the desk. It moves the mood only, and it stops pleasure at the floor (section 6.5.2) |
-| `feel` | Function | Applies one event: decay since `computed_at`, then the restore after talk, then `sadden` or `apply`. The `step` function will call it |
+| `feel` | Function | Applies one event: decay since `computed_at`, then the restore after talk, then `sadden` or `apply`. The `step` function calls it (section 6.18) |
 | `name` | Function | Looks up a name such as "pleased". The name is derived and never stored |
-| `EmotionService` | Class | Reads the temperament of the version in force through `CharacterStore`, then calls the rules. It holds no state |
+| `EmotionService` | Class | Reads the temperament of each version through `CharacterStore`, by version ID, for the `step` function (D-41). It calls no rule and holds no state |
 
 **The model never sets a feeling.** The AI model classifies a message once, and that class
 is the event (ADR 0004). `appraise` then uses a fixed table. A class outside the closed
@@ -1982,7 +1956,7 @@ code and not a user action.
   file ships with Cognia, so its sentence tells the user that a new installation repairs this.
 
 **Events and proposals.** A change of character is also the event `character_changed`, with the
-version ID. The rules read this event and then use the temperament of that version (section 6.4).
+version ID. The rules read this event and then use the temperament of that version (section 6.18).
 An approved proposal also adds a version, with `origin` set to `proposal` (section 6.9). Only the
 user can apply a proposal (FR-16).
 
@@ -2019,6 +1993,98 @@ flowchart LR
     copyv --> add
     add --> keep["every earlier version stays"]
 ```
+
+### 6.18 `domain/companion`
+
+**Purpose.** This module holds everything that the rules keep between events, and the `step`
+function that applies one event to it (ADR 0001, NFR-13, D-09, D-10, D-40). This subsection comes
+last only to keep the numbers of sections 6.4 to 6.17.
+
+```mermaid
+classDiagram
+    class CompanionState {
+        +version_id: str
+        +moods_on: bool
+        +emotion: EmotionState
+    }
+
+    class StepResult {
+        +state: CompanionState
+        +effects: tuple~Effect~
+        +next_wake: datetime
+    }
+
+    class ShowExpression {
+        +expression: Expression
+    }
+
+    class companion_rules {
+        <<module>>
+        +initial_state() CompanionState
+        +step(state, event, temperaments) StepResult
+        +fold(state, events, temperaments) CompanionState
+    }
+
+    class CompanionService {
+        -log: EventLog
+        -emotion: EmotionService
+        +start() CompanionState
+        +record(state, occurred_at, utc_offset_min, kind, payload, importance) StepResult
+    }
+
+    class EventLog {
+        <<interface>>
+    }
+
+    StepResult --> CompanionState
+    StepResult --> ShowExpression : holds
+    CompanionService --> EventLog : uses
+    CompanionService --> EmotionService : uses
+    CompanionService ..> companion_rules : calls
+    companion_rules ..> emotion_rules : calls
+```
+
+**Key types.**
+
+| Type | Kind | Note |
+|---|---|---|
+| `CompanionState` | Frozen dataclass | `version_id` is the character version in force. `version_id` and `emotion` are `None` until the first `character_changed`. Today the state holds the emotion state only. Each other feature adds its state when its rules exist |
+| `StepResult` | Frozen dataclass | The new state, the effects, and the next time that the rules want to run. `next_wake` is `None` when no rule needs a wake. No rule needs one yet |
+| `Effect` | Union of dataclasses | `ShowExpression` only, today. `RequestWording`, `RecordDecision` and `WatchForPause` join it with their features |
+| `ShowExpression` | Frozen dataclass | `step` returns it only when the face changes |
+| `initial_state` | Function | No character, and moods on, as in a new installation |
+| `step` | Function | Pure. Reads the event and the temperament of each version by its ID. Raises `ValueError` for a version that is not in the temperaments |
+| `fold` | Function | Applies `step` to each event in order. The start-up fold and a replay use it. It drops the effects, because they ran when the events happened |
+| `CompanionService` | Class | `start` folds the whole log. `record` reads the temperaments, appends one event through `EventLog`, then calls `step`. Thus a failed read appends nothing. It holds no state |
+
+**The order in `step`.** The final order is awareness, sessions, emotion, learning, reflection,
+initiative, speech. Today only emotion has rules, so `step` does these steps:
+
+1. `character_changed`, with the payload `{"version_id": ...}`. The event is felt under the old
+   temperament, so the time before the change decays at the old rates. Then the new version is in
+   force. The mood is not reset: it moves towards the resting mood of the new version (section
+   6.5). With no feeling yet, or with moods off, the state starts at the new resting mood.
+2. `setting_changed`, with the payload `{"name": "moods_on", "value": ...}`. The value changes
+   `moods_on`. Another name does not change the state yet.
+3. Each event. With no character, nothing changes. With moods on, `feel` of section 6.5 applies
+   the event. With moods off, the state stays at the resting mood (UC-18-A2).
+
+**Settings come from the log.** `step` takes no settings argument. A setting that a rule reads
+comes from `setting_changed`, because a replay has no other way to see it (section 6.4).
+
+**Example.** Version v1 has reactivity 0.4, a feeling half-life of 30 minutes, a mood half-life of
+720 minutes, and a resting mood of (0.10, 0.00, 0.00). The figures agree with section 6.5.1.
+
+| Seq, time | Event | What `step` does | Shown point, name | Effect |
+|---|---|---|---|---|
+| 1, 08:00 | `character_changed`, v1 | No feeling yet, so the state starts at rest | (0.10, 0.00, 0.00), calm | `neutral`, 1.0 |
+| 2, 08:10 | `user_message`, praise | `feel`: decay, then the appraisal of praise | (0.80, 0.28, 0.14), lively | `happy`, 0.87 |
+| 3, 08:40 | `presence` | `feel`: decay only, because the kind has no appraisal row | (0.54, 0.18, 0.09), lively | `happy`, 0.70 |
+| 4, 09:00 | `setting_changed`, moods off | The state goes back to rest | (0.10, 0.00, 0.00), calm | `neutral`, 1.0 |
+
+**Limits.** The face changes only at an event. Decay between two events does not reach the window
+until a rule returns a `next_wake` for it. `CharacterService` does not write `character_changed`
+yet (section 12), so a fold of a real log finds no character.
 
 ## 7. Component-and-connector view
 
@@ -2450,7 +2516,7 @@ sequenceDiagram
     developer->>replay: run with strategy B
     replay->>log: read all events in order
     loop each event
-        replay->>rules: step(state, event, settings)
+        replay->>rules: step(state, event, temperaments)
         rules-->>replay: state, effects
     end
     replay-->>developer: differences from strategy A
@@ -2692,6 +2758,10 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-37 | A rejected pattern and a deleted journal entry are tombstones in the event log | QA-10, UC-24-A3, UC-25-A2 | One table for each kind, one flat table for each kind | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
 | D-38 | The local models are the only models, and no table holds the current emotion point | QA-01, QA-10 | A second provider that is off by default, a cache row for the emotion point | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Decided |
 | D-39 | `Temperament` is in `domain/emotion`. The emotion service reads it through `CharacterStore`. `appraise` reads a minimal `Event` from `domain/events` | ADR 0001, BR-08 | A protocol in `domain/emotion`, an import from `domain/character`, a `TemperamentSource` port, no port, appraisal keys, no `appraise` yet | None needed | Decided |
+| D-40 | `step` and `CompanionState` are in a new package, `domain/companion`. `domain/events` imports nothing from another package of `domain/` | ADR 0001, QA-10 | `step` in `domain/events`, a protocol in `domain/events` that each feature implements | None needed | Decided |
+| D-41 | `step` reads the temperament of each version by its ID, and `character_changed` sets the version. `EmotionService` only reads the temperaments through `CharacterStore` | QA-10, BR-08 | One temperament of the version in force, keep `resting` and `feel`, no emotion service | None needed | Decided |
+| D-42 | A payload value can also be a tuple of seqs | ADR 0003, D-37 | Every JSON value, seqs in a string, one dataclass for each event kind | None needed | Decided |
+| D-43 | One `Database` holds the one connection. Every store uses it, and a call inside `Database.transaction()` joins that transaction | QA-06, D-03 | A `UnitOfWork` port in the domain, one store for all tables | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -3424,7 +3494,7 @@ frozen dataclass, so `domain/` imports no SQLAlchemy (rule 1 of section 6.2).
 that revision is refused, and it stays as it was.
 
 **Trade-off accepted.** The conversation store still builds its queries with the tables of the ORM classes, and
-no `Session` runs yet.
+no `Session` runs yet. The stores share one connection and one transaction through `Database` (D-43).
 
 ### 10.39 D-37: tombstones in the event log
 
@@ -3491,6 +3561,78 @@ need an event, and `domain/events` was empty.
 **Trade-off accepted.** The emotion service calls the port, and the rules stay pure (D-10). The
 appraisal table, the floor, the calm radius and the expression weights are start values. Some come
 from the illustrations of section 6.5. Trial use sets all of them (section 12, item 17).
+
+### 10.42 D-40: where the step function is
+
+**Question.** The `step` function calls the rules of each feature. Each feature reads `Event` from
+`domain/events`. Where is `step`, so that no two packages depend on each other?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. In `domain/events`, as section 6.4 first showed | One package holds the events and the step | `domain/events` imports `domain/emotion`, and `domain/emotion` imports `domain/events`. Each new feature adds one more such pair |
+| **B. A new package, `domain/companion`** (chosen) | The dependencies go one way: `companion`, then the features, then `events`. `domain/events` imports the standard library only | One more package. Sections 6.4 and 6.18 split the first design |
+| C. A protocol in `domain/events` that each feature implements | `domain/events` imports no feature | `CompanionState` has no typed field for each feature. The order of the calls is in `app/`, so a replay must connect the same list |
+
+**Reason.** The author chose B.
+
+**Trade-off accepted.** `domain/companion` imports the rules of each feature, so it changes when a
+feature adds a state or an effect.
+
+### 10.43 D-41: the temperament in a fold
+
+**Question.** A fold applies events from several weeks. The character can change during that time.
+Which temperament does `step` use for each event, and what does the emotion service do?
+
+**First part: the temperament.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The temperament of each version, by its ID** (chosen) | A fold gives the same feelings as the original run, also across a change of character | No feeling before the first `character_changed`. `CharacterService` must write that event (section 12) |
+| B. One temperament, of the version in force | Less code. No need for `character_changed` | After a change, a fold applies the new temperament to old events, so the result differs from the original run (NFR-13) |
+
+**Second part: the emotion service.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. It only reads the temperaments for `step`** (chosen) | One way to compute a feeling. The second part of D-39 still holds | `resting` and `feel` go, and their callers must use `step` |
+| B. Keep `resting` and `feel` | No change to the service | Two ways to compute a feeling, and nothing calls the old one |
+| C. Remove the service | The fewest classes | The second part of D-39 changes |
+
+**Reason.** The author chose A and A.
+
+**Trade-off accepted.** The payload of `character_changed` holds `version_id`. The payload of
+`setting_changed` holds `name`, a column of `settings`, and `value`. The ERD gives only the meaning
+of these payloads, so these keys are the contract.
+
+### 10.44 D-42: seqs in a payload
+
+**Question.** The tombstones `pattern_rejected` and `reflection_deleted` hold a list of seqs (D-37). A
+payload value was a string, a number or a boolean only. How does a payload hold the list?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A tuple of seqs as one more value type** (chosen) | The narrowest change. The type admits numbers and no list of words. The store writes a JSON array and reads it back as a tuple | A tuple can hold any integer, not only a seq |
+| B. Every JSON value | The widest type | The type admits a list of sentences and deep structures |
+| C. Seqs in one string, for example `"410,522,633"` | No change to the type | Each rule splits the string. The data file does not show a list |
+| D. One dataclass for each event kind | Each field has a name and a type. The kind and the payload cannot disagree | 22 kinds have no defined payload yet, so their fields would be guesses. It changes `Event`, against the third part of D-39 |
+
+**Reason.** The author chose A. Option D can follow when the features define their payloads.
+
+### 10.45 D-43: one transaction across the stores
+
+**Question.** Each store opened its own engine, so the event and the state rows committed separately.
+How does one item become one transaction (section 6.14)?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A shared `Database` with `transaction()`** (chosen) | One engine gives one connection (D-03). The caller sets the boundary, as section 6.14 states. No port changes | Each store receives the `Database` and not a path. `close` on a store does nothing, because the owner closes the `Database` |
+| B. A `UnitOfWork` port in the domain | A domain service can set the boundary | The domain sets the boundary, against section 6.14. One more port |
+| C. One store for all tables | No coordination | One class grows with each table |
+
+**Reason.** The author chose A.
+
+**Trade-off accepted.** A store call inside a transaction joins it, and only the outer call commits. A
+caller that catches a store error inside a transaction and continues commits the earlier writes.
 
 ## 11. Traceability
 

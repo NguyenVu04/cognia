@@ -9,6 +9,8 @@ thread fail loudly.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from alembic import command
@@ -46,6 +48,40 @@ def open_database(path: Path) -> Engine:
     event.listen(engine, "begin", _begin)
     _upgrade(engine)
     return engine
+
+
+class Database:
+    """The one file and its one connection, shared by every store.
+
+    Every store call inside :meth:`transaction` is part of that transaction:
+    all of it commits, or none of it. A store call outside one runs in its own.
+    """
+
+    def __init__(self, engine: Engine) -> None:
+        self._engine = engine
+        self._open: Connection | None = None
+
+    @classmethod
+    def open(cls, path: Path) -> Database:
+        """Open the file as :func:`open_database` does, with the same errors."""
+        return cls(open_database(path))
+
+    @contextmanager
+    def transaction(self) -> Iterator[Connection]:
+        """A connection in a transaction. Inside another transaction this joins
+        it, and only the outer one commits."""
+        if self._open is not None:
+            yield self._open
+            return
+        with self._engine.begin() as connection:
+            self._open = connection
+            try:
+                yield connection
+            finally:
+                self._open = None
+
+    def close(self) -> None:
+        self._engine.dispose()
 
 
 def _upgrade(engine: Engine) -> None:

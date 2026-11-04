@@ -11,7 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-Payload = Mapping[str, str | int | float | bool]
+# A tuple holds seqs, such as the evidence of a pattern the user rejected.
+Payload = Mapping[str, str | int | float | bool | tuple[int, ...]]
 
 
 class EventKind(StrEnum):
@@ -65,9 +66,11 @@ class MessageClass(StrEnum):
 class Event:
     """One row of the event log.
 
-    The payload keys the feelings read: ``class`` on ``user_message``, a
+    The payload keys the rules read: ``class`` on ``user_message``, a
     :class:`MessageClass` value; ``at_desk`` on ``message_answered`` and
-    ``message_passed_over``; ``finished`` on ``commitment_closed``.
+    ``message_passed_over``; ``finished`` on ``commitment_closed``;
+    ``version_id`` on ``character_changed``; ``name``, a column of the settings,
+    and ``value`` on ``setting_changed``.
 
     Raises ``ValueError`` for a value the stored event would refuse.
     """

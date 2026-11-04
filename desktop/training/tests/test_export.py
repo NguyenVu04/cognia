@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -49,3 +50,34 @@ def test_name_chat_file_refuses_two_models(tmp_path) -> None:
 
     with pytest.raises(ValueError):
         export._name_chat_file(tmp_path)
+
+
+def test_gguf_directory_is_a_sibling() -> None:
+    assert export._gguf_directory(Path("training/out/chat")) == Path(
+        "training/out/chat_gguf"
+    )
+
+
+def test_gguf_directory_bare_name() -> None:
+    assert export._gguf_directory(Path("chat")) == Path("chat_gguf")
+
+
+def test_main_writes_licences_beside_chat_file(tmp_path, monkeypatch) -> None:
+    licence = tmp_path / "LICENSE"
+    licence.write_text("Licence words", "utf-8")
+    chat_file = tmp_path / "chat_gguf" / "chat.gguf"
+    chat_file.parent.mkdir()
+    chat_file.write_text("model", "utf-8")
+    monkeypatch.setattr(
+        export, "merge_and_quantise", lambda adapter, method, output: chat_file
+    )
+
+    code = export.main(
+        [str(tmp_path / "adapter"), str(tmp_path / "chat"), str(licence),
+         "--base-date", "2025-12-01"]
+    )
+
+    assert code == 0
+    assert (tmp_path / "chat_gguf" / "LICENSE.txt").exists()
+    assert (tmp_path / "chat_gguf" / "NOTICE.txt").exists()
+    assert not (tmp_path / "chat" / "LICENSE.txt").exists()

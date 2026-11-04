@@ -1,46 +1,21 @@
-"""The companion's feelings under the temperament of the character in force."""
+"""How each version of the character feels things."""
 
 from __future__ import annotations
 
-from datetime import datetime
-
-from src.domain.emotion import rules
-from src.domain.emotion.models import EmotionState, Temperament
-from src.domain.events.models import Event
+from src.domain.emotion.models import Temperament
 from src.domain.ports import CharacterStore
 
 
 class EmotionService:
-    """Reads the temperament of the version in force and applies the rules.
+    """Reads the temperament of each character version for the rules.
 
-    It holds no state: the caller keeps the :class:`EmotionState` between
-    events and hands it back. Exceptions from the store pass through unchanged.
+    It holds no state. Exceptions from the store pass through unchanged.
     """
 
     def __init__(self, store: CharacterStore) -> None:
         self._store = store
 
-    def resting(self, at: datetime, seq: int = 0) -> EmotionState | None:
-        """The state at the resting mood, or ``None`` until the first choice."""
-        version = self._store.current()
-        if version is None:
-            return None
-        return rules.at_rest(version.temperament, at, seq)
-
-    def feel(
-        self, state: EmotionState, event: Event, moods_on: bool = True
-    ) -> EmotionState:
-        """``state`` after ``event``. With moods off it stays at the resting mood.
-
-        Raises ``ValueError`` if no character is in force.
-        """
-        temperament = self._temperament()
-        if not moods_on:
-            return rules.at_rest(temperament, event.occurred_at, event.seq)
-        return rules.feel(state, event, temperament)
-
-    def _temperament(self) -> Temperament:
-        version = self._store.current()
-        if version is None:
-            raise ValueError("No character is in force, so nothing can be felt.")
-        return version.temperament
+    def temperaments(self) -> dict[str, Temperament]:
+        """The temperament of every version, by version ID. Empty until the
+        first choice."""
+        return {version.id: version.temperament for version in self._store.versions()}

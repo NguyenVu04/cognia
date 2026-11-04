@@ -9,6 +9,7 @@ from src.domain.character.models import CHOSEN, RESTORED, Version
 from src.domain.emotion.models import Pad, Temperament
 from src.domain.ports import CharacterStoreFailed
 from src.infrastructure.storage.character_store import SqliteCharacterStore
+from src.infrastructure.storage.database import Database
 
 MONDAY = datetime(2026, 11, 2, 8, 0, 0, 125000, tzinfo=timezone.utc)
 TUESDAY = datetime(2026, 11, 3, 8, 0, tzinfo=timezone.utc)
@@ -43,9 +44,9 @@ def path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def store(path: Path):
-    store = SqliteCharacterStore(path)
-    yield store
-    store.close()
+    db = Database.open(path)
+    yield SqliteCharacterStore(db)
+    db.close()
 
 
 def test_current_none_on_new_file(store: SqliteCharacterStore) -> None:
