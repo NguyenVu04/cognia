@@ -1,6 +1,16 @@
 {
-  "OLLAMA_MODEL": "qwen3.5:2b",
-  "OLLAMA_BASE_URL": "http://localhost:11434",
+  "LLAMA_SERVER_VULKAN": "models/runtime/vulkan/llama-server.exe",
+  "LLAMA_SERVER_CPU": "models/runtime/cpu/llama-server.exe",
+  "CHAT_MODEL": "models/chat.gguf",
+  "EMBEDDING_MODEL": "models/embedding.gguf",
+  "EMBEDDING_BASELINE": 0.45,
+  "NEAR_DUPLICATE": 0.95,
+  "EMBEDDING_MAX_CHARS": 1200,
+  "CHAT_CONTEXT": 8192,
+  "MODEL_IDLE_SECONDS": null,
+  "MODEL_START_SECONDS": 120,
+  "MODEL_RESTARTS": 3,
   "HISTORY_MESSAGES": 40,
+  "MESSAGE_MAX_CHARS": 1200,
   "DATABASE_PATH": "data/cognia.sqlite3"
 }

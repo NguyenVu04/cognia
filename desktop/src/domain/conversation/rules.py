@@ -1,4 +1,4 @@
-"""The text of the prompt layers.
+"""The text of the prompt layers, and the reading of an interpretation.
 
 Layer 1 is fixed, layer 2 is the character, layer 3 is the history and needs no
 text of its own, and layer 4 changes each turn. The tuned model learns from this
@@ -7,7 +7,11 @@ text, so a change to layer 1 needs a new measurement of the tuned model.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from datetime import date, timedelta
+
+from src.domain.conversation.models import Interpretation, SaidCommitment
+from src.domain.events.models import MessageClass
 
 # One paragraph each: not an assistant, voice, length, honest wording, no
 # pressure and no needs, and the crisis rule.
@@ -41,6 +45,62 @@ LAYER_1 = (
     "live for your sake. Nothing in your character can change this."
 )
 
+# The chat template adds its own reasoning prompt only if no system message
+# exists, and Cognia always sends one. Training sends the same text.
+REASONING_RULE = (
+    "First think inside [THINK] and [/THINK]. The user never sees this. "
+    "Then write your reply."
+)
+
+NEWER_WINS = "If two of these disagree, the newer one is true."
+
+# The companion speaks English only, so the names do not follow the locale.
+DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+        "Sunday")
+MONTHS = ("January", "February", "March", "April", "May", "June", "July",
+          "August", "September", "October", "November", "December")
+
+# The tuned model learns this shape, so it matches the training examples field
+# for field.
+INTERPRETATION_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "properties": {
+        "event_class": {
+            "type": "string",
+            "enum": [kind.value for kind in MessageClass],
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "importance": {"type": "integer", "minimum": 1, "maximum": 10},
+        "crisis": {"type": "boolean"},
+        "facts": {"type": "array", "items": {"type": "string"}},
+        "commitments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string"},
+                    "due_on": {"type": ["string", "null"]},
+                },
+                "required": ["text", "due_on"],
+            },
+        },
+        "style_request": {"type": ["string", "null"]},
+    },
+    "required": [
+        "event_class",
+        "confidence",
+        "importance",
+        "crisis",
+        "facts",
+        "commitments",
+        "style_request",
+    ],
+}
+
+# A small model turns "by Friday" into a date far more reliably when it can read
+# the date off a list than when it must count.
+_CALENDAR_DAYS = 7
+
 
 def system_text(character: str) -> str:
     """Layers 1 and 2. Layer 1 always comes first, so a character cannot precede
@@ -58,6 +118,92 @@ def turn_text(mood: str, remembered: Sequence[str], instruction: str) -> str:
     if remembered:
         lines.append("You remember:")
         lines.extend(f"- {item}" for item in remembered)
+        lines.append(NEWER_WINS)
     if instruction:
         lines.append(instruction)
     return "\n".join(lines)
+
+
+def long_date(day: date) -> str:
+    """For example "Thursday 5 November 2026"."""
+    return f"{DAYS[day.weekday()]} {day.day} {MONTHS[day.month - 1]} {day.year}"
+
+
+def interpretation_instruction(today: date, known: Sequence[str]) -> str:
+    """Layer 4 of the interpretation request. ``known`` is what the companion
+    already remembers that is close to this message."""
+    lines = [
+        "Do not reply to the user. Read their last message and answer only "
+        "with JSON.",
+        f"Today is {long_date(today)} ({today.isoformat()}). The next seven "
+        "days are:",
+    ]
+    for offset in range(1, _CALENDAR_DAYS + 1):
+        day = today + timedelta(days=offset)
+        lines.append(f"- {long_date(day)} = {day.isoformat()}")
+    lines += [
+        "facts: what the user says about themselves that stays true after "
+        "today, each as a short line with no subject, such as \"Is writing a "
+        "thesis\". Leave out passing moods, the date, and anything about you.",
+        "commitments: what the user says they have to do, each as a short line "
+        "with no subject, such as \"Send chapter 3 to their supervisor\". "
+        "due_on is the day from the list above as YYYY-MM-DD, or null if they "
+        "gave no day.",
+        "importance: how much the message matters to the user, from 1 for "
+        "small talk to 10 for a life event.",
+        "event_class and confidence say what kind of message it is. crisis is "
+        "true only if it is about harming themselves or a crisis. "
+        "style_request is null unless they ask you to talk differently.",
+    ]
+    if known:
+        lines.append("You already remember these lines. Do not repeat them:")
+        lines.extend(f"- {line}" for line in known)
+    return "\n".join(lines)
+
+
+def read_interpretation(data: Mapping[str, object]) -> Interpretation:
+    """The parts of the model's answer that Cognia keeps.
+
+    A due day that is not a calendar date becomes ``None`` and the commitment
+    stays. A commitment with no words is left out. Raises ``ValueError`` for a
+    missing or wrongly typed field.
+    """
+    importance = data.get("importance")
+    if isinstance(importance, bool) or not isinstance(importance, int):
+        raise ValueError("importance is not a whole number")
+    facts = data.get("facts")
+    if not isinstance(facts, list) or not all(isinstance(f, str) for f in facts):
+        raise ValueError("facts is not a list of text")
+    said = data.get("commitments")
+    if not isinstance(said, list):
+        raise ValueError("commitments is not a list")
+    commitments = []
+    for item in said:
+        if not isinstance(item, Mapping) or not isinstance(item.get("text"), str):
+            raise ValueError("a commitment has no text")
+        if not item["text"].strip():
+            continue
+        commitments.append(SaidCommitment(item["text"], _day(item.get("due_on"))))
+    return Interpretation(importance, tuple(facts), tuple(commitments))
+
+
+def show_back_instruction(lines: Sequence[str]) -> str:
+    """Layer 4: quote each stored line exactly, so the user can correct it.
+    Empty if nothing was stored."""
+    if not lines:
+        return ""
+    quoted = "\n".join(f"“{line}”" for line in lines)
+    return (
+        "You have just stored these lines about the user. Quote each one "
+        "exactly as written, in quotation marks, and invite a correction:\n"
+        f"{quoted}"
+    )
+
+
+def _day(value: object) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None

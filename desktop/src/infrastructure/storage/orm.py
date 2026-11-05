@@ -630,3 +630,6 @@ class Settings(Base):
     companion_screen: Mapped[str | None]
     close_hint_shown: Mapped[int] = mapped_column(server_default=text("0"))
     embedding_model: Mapped[str | None]
+    # The GPU that measured fastest for the chat model, by its name, so the
+    # measurement runs once. NULL until measured.
+    chat_device: Mapped[str | None]

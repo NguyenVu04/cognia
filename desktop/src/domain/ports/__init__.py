@@ -6,7 +6,11 @@ from src.domain.ports.character_catalog import (
 )
 from src.domain.ports.character_store import CharacterStore, CharacterStoreFailed
 from src.domain.ports.conversation_store import ConversationStore
+from src.domain.ports.embedder import Embedder, EmbedFailed
+from src.domain.ports.erasure_store import ErasureFailed, ErasureStore
 from src.domain.ports.event_log import EventLog, EventLogFailed
+from src.domain.ports.interpreter import Interpreter, InterpretFailed
+from src.domain.ports.memory_store import MemoryStore, MemoryStoreFailed
 from src.domain.ports.replier import Replier, ReplyFailed
 
 __all__ = [
@@ -15,8 +19,16 @@ __all__ = [
     "CharacterStore",
     "CharacterStoreFailed",
     "ConversationStore",
+    "EmbedFailed",
+    "Embedder",
+    "ErasureFailed",
+    "ErasureStore",
     "EventLog",
     "EventLogFailed",
+    "InterpretFailed",
+    "Interpreter",
+    "MemoryStore",
+    "MemoryStoreFailed",
     "Replier",
     "ReplyFailed",
 ]

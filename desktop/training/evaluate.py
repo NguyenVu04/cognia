@@ -1,9 +1,8 @@
 """Measure a model and apply the acceptance gate.
 
-``LlamaClient`` does not exist yet. So a caller passes the
-call to the model and the safety check in, and this module holds no HTTP code
-(only ``infrastructure/ai/`` may). ``check_wording`` also waits for
-``domain/speech``.
+A caller passes the call to the model and the safety check in, so this module
+holds no HTTP code (only ``infrastructure/ai/`` may). ``measure`` is not yet
+connected to ``LlamaClient``. ``check_wording`` waits for ``domain/speech``.
 
 Run from ``desktop/``:
 

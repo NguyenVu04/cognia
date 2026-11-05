@@ -57,7 +57,7 @@ def test_open_creates_schema(tmp_path: Path) -> None:
 
     assert tables - {"alembic_version"} == set(Base.metadata.tables)
     assert len(Base.metadata.tables) == 25
-    assert revision == "0001"
+    assert revision == "0002"
 
 
 def test_open_twice_changes_nothing(tmp_path: Path) -> None:

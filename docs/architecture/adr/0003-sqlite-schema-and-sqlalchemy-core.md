@@ -54,8 +54,8 @@ A later check of the 31-table design found these problems:
 ## Decision
 
 **We adopt the schema in [`docs/ERD.md`](../../ERD.md).** It has 25 tables. Its section
-3 lists its decisions with their reasons, and sections 3.2 and 3.3 give the check of
-normal forms and of indexes. The decisions that shape everything else are these:
+3 lists its decisions with their reasons, and section 3.2 gives the check of indexes. The
+decisions that shape everything else are these:
 
 - **State tables hold what the user owns. The event log holds what happened.**
   Memory items, commitments, sessions and character versions are rows that the user
@@ -121,8 +121,7 @@ that rule cannot be a `CHECK` until a character row exists.
 - UC-13 and UC-14 delete real rows. No copy of the user's words stays in the event
   log or in a tombstone.
 - The file stays readable with nothing but `sqlite3`, as ADR 0002 promised.
-- One definition of the schema. Twenty-two tables are in BCNF. The other three have a
-  derived `embedding` column, by decision.
+- One definition of the schema.
 - A delete of events no longer scans the evidence tables.
 
 **Negative**

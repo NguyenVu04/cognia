@@ -78,7 +78,7 @@ revisions apply it to the file (ADR 0003).
 | D-18 | The event log holds each change of foreground application with its time | UC-22 decides from the application in use, and a replay needs each input (C-05 in version 5.2, ADR 0006) |
 | D-19 | The current emotion point stays in memory, and no table stores it | The core thread folds the event log at each start, so nothing would read such a table. A snapshot table is the upgrade if a measurement shows a slow start |
 | D-20 | `name` in `decision_factors` sets the unit of `value` and the table of `ref_id` | A stored unit and a stored table name each depend on `name` and not on the key, which breaks third normal form. The set of factors is closed, so the domain holds one lookup |
-| D-21 | Each foreign key has an index, with the exceptions in section 3.3 | SQLite makes no index for a foreign key. With no index, each deleted parent row scans the child table |
+| D-21 | Each foreign key has an index, with the exceptions in section 3.2 | SQLite makes no index for a foreign key. With no index, each deleted parent row scans the child table |
 
 ### 3.1 Rules for all tables
 
@@ -92,32 +92,7 @@ revisions apply it to the file (ADR 0003).
 8. A boolean is `INTEGER` with `CHECK (x IN (0, 1))`.
 9. A foreign key to `events.seq` uses `ON DELETE CASCADE` in a join table or a cache table. Every other foreign key to `events.seq` uses `ON DELETE SET NULL`. Thus the user can always delete events (UC-13-A2, UC-14).
 
-### 3.2 Normal forms
-
-The design has 25 tables. This check looks at the functional dependencies inside each
-table. Twenty-two tables are in Boyce-Codd normal form (BCNF).
-
-| Tables | Result | Reason |
-|---|---|---|
-| `memory_items`, `commitments`, `journal_entries` | Not in third normal form, by decision | `text` sets `embedding`, and `text` is not a key. The vector is a cache that the application can compute again, and it must disappear with its row (D-15). A separate table would add a join and give no benefit |
-| `character_versions` | BCNF | `template_id` seems to set `name`, `role` and `appearance_id`, but a resource file can change between releases. A row is a fixed copy that a restore needs (UC-03), so this is not a dependency |
-| `character_proposals`, `patterns` | BCNF | `fingerprint` is a candidate key, so the columns that make it depend on a key |
-| `speech_decisions` | BCNF | `message_id` is a candidate key, with a partial unique index |
-| `decision_factors` | BCNF | `name` no longer has a stored unit or table (D-20) |
-| All other tables | BCNF | Each non-key column depends on the key only |
-
-**JSON columns.** `events.payload` and `patterns.parameters` hold JSON, so they are not in
-first normal form in the strict sense. This check treats each as one value, because each
-event kind and each rule has a different shape (D-03).
-
-**Copies across tables.** A normal form looks at one table only. Some facts exist in a
-state table and in an event, because a rule reads only the event log. These are
-`app_usage` and `app_hour_closed`, `messages.rating` and `message_rated`, and
-`speech_decisions.response` and `message_answered`. `conversations.last_active_at` is a
-copy of the time of the last message. An empty conversation has no message, and the
-picker sorts by this column.
-
-### 3.3 Indexes
+### 3.2 Indexes
 
 SQLite makes no index for a foreign key. When foreign keys are on, each deleted parent row
 must find its child rows. With no index, this is a scan of the child table (D-21).
@@ -982,6 +957,7 @@ erDiagram
         TEXT companion_screen
         INTEGER close_hint_shown "0 or 1, default 0"
         TEXT embedding_model "model that made the stored embeddings"
+        TEXT chat_device "GPU chosen for the chat model, or NULL"
     }
     settings }o--|| character_versions : "current"
 ```
@@ -1012,9 +988,14 @@ Moving or hiding the companion writes no event, because neither is an event
 shows its explanation (FR-37), so the explanation appears once. "Erase everything"
 sets it to 0 with the other settings (section 14.2).
 
-**Embedding model.** `embedding_model` names the model that made the stored vectors.
-If a new version ships another model, the application sets each `embedding` to `NULL`,
-and a job computes them again.
+**Embedding model.** `embedding_model` names the model that made the stored vectors,
+as its file name and its size in bytes. If a new version ships another model, the
+application sets each `embedding` to `NULL`, and a job computes them again.
+
+**Chat device.** `chat_device` holds the name of the GPU that measured fastest for the
+chat model, so the measurement runs once (D-53 in `ARCHITECTURE.md`). `NULL` means "not
+measured". It is not user data and holds no user text. "Erase everything" sets it to
+`NULL` with the other settings, and the next run measures again. Revision `0002` adds it.
 
 ## 14. Deletion and erasure
 

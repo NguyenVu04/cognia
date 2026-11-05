@@ -10,16 +10,16 @@ are decided in ``app/`` — ``ui/`` is not allowed to know either.
 
 from __future__ import annotations
 
+import unicodedata
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import QLocale, Qt, QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from src.domain.conversation.models import COMPANION, Conversation, Message
 from src.ui import theme
 from src.ui.dialogs.conversation_menu import ConversationMenu
-from src.ui.views import sample_data
 from src.ui.widgets.buttons import accent_button, quiet_button
 from src.ui.widgets.message_bubble import MessageRow, TypingIndicator
 from src.ui.widgets.scroll import ScrollPane
@@ -30,6 +30,41 @@ from src.ui.widgets.typography import label, paragraph
 #: carries no identity and no time — only the text, which keeps changing.
 _DRAFT_REPLY = Message("", "", COMPANION, "", datetime.min)
 
+#: The counter appears once a message reaches this share of the limit.
+_COUNTER_FROM = 0.8
+
+_ENGLISH = QLocale(QLocale.Language.English)
+
+NO_EMOJI = "Emoji can’t be sent."
+NO_INVISIBLE = "Invisible characters can’t be sent."
+
+# Emoji blocks, with the selector, keycap and joiner marks that build emoji.
+_EMOJI_RANGES = (
+    (0x1F000, 0x1FAFF),
+    (0x2600, 0x27BF),
+    (0x2B00, 0x2BFF),
+    (0xFE00, 0xFE0F),
+    (0x20E3, 0x20E3),
+)
+# Control, format (zero-width, direction overrides), private, surrogate and
+# unassigned code points: they make the line shown differ from the line kept.
+_INVISIBLE = {"Cc", "Cf", "Co", "Cs", "Cn"}
+
+
+def refusal(text: str) -> str:
+    """Why ``text`` cannot be sent, or an empty string if it can. Letters with
+    accents and typographic punctuation, such as ’ — …, are allowed."""
+    if any(_is_emoji(ch) for ch in text):
+        return NO_EMOJI
+    if any(unicodedata.category(ch) in _INVISIBLE for ch in text):
+        return NO_INVISIBLE
+    return ""
+
+
+def _is_emoji(ch: str) -> bool:
+    point = ord(ch)
+    return any(low <= point <= high for low, high in _EMOJI_RANGES)
+
 
 class ChatView(QWidget):
     hideCompanionRequested = Signal()
@@ -39,20 +74,20 @@ class ChatView(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        character = sample_data.CHARACTERS[0]
         self._busy = False
         self._reply_row: MessageRow | None = None
         self._reply_text = ""
+        self._max_chars: int | None = None
 
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(0)
 
-        column.addWidget(self._header(character))
+        column.addWidget(self._header())
         column.addWidget(self._messages(), 1)
         column.addWidget(self._composer())
 
-    def _header(self, character: sample_data.Character) -> QWidget:
+    def _header(self) -> QWidget:
         header = bottom_rule()
         row = QHBoxLayout(header)
         row.setContentsMargins(36, 26, 36, 14)
@@ -60,16 +95,10 @@ class ChatView(QWidget):
 
         titles = QVBoxLayout()
         titles.setSpacing(0)
-        titles.addWidget(
-            label(character.name, font=theme.font(20, 500), colour=theme.TEXT)
-        )
-        titles.addWidget(
-            label(
-                f"{character.role} · {sample_data.TOGETHER_SINCE}",
-                font=theme.font(12.5),
-                colour=theme.muted(0.5),
-            )
-        )
+        self.name = label("", font=theme.font(20, 500), colour=theme.TEXT)
+        titles.addWidget(self.name)
+        self.role = label("", font=theme.font(12.5), colour=theme.muted(0.5))
+        titles.addWidget(self.role)
         row.addLayout(titles)
         row.addStretch(1)
 
@@ -121,7 +150,12 @@ class ChatView(QWidget):
             "QLineEdit { border-radius: 9px; padding: 12px 15px; }"
         )
         self.draft.returnPressed.connect(self._send)
+        self.draft.textChanged.connect(self._count)
         row.addWidget(self.draft, 1)
+
+        self.counter = label("", font=theme.font(12), colour=theme.muted(0.45))
+        self.counter.setVisible(False)
+        row.addWidget(self.counter)
 
         self.send = accent_button(
             "Send", px=14, radius=9, padding=(13, 20),
@@ -134,12 +168,39 @@ class ChatView(QWidget):
     # ── the user's half ───────────────────────────────────────────────────
 
     def _send(self) -> None:
-        """Hand the draft up, if there is one and nothing is already in flight."""
+        """Hand the draft up, if there is one, it can be sent, and nothing is
+        already in flight."""
         text = self.draft.text().strip()
-        if not text or self._busy:
+        if not text or self._busy or not self._sendable():
             return
         self.draft.clear()
         self.messageSent.emit(text)
+
+    def _sendable(self) -> bool:
+        text = self.draft.text()
+        too_long = self._max_chars is not None and len(text) > self._max_chars
+        return not too_long and not refusal(text)
+
+    def _count(self) -> None:
+        """Say why the draft cannot go, or show its length near the limit. Send
+        stops instead: nothing the user typed or pasted is cut without their
+        knowing."""
+        text = self.draft.text()
+        refused = refusal(text)
+        length = len(text)
+        limit = self._max_chars
+        over = limit is not None and length > limit
+        if refused:
+            self.counter.setText(refused)
+        elif limit is not None:
+            self.counter.setText(f"{length:,} / {limit:,}")
+        near = limit is not None and length >= limit * _COUNTER_FROM
+        self.counter.setVisible(bool(refused) or near)
+        colour = theme.ACCENT_TEXT if refused or over else theme.muted(0.45)
+        self.counter.setStyleSheet(
+            f"color: {theme.css(colour)}; background: transparent;"
+        )
+        self.send.setEnabled(not self._busy and self._sendable())
 
     def _open_menu(self) -> None:
         if self.menu.isVisible():
@@ -196,11 +257,17 @@ class ChatView(QWidget):
         self._reply_row.setText(self._reply_text)
         self._settle()
 
-    def endReply(self, text: str | None = None) -> None:  # noqa: N802 - Qt naming
+    def endReply(  # noqa: N802 - Qt naming
+        self, text: str | None = None, note: str = ""
+    ) -> None:
+        """Finish the reply. ``note`` is the chip under it, if anything was
+        stored."""
         if text and self._reply_row is not None:
             self._reply_row.setText(text)
+        if note and self._reply_row is not None:
+            self._reply_row.setNote(note)
         self._busy = False
-        self.send.setEnabled(True)
+        self.send.setEnabled(self._sendable())
         self._reply_row = None
         self._reply_text = ""
         self.typing_row.setVisible(False)
@@ -223,6 +290,19 @@ class ChatView(QWidget):
     def setHideLabel(self, text: str) -> None:  # noqa: N802 - matches Qt naming
         """Track whether the companion is on screen, as the tray does."""
         self.hide_button.setLabel(text)
+
+    def setCharacter(  # noqa: N802 - matches Qt naming
+        self, name: str, role: str, since: date | None
+    ) -> None:
+        """The character in force, and the day the first one was chosen."""
+        self.name.setText(name)
+        together = f" · together since {_ENGLISH.toString(since, 'd MMMM')}"
+        self.role.setText(f"{role}{together if since else ''}")
+
+    def setMaxChars(self, limit: int) -> None:  # noqa: N802 - matches Qt naming
+        """The longest message the user can send, in characters."""
+        self._max_chars = limit
+        self._count()
 
     # ── the column ────────────────────────────────────────────────────────
 

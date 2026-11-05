@@ -14,6 +14,9 @@ desktop/training/.venv/
 # Adapters and GGUF files from training
 desktop/training/out/
 
+# Model files and llama-server builds, placed by hand (several GB, own licences)
+desktop/models/
+
 # Cognia's database: the user's conversations, never committed (NFR-03)
 *.sqlite3
 *.sqlite3-wal

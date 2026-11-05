@@ -6,9 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
-    "langchain-core>=1.6.1",
-    "langchain-ollama>=1.1.0",
-    "langgraph>=1.2.11",
+    "httpx>=0.28.1",
     "pyside6>=6.11.1",
     "sqlalchemy>=2.1.1",
 ]

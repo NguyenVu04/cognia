@@ -21,29 +21,18 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
+from src.domain.conversation import rules as conversation_rules
 from src.domain.conversation.models.message import COMPANION, USER
+from src.domain.events.models import MessageClass
 from src.domain.safety import rules as safety_rules
 
 JOBS = ("voice", "interpretation")
 
-EVENT_CLASSES = (
-    "praise",
-    "complaint",
-    "good_news",
-    "bad_news",
-    "shared_worry",
-    "nothing",
-)
+# The run-time interpretation reads the same classes and fields, so an example
+# can never teach a shape that Cognia refuses.
+EVENT_CLASSES = tuple(kind.value for kind in MessageClass)
 
-_INTERPRETATION_FIELDS = {
-    "event_class",
-    "confidence",
-    "importance",
-    "crisis",
-    "facts",
-    "commitments",
-    "style_request",
-}
+_INTERPRETATION_FIELDS = set(conversation_rules.INTERPRETATION_SCHEMA["properties"])
 # The tags are the tokenizer's job: reasoning has its own field.
 _THINK_TAGS = ("[THINK]", "[/THINK]")
 

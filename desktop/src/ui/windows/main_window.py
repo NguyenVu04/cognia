@@ -32,6 +32,8 @@ WIDTH = 1010
 HEIGHT = 748
 RADIUS = 14
 
+_NEED_A_CHARACTER = ("chat", "character")
+
 
 class MainWindow(ShadowWindow):
     pauseMenuRequested = Signal()
@@ -64,8 +66,9 @@ class MainWindow(ShadowWindow):
         self.stack = QStackedWidget()
         frame.addWidget(self.stack, 1)
 
+        self._needs_character = False
         self.first_run = FirstRunView()
-        self.first_run.confirmed.connect(self.showApplication)
+        self.first_run.backRequested.connect(lambda: self.showApplication("character"))
         self.stack.addWidget(self._application_page())
         self.stack.addWidget(self.first_run)
         self.stack.setCurrentIndex(0)
@@ -97,12 +100,12 @@ class MainWindow(ShadowWindow):
         self.sessions = SessionsView()
         self.sessions.nudgeRequested.connect(self.nudgeRequested)
         self.character = CharacterView()
-        self.character.firstRunRequested.connect(self.showFirstRun)
+        self.memory = MemoryView()
 
         self._by_id: dict[str, QWidget] = {
             "chat": self.chat,
             "sessions": self.sessions,
-            "memory": MemoryView(),
+            "memory": self.memory,
             "character": self.character,
             "desk": DeskView(),
             "proactivity": ProactivityView(),
@@ -115,15 +118,23 @@ class MainWindow(ShadowWindow):
     # ── navigation ────────────────────────────────────────────────────────
 
     def go(self, screen_id: str) -> None:
+        """Show a screen. With no character in force, the screens that need one
+        lead to the choice of a character instead."""
+        if self._needs_character and screen_id in _NEED_A_CHARACTER:
+            self.showFirstRun()
+            return
         self.screens.setCurrentWidget(self._by_id[screen_id])
         self.sidebar.setCurrent(screen_id)
 
     def showFirstRun(self) -> None:
         self.stack.setCurrentWidget(self.first_run)
 
-    def showApplication(self) -> None:
+    def showApplication(self, screen_id: str = "chat") -> None:
         self.stack.setCurrentIndex(0)
-        self.go("chat")
+        self.go(screen_id)
+
+    def setNeedsCharacter(self, needed: bool) -> None:  # noqa: N802 - Qt naming
+        self._needs_character = needed
 
     # ── paused state ──────────────────────────────────────────────────────
 

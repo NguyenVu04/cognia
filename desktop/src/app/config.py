@@ -1,13 +1,12 @@
-"""Where the model lives, how much of the conversation it is shown, and where
-the database file is kept.
+"""Where the model servers and their files live, how they run, how much of the
+conversation the model is shown, and where the database file is kept.
 
-Providers are named in configuration rather than loaded as code, so
-this is the one place that says "Ollama, on this port, this model". Changing it
-does not touch the domain.
+Providers are named in configuration rather than loaded as code, so this is the
+one place that says "this server, this model". Changing it does not touch the
+domain.
 
 There are no secrets here and there is no ``.env``: Cognia has no account and
-no credentials of its own. The only endpoint is a daemon on the
-user's own machine.
+no credentials of its own. The model servers run on this machine only.
 
 The defaults ship in ``src/config.json``. A ``config.json`` in the data
 directory overrides any of the same keys if the user writes one; it is not
@@ -28,13 +27,43 @@ _APP_DIR = Path(__file__).resolve().parents[2]  # desktop/
 
 _DEFAULTS = json.loads((_APP_DIR / "src" / "config.json").read_text(encoding="utf-8"))
 
-OLLAMA_MODEL: str = _DEFAULTS["OLLAMA_MODEL"]
-OLLAMA_BASE_URL: str = _DEFAULTS["OLLAMA_BASE_URL"]
+#: The two builds of llama-server and the two model files. A relative path is
+#: taken from ``desktop/``.
+LLAMA_SERVER_VULKAN: str = _DEFAULTS["LLAMA_SERVER_VULKAN"]
+LLAMA_SERVER_CPU: str = _DEFAULTS["LLAMA_SERVER_CPU"]
+CHAT_MODEL: str = _DEFAULTS["CHAT_MODEL"]
+EMBEDDING_MODEL: str = _DEFAULTS["EMBEDDING_MODEL"]
+
+#: These three belong to the embedding model and change with it. Two unrelated
+#: lines still reach a cosine of about the baseline; at the near-duplicate
+#: cosine a new line counts as one already stored; the model reads 512 tokens,
+#: about this many characters of English with a margin.
+EMBEDDING_BASELINE: float = _DEFAULTS["EMBEDDING_BASELINE"]
+NEAR_DUPLICATE: float = _DEFAULTS["NEAR_DUPLICATE"]
+EMBEDDING_MAX_CHARS: int = _DEFAULTS["EMBEDDING_MAX_CHARS"]
+
+#: The chat model's context in tokens. Left to the server, it would reserve the
+#: model's full context, which needs far more memory than a conversation uses.
+CHAT_CONTEXT: int = _DEFAULTS["CHAT_CONTEXT"]
+
+#: Seconds without a request before a server frees its model. ``null`` keeps it
+#: loaded. Trial use sets this.
+MODEL_IDLE_SECONDS: int | None = _DEFAULTS["MODEL_IDLE_SECONDS"]
+
+#: How long a server may take to load its model, and how often it may be
+#: started again after it ends, in one run.
+MODEL_START_SECONDS: float = _DEFAULTS["MODEL_START_SECONDS"]
+MODEL_RESTARTS: int = _DEFAULTS["MODEL_RESTARTS"]
 
 #: How many past messages go to the model. The window is deliberately smaller
 #: than the model's context: a long history costs first-token latency, and
 #: the first words must appear within three seconds.
 HISTORY_MESSAGES: int = _DEFAULTS["HISTORY_MESSAGES"]
+
+#: The longest message the user can send. About 190 tokens of English, as
+#: measured: a long paragraph, read in about 2 seconds on a CPU, and the whole
+#: of it fits what the embedding model reads.
+MESSAGE_MAX_CHARS: int = _DEFAULTS["MESSAGE_MAX_CHARS"]
 
 #: Where the SQLite file lives. ``null`` means ``cognia.sqlite3`` in the data
 #: directory. ``~`` and ``%VARIABLES%`` are expanded, a relative path is taken
@@ -74,7 +103,15 @@ def database_path() -> Path:
     """The database file, from ``DATABASE_PATH`` or the default location."""
     if not DATABASE_PATH:
         return paths.data_file(DATABASE_NAME)
-    path = Path(os.path.expandvars(DATABASE_PATH)).expanduser()
-    if not path.is_absolute():
-        path = _APP_DIR / path
+    path = _resolve(DATABASE_PATH)
     return path / DATABASE_NAME if path.is_dir() else path
+
+
+def model_path(value: str) -> Path:
+    """One of the model paths above, resolved the same way as the database."""
+    return _resolve(value)
+
+
+def _resolve(value: str) -> Path:
+    path = Path(os.path.expandvars(value)).expanduser()
+    return path if path.is_absolute() else _APP_DIR / path

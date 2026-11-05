@@ -80,6 +80,25 @@ class Database:
             finally:
                 self._open = None
 
+    def compact(self) -> None:
+        """Rewrite the file and empty the write-ahead log.
+
+        The log can still hold copies of pages that held deleted rows, and the
+        file keeps free pages, so after an erasure both are rewritten. Runs
+        outside any transaction. Raises ``sqlite3.Error`` if SQLite refuses.
+        """
+        if self._open is not None:
+            raise RuntimeError("compact() cannot run inside a transaction")
+        connection = self._engine.raw_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            cursor.execute("VACUUM")
+            cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            cursor.close()
+        finally:
+            connection.close()
+
     def close(self) -> None:
         self._engine.dispose()
 

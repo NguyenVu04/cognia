@@ -19,12 +19,8 @@ from training.generate import Example, read_examples, split, validate
 
 BASE_MODEL = "mistralai/Ministral-3-3B-Reasoning-2512"
 
-# The chat template adds its own reasoning prompt only if no system message exists,
-# and this project always sends one. The run-time client must send the same text.
-REASONING_RULE = (
-    "First think inside [THINK] and [/THINK]. The user never sees this. "
-    "Then write your reply."
-)
+# The run-time client sends the same text, so both read it from one place.
+REASONING_RULE = rules.REASONING_RULE
 
 
 @dataclass(frozen=True)

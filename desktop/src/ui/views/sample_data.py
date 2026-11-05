@@ -15,14 +15,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Character:
-    id: str
-    name: str
-    role: str
-    sample: str
-
-
-@dataclass(frozen=True)
 class NavItem:
     id: str
     label: str
@@ -42,20 +34,6 @@ class PastSession:
     answer: str
     when: str
     length: str
-
-
-@dataclass(frozen=True)
-class MemoryItem:
-    id: str
-    text: str
-    date: str
-    evidence: str = ""
-
-
-@dataclass(frozen=True)
-class CharacterVersion:
-    summary: str
-    date: str
 
 
 @dataclass(frozen=True)
@@ -79,17 +57,6 @@ class PauseOption:
     icon: str
     paused_label: str
 
-
-CHARACTERS: list[Character] = [
-    Character("wren", "Wren", "Archivist",
-              "You said the second half needed rewriting. Still true?"),
-    Character("otto", "Otto", "Old colleague",
-              "Two hours on the one chapter. That is where you stopped."),
-    Character("mira", "Mira", "Studio neighbour",
-              "I am here. Say when you start and I will leave you to it."),
-    Character("kes", "Kes", "Night reader",
-              "It is late. I will not keep you."),
-]
 
 NAV: list[NavItem] = [
     NavItem("chat", "Companion", "chat-circle"),
@@ -122,32 +89,6 @@ PAST_SESSIONS: list[PastSession] = [
                 "No answer given", "13 Aug", "1h 25m"),
     PastSession("Use case spec, section 5",
                 "“Cut four things. Good day.”", "12 Aug", "2h 02m"),
-]
-
-TOLD: list[MemoryItem] = [
-    MemoryItem("t1", "Works best in the morning; afternoons are for reading.", "2 Aug"),
-    MemoryItem("t2", "Prefers short answers. Asked for it, said to keep it.", "7 Aug"),
-    MemoryItem("t3", "Thesis is due 15 December.", "11 Aug"),
-]
-
-NOTICED: list[MemoryItem] = [
-    MemoryItem("n1", "Sessions rarely run past 16:00.", "14 Aug",
-               "18 of 21 recorded sessions ended before 16:00, 2–14 Aug."),
-    MemoryItem("n2", "Break nudges are usually postponed once, then taken.", "13 Aug",
-               "5 of 6 nudges postponed by 20 minutes, then followed by 12+ "
-               "minutes away."),
-]
-
-CHARACTER_TEXT = (
-    "Wren, an archivist who has read too much and says too little. Short "
-    "sentences. Never flatters, never congratulates. Asks one thing at a time "
-    "and lets a silence sit. Says plainly when it does not know."
-)
-
-CHARACTER_VERSIONS: list[CharacterVersion] = [
-    CharacterVersion("Added: never congratulates", "9 Aug"),
-    CharacterVersion("Shorter sentences; dropped the greeting line", "4 Aug"),
-    CharacterVersion("First written character", "12 Mar"),
 ]
 
 READS: list[str] = [
@@ -200,5 +141,3 @@ NUDGE_WHY: list[str] = [
     "Held 12 minutes because you were typing",
     "Allowance used — 1 of 3 today",
 ]
-
-TOGETHER_SINCE = "together since 12 March"

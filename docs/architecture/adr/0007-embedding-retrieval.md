@@ -18,18 +18,23 @@ memory list to work with the model stopped. NFR-03 needs a deletion to remove al
 
 ## Decision
 
-**Relevance is the cosine between embeddings.** The score adds recency, importance and relevance.
-Each term is scaled from 0 to 1, and the three weights are equal. Recency decays with each real
-hour since the item was last retrieved. Section 6.8.1 of
-[`ARCHITECTURE.md`](../ARCHITECTURE.md) gives a worked example.
+**Relevance is the cosine between embeddings.** Relevance counts only the cosine above what two
+unrelated lines reach, 0.45 for bge-small-en-v1.5, scaled from 0 to 1. The score multiplies
+recency, importance and relevance (D-45 in `ARCHITECTURE.md`). Recency is 0.995 for each real hour
+since the item was last retrieved, and importance is the score from 1 to 10 divided by 10. A line
+under 0.05 stays out of the reply, and at most three lines enter. Section 6.8.1 of
+[`ARCHITECTURE.md`](../ARCHITECTURE.md) gives a worked example. Until 2026-11-05 this decision added
+the three terms after min-max scaling, as Generative Agents does. That sum always put three lines in
+the prompt, also lines that were off the subject.
 
-**A second server computes embeddings.** The installer ships one small GGUF embedding model.
-`--embedding` restricts a `llama-server` to embeddings, so Cognia runs a second child process, under
-the same supervisor as the chat server (ADR 0002). Measurement selects the model.
+**A second server computes embeddings.** The installer ships one small GGUF embedding model,
+bge-small-en-v1.5 Q8_0 (D-55). `--embedding` restricts a `llama-server` to embeddings, so Cognia runs
+a second child process, under the same supervisor as the chat server (ADR 0002). It always runs the
+CPU build, so the GPU memory stays for the chat model (D-53).
 
 **Vectors live on the row they describe.** `memory_items`, `commitments` and `journal_entries` each
 gain `embedding`, `importance` and `last_retrieved_at`. `settings.embedding_model` names the model
-that made the vectors. A deletion removes the vector with the row, and `secure_delete` covers it. An
+that made the vectors, as its file name and size in bytes. A deletion removes the vector with the row, and `secure_delete` covers it. An
 edit clears the vector, and a later job computes it again.
 
 **Search reads each vector.** Python 3.12 has `math.sumprod`, so the standard library does the work.

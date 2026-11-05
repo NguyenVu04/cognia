@@ -344,6 +344,7 @@ src/
 │   ├── character/       versions, temperament
 │   ├── conversation/    messages, prompt layers
 │   ├── memory/          memory items, commitments, retrieval score
+│   ├── erasure/         the two levels of erasure, groups, report (D-51)
 │   ├── awareness/       presence facts, time at the machine, application totals
 │   ├── sessions/        work sessions
 │   ├── emotion/         PAD, appraisal, decay
@@ -353,7 +354,7 @@ src/
 │   ├── reflection/      the threshold, journal entries
 │   └── safety/          crisis detection, the required line
 ├── infrastructure/
-│   ├── ai/              llama client, supervisor, scheduler
+│   ├── ai/              llama client, supervisor, job object, GPU memory
 │   ├── storage/         SQLite stores and migrations
 │   └── presence/        the Win32 calls
 ├── ui/                  windows, views, dialogs, widgets
@@ -396,8 +397,9 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
 6. Nothing imports `app/`. It wires the layers together.
 7. `utils/` imports the standard library only.
 8. Only `domain/speech/speech_service.py` references the `SpeechOutput` port (NFR-09).
-9. Only `infrastructure/presence/` calls `ctypes` for Win32 functions (C-05, NFR-02). Its
-   allow-list is in section 6.12.
+9. (Removed by D-48.) `infrastructure/presence/` and `infrastructure/ai/` call `ctypes`. Each
+   module states its Win32 functions in its docstring. The data type of `PresenceSample` keeps
+   the limit of C-05 (section 6.12).
 10. Only `infrastructure/ai/` holds HTTP code. `httpx` appears nowhere else (NFR-01).
 11. From this source tree, `training` imports `domain/` and `infrastructure/ai/` only. It never
     imports `ui/`, `app/`, `infrastructure/storage` or `infrastructure/presence`, and it never
@@ -418,7 +420,8 @@ exist, a reviewer checks these rules by hand.
 | `domain/companion` | Hold the companion's state, and apply each event to it with the `step` function | [`desktop/src/domain/companion`](../../desktop/src/domain/companion) (models, rules and service for the emotion state only, no caller yet) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (models, rules and service, no caller yet) |
 | `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
-| `domain/memory` | Hold memory items and commitments, and score retrieval (UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (stub) |
+| `domain/memory` | Hold memory items and commitments, choose new lines, and score retrieval (UC-09, UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (models, rules and service, wired in `app/`) |
+| `domain/erasure` | Erase at the two levels of UC-14, group by group, and report the result | [`desktop/src/domain/erasure`](../../desktop/src/domain/erasure) (models, rules and service, wired in `app/`) |
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
 | `domain/sessions` | Hold work sessions (UC-05, UC-07) | [`desktop/src/domain/sessions`](../../desktop/src/domain/sessions) (empty) |
 | `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, no caller yet) |
@@ -427,7 +430,7 @@ exist, a reviewer checks these rules by hand.
 | `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
 | `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
 | `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, no caller yet) |
-| `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (Ollama today) |
+| `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
 | `infrastructure/storage` | Implement the store ports over SQLite, and read the ready-made characters from `characters.toml` | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
@@ -506,7 +509,7 @@ examples in section 9.1 of the ERD, and it closes ERD open item 4.
 | Opening | `window_opened` | Nothing. The rules decide whether this is the first opening of the day |
 | Sessions | `session_opened`, `intent_changed`, `session_closed` | Session ID and figures |
 | Speech | `message_shown`, `message_answered`, `message_passed_over` | Decision ID, and whether the user was at the desk |
-| Memory | `memory_stored`, `memory_removed`, `commitment_added`, `commitment_closed` | Row ID, and finished or dropped |
+| Memory | `memory_stored`, `memory_removed`, `commitment_added`, `commitment_closed` | `memory_item_id` or `commitment_id`, and `finished` on `commitment_closed`. The importance is `NULL`, because the message event will carry it |
 | Learning | `pattern_found`, `adjustment_applied`, `adjustment_undone`, `proposal_decided` | Row ID |
 | Learning, tombstone | `pattern_rejected` | Fingerprint and evidence seqs (D-37) |
 | Reflection | `reflection_written`, `reflection_deleted` | Entry ID and source seqs. `reflection_deleted` is a tombstone (D-37) |
@@ -1029,8 +1032,9 @@ moment, and it never needs a real clock.
 
 ### 6.8 `domain/memory`
 
-**Purpose.** This module holds what the companion remembers and chooses what a reply or a
-reflection draws on (FR-14, FR-17, FR-18, FR-29, UC-09, UC-12, UC-13, UC-21, D-07, D-16).
+**Purpose.** This module holds what the companion remembers, chooses which new lines it keeps, and
+chooses what a reply draws on (FR-14, FR-17, FR-18, FR-29, UC-09, UC-12, UC-13, UC-21, D-07, D-16,
+D-44 to D-47).
 
 ```mermaid
 classDiagram
@@ -1040,103 +1044,150 @@ classDiagram
         +text: str
         +importance: int
         +last_retrieved_at: datetime
+        +recorded_at: datetime
+        +embedding: tuple
     }
 
     class Commitment {
         +id: str
         +text: str
         +due_on: date
+        +importance: int
+        +recorded_at: datetime
+        +embedding: tuple
     }
 
-    class retrieval_rules {
+    class memory_rules {
         <<module>>
-        +score(items, query_vector, now) tuple~Scored~
-        +greeting_items(open_session, commitments, last_session) tuple
+        +recall(entries, query, now, calibration) tuple~Scored~
+        +known(entries, query, limit) tuple~Entry~
+        +select(found, existing, vectors, calibration) Selection
+        +shows_back(reply, line) bool
+        +stored_note(missing, day) str
     }
 
     class MemoryService {
         -store: MemoryStore
-        -embedder: Embedder
-        +remember(interpretation) None
-        +retrieve(text, limit) tuple~Scored~
-        +correct(item_id, text) None
-        +remove(item_id) None
+        +remember(chosen, importance, source, vectors, now) tuple~Entry~
+        +correct(entry, text) None
+        +remove(entry) None
+        +use(message_id, entries, now) None
+        +missing_vectors() list~Entry~
+        +check_model(identity) bool
     }
 
     class MemoryStore {
         <<interface>>
-        +add(item) None
-        +vectors() Iterator
-        +delete(item_id) None
-    }
-
-    class Embedder {
-        <<interface>>
-        +embed(texts) list
+        +items() list~MemoryItem~
+        +commitments() list~Commitment~
+        +add(entry) None
+        +correct(entry, text) None
+        +remove(entry) None
+        +set_embedding(entry, vector) None
+        +link(message_id, entries, now) None
+        +reset_embeddings(model) None
     }
 
     MemoryService --> MemoryStore : uses
-    MemoryService --> Embedder : uses
-    MemoryService ..> retrieval_rules : calls
-    retrieval_rules ..> MemoryItem : reads
+    memory_rules ..> MemoryItem : reads
+    memory_rules ..> Commitment : reads
 ```
 
 **Key types.**
 
 | Type | Kind | Note |
 |---|---|---|
-| `MemoryItem` | Frozen dataclass | `text` is the exact line that the user saw (FR-14) |
+| `MemoryItem` | Frozen dataclass | `text` is the exact line that the user saw (FR-14). Refuses a value that the stored row refuses |
 | `Commitment` | Frozen dataclass | It has no time of day and no status, so no code can schedule it or mark it complete (FR-24) |
-| `score` | Function | Pure. It receives the vectors as arguments, so `domain/` needs no database |
-| `greeting_items` | Function | Applies the fixed order of the UC-16 table, and stops after two items |
+| `Entry` | Type | `MemoryItem` or `Commitment`. One port and one list for both |
+| `Calibration` | Frozen dataclass | The two figures that belong to the embedding model: the cosine of unrelated lines and the near-duplicate cosine |
+| `recall` | Function | Pure. The lines a reply draws on (section 6.8.1) |
+| `known` | Function | Pure. The stored lines closest to the message, by cosine only, for the interpretation prompt |
+| `select` | Function | Pure. The new lines worth keeping |
+| `MemoryStore` | Port | Raises `MemoryStoreFailed` with a sentence for the user |
 
-**Vectors (D-07, D-16).** A vector is derived data. It lives in a column of the row that
-it describes, so it disappears with that row. An edit in UC-13 computes it again. The
-`embedding_server` returns normalised vectors, so a dot product gives the cosine. Python
-3.12 and later have `math.sumprod`, so the standard library does this work.
+**Three layers of choice (D-46).**
 
-**With the model stopped.** The memory list needs no model (NFR-08). If only the
-`embedding_server` fails, `relevance` is zero for each item and the score uses the other
-two terms. New items wait with an empty vector, and a later job fills them.
+1. **The model.** The interpretation asks for lines that stay true after today, and lists up to five
+   stored lines that are close to the message, so that the model does not extract them again.
+2. **The rules.** `select` drops a line that is blank, longer than 200 characters, the same as a
+   stored line apart from case and edge punctuation, or at least `near_duplicate` similar to one. It
+   keeps at most three facts and three commitments from one message.
+3. **The user.** The chip shows each stored line, and the memory page edits or deletes it.
 
-**Retrieval and replay.** Retrieval depends on the embedding model, so it stays outside
-the rules. It only selects what a reply draws on. The result is recorded in the reply
-source tables, and a replay does not repeat it.
+Two lines that disagree are both kept. Each line in the reply prompt carries the day it was told,
+and layer 4 says that the newer line is true. The model never changes a stored line. Example: with
+"Lives in Saigon (told 2 August 2026)" stored, the user writes "I moved to Hanoi". The new line
+"Lives in Hanoi" is kept, because the cosine of the two lines is 0.880, under 0.95.
+
+**When a line is stored (D-44).** The interpretation runs before the reply (D-04), so the rules
+choose the lines before the reply, and layer 4 asks the reply to quote them. The rows, their events
+and the reply source links commit in the one transaction that stores the reply. A reply that fails
+or that the user cancels stores nothing (UC-09-E2).
+
+**Showing the line back (D-47).** After the stream ends, `shows_back` checks that the reply quotes
+each stored line, apart from case and spacing. The chip under the reply says "Stored — you told me
+· 5 Nov". It also holds each line that the reply did not quote, so the user always sees the exact
+words (FR-14).
+
+**Vectors (D-07, D-16).** A vector is derived data. It lives in a column of the row that it
+describes, so it disappears with that row. An edit in UC-13 clears it, and the model thread computes
+it again. `settings.embedding_model` holds the file name and the size in bytes of the embedding
+model. A different value clears every vector at start. A text longer than 1 200 characters is cut
+before it is embedded, because the model reads 512 tokens (D-54).
+
+**With the model stopped.** The memory list needs no model (NFR-08). If only the `embedding_server`
+fails, the relevance factor is left out of the score. New items wait with an empty vector, and the
+model thread fills them later.
+
+**Retrieval and replay.** Retrieval depends on the embedding model, so it stays outside the rules
+of `step`. It only selects what a reply draws on. The result is recorded in the reply source tables,
+and a replay does not repeat it.
 
 #### 6.8.1 Explained: the retrieval score
 
-**The idea.** A good memory for this moment is recent, important and on the same subject.
-Each of the three terms gets a value from 0 to 1. The score adds them. This follows
-Generative Agents, which gives each term the same weight.
+**The idea.** A good memory for this moment is recent, important and on the same subject. Each of
+the three factors is a value from 0 to 1, and the score is their product (D-45). So a line that is
+off the subject scores zero, however important or recent it is.
 
-- **Recency** falls with each hour since the item was last retrieved.
-- **Importance** is the score from 1 to 10 that the item received when it was stored.
-- **Relevance** is the cosine between the item's embedding and the query's embedding.
+- **Recency** is 0.995 to the power of the hours since the line was last used, or since it was told.
+- **Importance** is the score from 1 to 10 that the line received, divided by 10.
+- **Relevance** is the cosine above what two unrelated lines reach, scaled to 0 to 1:
+  `max(0, (cosine − 0.45) / (1 − 0.45))`. The figure 0.45 belongs to bge-small-en-v1.5, which
+  gives unrelated lines a cosine of 0.38 to 0.45.
+
+A line with a score of 0.05 or more enters the reply prompt, at most three lines.
 
 ```mermaid
 flowchart LR
-    q["what the user just wrote"] --> e["embedding of the query"]
-    e --> rel["relevance"]
-    items[("memory items")] --> rec["recency"]
-    items --> imp["importance"]
+    q["what the user just wrote"] --> e["embedding of the message"]
+    e --> rel["relevance above the baseline"]
+    items[("memory items, commitments")] --> rec["recency"]
+    items --> imp["importance / 10"]
     items --> rel
-    rec --> norm["scale each term from 0 to 1"]
-    imp --> norm
-    rel --> norm
-    norm --> sum["add the three terms"]
-    sum --> top["keep the best items"]
+    rec --> mul["multiply the three factors"]
+    imp --> mul
+    rel --> mul
+    mul --> floor{"score ≥ 0.05?"}
+    floor -- "yes" --> top["keep the best three"]
+    floor -- "no" --> out["left out of the reply"]
 ```
 
-**Illustration.** The user writes "I am worried about the deadline". The recency factor is
-0.995 per hour.
+**Illustration.** The cosines are measured with bge-small-en-v1.5. The user writes "Ugh, the
+deadline is stressing me".
 
-| Item | Hours since retrieved | Importance | Cosine | Recency, scaled | Importance, scaled | Relevance, scaled | Score |
-|---|---|---|---|---|---|---|---|
-| "Writing chapter 3 for their supervisor" | 4 | 8 | 0.82 | 1.00 | 1.00 | 1.00 | 3.00 |
-| "Prefers short answers" | 30 | 5 | 0.21 | 0.80 | 0.40 | 0.21 | 1.41 |
-| "Their cat is called Miso" | 200 | 3 | 0.05 | 0.00 | 0.00 | 0.00 | 0.00 |
+| Line | Hours since used | Importance | Cosine | Recency | Importance factor | Relevance | Score | In the reply |
+|---|---|---|---|---|---|---|---|---|
+| "Send chapter 3 to their supervisor" | 4 | 8 | 0.616 | 0.980 | 0.8 | 0.302 | 0.237 | Yes |
+| "Is writing a thesis on indoor positioning" | 1 | 8 | 0.543 | 0.995 | 0.8 | 0.169 | 0.135 | Yes |
+| "Has a cat called Miso" | 200 | 3 | 0.448 | 0.367 | 0.3 | 0 | 0 | No |
 
-The reply draws on the first item, and UC-09 step 3 shows that item to the user.
+**Trade-off accepted: forgetting.** "Is vegetarian" with importance 6 and a cosine of 0.71 to "What
+should I cook tonight?" scores 0.158 when it was used 200 hours ago. After 1 000 hours unused it
+scores 0.002, so the reply forgets it. The line stays on the memory page.
+
+**Without the embedding server**, the score is recency × importance, and the best three lines over
+the floor enter.
 
 ### 6.9 `domain/learning`
 
@@ -1291,12 +1342,12 @@ D-15, D-18, D-19, D-27).
 classDiagram
     class Replier {
         <<interface>>
-        +stream_reply(messages) Iterator~str~
+        +stream_reply(system_prompt, history, turn) Iterator~str~
     }
 
     class Interpreter {
         <<interface>>
-        +interpret(messages, schema) dict
+        +interpret(system_prompt, history, turn, schema) dict
     }
 
     class Embedder {
@@ -1312,9 +1363,9 @@ classDiagram
 
     class LlamaClient {
         -http: httpx.Client
-        -api_key: str
-        +stream_reply(messages) Iterator~str~
-        +interpret(messages, schema) dict
+        -supervisor: ModelSupervisor
+        +stream_reply(system_prompt, history, turn) Iterator~str~
+        +interpret(system_prompt, history, turn, schema) dict
         +embed(texts) list
     }
 
@@ -1326,10 +1377,10 @@ classDiagram
     }
 
     class ModelSupervisor {
-        -job_object: handle
-        +start() None
-        +state() ServerState
-        +restart(server) None
+        -platform: LocalPlatform
+        +endpoint(server) Endpoint
+        +state(server) ServerState
+        +stop() None
     }
 
     LlamaClient ..|> Replier
@@ -1347,8 +1398,11 @@ classDiagram
 | `Replier` | Port | Free text: replies, wording and journal entries. It keeps the name that the code has today |
 | `Interpreter` | Port | Output that a JSON schema constrains: message interpretation, temperament reading, importance |
 | `Embedder` | Port | Text to vectors |
-| `ModelJobs` | Port | The one way that a service asks for model work |
-| `ModelScheduler` | Class | Runs on the model thread, so no service ever waits for the model |
+| `ModelJobs` | Port | The one way that a service asks for model work. Not built yet |
+| `ModelScheduler` | Class | Runs on the model thread, so no service ever waits for the model. Not built yet: today `app/chat_worker.py` runs one request at a time, in the order that it receives them |
+| `ModelSupervisor` | Class | Starts the two servers at the first need, chooses the GPU, and starts a server again at the next need after it ends (section 6.11.1) |
+| `JobObject` | Class | A Windows job object that ends both servers when Cognia ends, after a crash too (D-48) |
+| `dedicated_memory` | Function | The dedicated video memory of each adapter, from DXGI (D-53) |
 
 **Job priority (D-15).** The chat server has one slot. The scheduler holds a priority list.
 A user message cancels low-priority work, and that work runs again later.
@@ -1360,38 +1414,57 @@ A user message cancels low-priority work, and that work runs again later.
 | 3 | Embed a new item, score importance, word a pattern |
 | 4 | Write journal entries, read a temperament |
 
-**Interpretation (D-04).** The call uses the `json_schema` option of the server, so the
-output always fits the schema. The closed set of classes cannot produce an unknown value.
-Low confidence still raises no event (UC-23-A3). Here is the shape of the answer:
+**Interpretation (D-04, D-44).** The call sends `response_format` in the OpenAI form,
+`{"type": "json_schema", "json_schema": {"name": ..., "schema": ...}}`, so the output fits the
+schema. The build of D-13 ignores the shorter form that its README shows (Step 0, 2026-11-05).
+The schema does not stop the reasoning of the model. The closed set of classes cannot produce an
+unknown value. Low confidence still raises no event (UC-23-A3). Here is the shape of the answer:
 
 ```json
 {
   "event_class": "good_news",
   "confidence": 0.86,
-  "importance": 9,
+  "importance": 8,
   "crisis": false,
-  "facts": ["Sent chapter 3 to their supervisor"],
-  "commitments": [],
+  "facts": ["Is writing a thesis on indoor positioning"],
+  "commitments": [{"text": "Send chapter 3 to their supervisor", "due_on": "2026-11-06"}],
   "style_request": null
 }
 ```
 
-Only `event_class`, `confidence` and `importance` reach the event log. The words in `facts`
-go to state tables. `crisis` reaches neither (section 6.13).
+Layer 4 of this request states today and the dates of the next seven days, so that the model
+reads "by Friday" as a date from a list instead of counting. Only `event_class`, `confidence` and
+`importance` reach the event log. The words in `facts` and `commitments` go to state tables
+(section 6.8). `crisis` reaches neither (section 6.13). Today only `importance`, `facts` and
+`commitments` are read; the other fields stay in the schema because the tuned model learns the
+whole shape.
 
 **Local server safety (D-19).** Cognia starts each server on `127.0.0.1` with a free port,
 `--api-key` with a new random key from each start, `--no-webui` and `--offline`. It
 never passes `-hf` or any other download option. The key is not a secret of the user. It
-only stops another local program from using the model.
+only stops another local program from using the model. `/health` answers with no key. The
+process has no window, and its log goes nowhere, because the log can hold the user's words.
 
-**GPU choice (D-13).** The supervisor starts the Vulkan build first. If that build fails
-before it reports healthy, the supervisor starts the CPU build and remembers this choice.
+**GPU choice (D-13, D-53).** The embedding server always runs the CPU build. For the chat
+server, the supervisor lists the GPUs of the Vulkan build and drops each GPU whose dedicated
+memory, from DXGI, is less than the model file plus 512 MiB. A GPU built into the processor
+reports shared memory to Vulkan (8 044 MiB on the author's laptop) but 128 MiB of dedicated
+memory to DXGI, so this check drops it. The supervisor then measures each remaining GPU once: one
+short request that is not timed, then a prompt of about 400 tokens and 32 generated tokens. It
+keeps the fastest and stores its name in `settings.chat_device`, so later runs do not measure
+again. If no GPU starts, the CPU build runs the chat model for the rest of the run (D-49).
 
-**Reasoning output.** The chat model may produce reasoning text. The supervisor sets the
-reasoning options of the server, and the client discards that text. The behaviour must be
-checked on the model that ships (ADR 0002). The model card of Gemma 4 E2B states that the
-`<|think|>` token in the system prompt enables reasoning. The training examples and prompt
-layer 1 must make the same choice about this token (section 12).
+| Device on the author's laptop | First word | Generation |
+|---|---|---|
+| Vulkan, both GPUs (the default of the server) | 13.1 s | 24 tokens/s |
+| NVIDIA RTX 3050 Ti only | 0.4 s | 33 tokens/s |
+| Intel Iris Xe only | 3.2 s | 8 tokens/s |
+| CPU build | 4.0 s | 13 tokens/s |
+
+**Reasoning output.** The system prompt ends with `REASONING_RULE`, the same text that the
+training examples use. The server returns reasoning in `reasoning_content`, apart from the answer,
+and the client drops it. In Step 0 the model reasoned for an interpretation, but did not always
+reason before a reply.
 
 #### 6.11.1 Explained: the model supervisor
 
@@ -1401,26 +1474,30 @@ The application never assumes that the model works.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Starting : Cognia starts
+    [*] --> Stopped : Cognia starts
+    Stopped --> Starting : the first request that needs the server
     Starting --> Ready : /health returns 200
-    Starting --> FallbackCpu : Vulkan build failed
+    Starting --> FallbackCpu : no GPU became healthy
     FallbackCpu --> Ready : /health returns 200
     FallbackCpu --> Failed : CPU build failed
-    Ready --> Sleeping : idle time passed
-    Sleeping --> Ready : a request arrives
-    Ready --> Restarting : process ended
+    Ready --> Restarting : the next request finds the process ended
     Restarting --> Ready : /health returns 200
-    Restarting --> Failed : too many restarts
-    Failed --> Starting : the user retries
+    Restarting --> Failed : more than three starts again in this run
+    Failed --> [*] : Cognia ends
 ```
 
 The server returns HTTP 503 while it loads the model, and HTTP 200 when it is ready. The two
 servers have one supervisor and separate states, because the failure of one does not stop
 the other. Both are in a Windows job object, so they end with Cognia even after a crash
-(ADR 0002). `--sleep-idle-seconds` frees the memory of an idle model (D-18).
+(ADR 0002). `--sleep-idle-seconds` frees the memory of an idle model (D-18). The server loads
+the model again itself at the next request, so the supervisor has no sleeping state.
+
+**Start again at the next need.** No thread watches the processes. The next request finds a
+process that ended, and the supervisor starts it again with a new port and a new key. The request
+that was running when the process ended fails with a plain sentence (section 7.11).
 
 `Failed` is a normal state and not a crash. In this state, each model job fails at once with
-a plain sentence (UC-09-E1, UC-01-E1).
+a plain sentence (UC-09-E1, UC-01-E1). Only a new start of Cognia leaves it.
 
 #### 6.11.2 Explained: prompt layers and the prefix cache
 
@@ -1444,8 +1521,16 @@ flowchart TB
 | 3 | The recent messages | One message added at the end |
 | 4 | The mood name, remembered items, and any instruction for this turn | Each turn |
 
+Layer 4 goes at the end of the last user message, after a blank line, the same as in the
+training examples. Each remembered line carries the day it was told, for example "Send chapter
+3 to their supervisor (told 5 November 2026, due Friday 6 November)", and a line after the list
+says that the newer of two lines that disagree is true (D-46). When the turn stores lines, layer
+4 also asks the reply to quote each one exactly (D-47).
+
 **Example.** On a long conversation, only layer 4 and the newest message need new work. This
-matters most on a CPU, where the model reads each token of the prompt slowly (NFR-05).
+matters most on a CPU, where the model reads each token of the prompt slowly (NFR-05). The
+interpretation request and the reply request share the prefix up to the last user message, so
+the second request reads only its own layer 4 again.
 
 **Safety does not depend on a prompt.** A character is data in layer 2, so it cannot remove
 layer 1. Section 6.13 adds a check that does not trust the model at all.
@@ -2167,7 +2252,8 @@ its commit.
 
 ### 7.4 Scenario: the user sends a message
 
-**Trigger.** The user writes a message and presses Send (UC-09, UC-23, UC-21, FR-13, FR-14, D-04).
+**Trigger.** The user writes a message and presses Send (UC-09, UC-23, UC-21, FR-13, FR-14, FR-29,
+D-04, D-44 to D-47).
 
 ```mermaid
 sequenceDiagram
@@ -2180,39 +2266,51 @@ sequenceDiagram
 
     user->>gui: writes a message
     gui-)core: SendMessage
-    core->>core: store message, run the tripwire
+    core->>core: store message, run the tripwire, read the stored lines
     core-)gui: show the message, show working indicator
-    core-)model: job 1, interpret
-    model->>chat: json_schema request
-    chat-->>model: class, importance, facts
-    model-)core: interpretation ready
-    core->>core: user_message event, step, commit
-    Note over core: the mood has now moved
-    core-)model: job 1, embed the query
-    model->>embed: text
+    core-)model: prepare the turn
+    model->>embed: embed the message
     embed-->>model: vector
-    model-)core: vector
-    core->>core: retrieve, build prompt layers
-    core-)model: job 1, reply
+    model->>model: recall, and the lines closest to the message
+    model->>chat: interpret, json_schema, closest lines in layer 4
+    chat-->>model: class, importance, facts, commitments
+    model->>embed: embed the new lines
+    embed-->>model: vectors
+    model-)core: prepared
+    core->>core: select the lines to keep, build layer 4
+    core-)model: reply
     model->>chat: stream
     loop each piece
         chat-->>model: piece
         model-)gui: show the piece
     end
     model-)core: reply complete
-    core->>core: safety check, store reply and sources
-    core-)gui: reply final, sources, stored line
+    core->>core: one transaction: reply, lines, their events, reply sources
+    core-)gui: reply final, chip with the stored lines
 ```
 
 The first piece of the reply hides the working indicator. The indicator covers the
-interpretation and the retrieval, so the user never sees a blank pause (NFR-05).
+interpretation and the retrieval, so the user never sees a blank pause (NFR-05). Until D-03 is
+built, the GUI thread does the work of the core thread in this diagram.
 
-**What happens when the model is unavailable.** The interpretation job fails at once. No event is
-raised, and the feeling does not move on a guess (UC-23-E1). The conversation view shows a plain
-sentence that says what would fix the problem (UC-09-E1). No memory item is stored.
+**What happens when a message trips the tripwire.** The model thread does not interpret it, so
+nothing from it is kept (section 6.13).
 
-**What happens when the user closes the window during the reply.** The core thread cancels the job.
-The partial reply is discarded, and nothing from the exchange reaches memory (UC-09-E2).
+**What happens when the embedding server is unavailable.** Retrieval uses recency and importance
+only, the interpretation lists the newest lines, and new lines are stored with no vector. The
+model thread computes their vectors later.
+
+**What happens when the chat model is unavailable.** The interpretation fails, and the reply then
+fails with a plain sentence that says what would fix the problem (UC-09-E1). No memory item is
+stored. The `user_message` event and the feeling are not built yet (section 12).
+
+**What happens when the user closes the window during the reply.** The model thread stops reading
+the stream. The partial reply is discarded, and nothing from the exchange reaches memory, because
+the lines commit only with the reply (UC-09-E2).
+
+**A message that is too long or that holds emoji.** The composer counts the characters from 960
+of 1 200, and it stops Send over 1 200 or when the message holds an emoji or an invisible
+character. It cuts nothing (D-56).
 
 ### 7.5 Scenario: a break suggestion waits for a pause
 
@@ -2395,9 +2493,23 @@ sequenceDiagram
     core-)gui: what was removed
 ```
 
-**What happens when erasure fails part-way.** Each group has its own transaction. The report states
-exactly which groups are gone and which remain, and it offers to run again. It never reports a partial
-erasure as complete (UC-14-E1).
+**What happens when erasure fails part-way.** Each group has its own transaction. A group that fails
+does not stop the groups after it, so as much as possible goes. The report states exactly which groups
+are gone and which remain, and it offers to run again. It never reports a partial erasure as complete
+(UC-14-E1, D-51).
+
+**What the user sees.** The two buttons of the erase strip on the memory page open a dialog. It lists
+the rows of each group that holds any, and it says that erasure cannot be undone. After the erasure
+it shows the report. After "Erase memory", Cognia records `character_changed` for the character that
+stays, so the feeling starts again at its resting mood. After "Erase everything", Cognia stays on the
+memory page, and Chat and Character open the choice of a character (D-52).
+
+**Who knows the tables.** `infrastructure/storage/erasure_store.py` lists the tables of each group. A
+test fails if a table of `orm.py` is in no group or in two. When sessions, learning, reflection and
+speech have their own stores, each store can erase its own tables (section 12).
+
+Until D-03 is built, the GUI thread runs the erasure, and `VACUUM` can stop the window for a moment
+while the dialog shows "Erasing…".
 
 **What this costs.** `VACUUM` can take time, and the core thread does nothing else during it. A view
 shows a waiting state. A pause still stops observation, through the stop flag.
@@ -2417,15 +2529,18 @@ sequenceDiagram
     chat--xmodel: connection lost
     model-)core: reply failed
     core-)gui: plain sentence, partial reply discarded
-    model->>chat: restart, wait for /health
+    Note over model: the user sends the next message
+    model->>chat: start again, new port and key, wait for /health
     alt server recovers
         chat-->>model: 200
-        model-)core: model ready
-    else too many restarts
+        model->>chat: the new request
+    else more than three starts again in this run
         model-)core: model failed
         core-)gui: state the fault and the repair
     end
 ```
+
+The supervisor starts the process again at the next request, not at once (section 6.11.1).
 
 **What continues.** The queue, the rules, the memory list, sessions, pausing and the emotion state do
 not depend on `model_thread`. Decay and appraisal of non-message events continue (NFR-08).
@@ -2614,10 +2729,10 @@ alone may use most of the limit. Nobody has measured the installer (section 12).
 | `Cognia.exe`, `_internal/` | `desktop/src/`, by PyInstaller | User session | `src/config.json`, then the optional `config.json` in the data folder | None. Cognia holds no credential (NFR-01) |
 | `QtWebEngineProcess.exe` | PySide6 | User session | Fixed in code | None |
 | `resources/companion/` | Vendored JavaScript and VRM files, each with its licence | Render process | Fixed | None |
-| `llama-server.exe`, two builds | llama.cpp release, pinned | User session | Arguments from `Cognia.exe` | A random key for each start, held in memory only |
+| `llama-server.exe`, two builds | llama.cpp build `b12121`, pinned: `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` | User session | Arguments from `Cognia.exe` | A random key for each start, held in memory only |
 | `chat.gguf` | Gemma 4 E2B, tuned and merged by `desktop/training/`, if it passes the gate of section 8.6. If it does not pass, the base model stays the candidate | Server processes | Paths relative to the install folder | None |
 | Licence files of `chat.gguf` | `export.py` writes the licence text, the notices and a statement that the weights are modified | Beside `chat.gguf`, read by people | Fixed | None |
-| `embedding.gguf` | Selected by measurement (section 12) | Server processes | Paths relative to the install folder | None |
+| `embedding.gguf` | bge-small-en-v1.5 Q8_0 from `ggml-org/bge-small-en-v1.5-Q8_0-GGUF` (D-55). Its MIT licence file ships beside it | Server processes | Paths relative to the install folder | None |
 | `cognia.sqlite3` | Created at first run | User session | `DATABASE_PATH`, default in the data folder | None. Windows account rights protect it (D-20) |
 
 The data folder is `LOCALAPPDATA`, not `APPDATA`, because a roaming profile can copy `APPDATA`
@@ -2703,6 +2818,7 @@ because it runs before the installer exists.
 ## 10. Decisions and rationale
 
 The author made D-01 to D-14 and D-26 in the design review of 2026-10-30, and D-27 and D-28 on 2026-10-31.
+The author made D-44 to D-56 on 2026-11-05, with the memory, the move to `llama-server` and the erasure.
 D-15 to D-25 are proposals. Each proposal states a recommended option, and the views in this document use that
 option. The author can change any proposal cheaply. Decisions with an ADR link are costly to reverse.
 
@@ -2762,6 +2878,19 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-41 | `step` reads the temperament of each version by its ID, and `character_changed` sets the version. `EmotionService` only reads the temperaments through `CharacterStore` | QA-10, BR-08 | One temperament of the version in force, keep `resting` and `feel`, no emotion service | None needed | Decided |
 | D-42 | A payload value can also be a tuple of seqs | ADR 0003, D-37 | Every JSON value, seqs in a string, one dataclass for each event kind | None needed | Decided |
 | D-43 | One `Database` holds the one connection. Every store uses it, and a call inside `Database.transaction()` joins that transaction | QA-06, D-03 | A `UnitOfWork` port in the domain, one store for all tables | None needed | Decided |
+| D-44 | The interpretation before the reply also finds the lines to keep. They commit with the reply | FR-14, FR-29, UC-09-E2 | Extraction after the reply, a separate small model, a commit before the reply | None needed | Decided |
+| D-45 | The retrieval score is recency × importance × relevance above a baseline, with a floor and at most three lines | UC-09, UC-25 | Min-max scaling with a sum, a cosine floor, a sum with a threshold, a recency floor, decay per day | [0007](adr/0007-embedding-retrieval.md) | Decided |
+| D-46 | Three layers choose the lines. Two lines that disagree are both kept, with the day each was told | FR-14, G-01 | Exact duplicates only, a replacement that the model proposes | None needed | Decided |
+| D-47 | A check after the reply. The chip holds each stored line that the reply did not quote | FR-14 | The line always on the chip, the prompt only | None needed | Decided |
+| D-48 | `infrastructure/ai/` calls Win32 through `ctypes` for the job object and DXGI. Rule 9 of section 6.2 is removed | ADR 0002 | No job object | None needed | Decided |
+| D-49 | The supervisor of D-13 in full. The CPU fallback holds for one run. A process that ended starts again at the next need | QA-07, NFR-08 | A stored CPU choice, a watcher thread | None needed | Decided |
+| D-50 | Model files in `desktop/models/` with the names of the installer, ignored by Git | NFR-14 | The original file names | None needed | Decided |
+| D-51 | `domain/erasure` with one list of tables per group, a test that covers every table, and a dialog. A failed group does not stop the others | UC-14, NFR-03 | Erasure in `domain/memory`, each store erases its own tables now, no domain module, `CASCADE` to `character_versions` | None needed | Decided |
+| D-52 | `CharacterService` is wired. The first-run view also changes the character | UC-01, UC-03 | Only what erasure needs | None needed | Decided |
+| D-53 | The chat model runs on the fastest GPU with enough dedicated memory, measured once and stored. The embedding model runs on the CPU | NFR-05 | The default of the server, a name list, configuration only, the largest memory that Vulkan reports, DXGI alone | None needed | Decided |
+| D-54 | A text is cut at 1 200 characters before it is embedded | D-07 | Average of several pieces | None needed | Decided |
+| D-55 | bge-small-en-v1.5 Q8_0 is the embedding model | D-07 | Qwen3-Embedding-0.6B, nomic-embed-text-v1.5, EmbeddingGemma-300M | None needed | Decided |
+| D-56 | The composer accepts at most 1 200 characters and refuses emoji and invisible characters, with a notice. No budget for the history | NFR-05, FR-14 | 2 000 or 4 000 characters, a hard stop on typing, a history budget, ASCII only | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -3634,6 +3763,173 @@ How does one item become one transaction (section 6.14)?
 **Trade-off accepted.** A store call inside a transaction joins it, and only the outer call commits. A
 caller that catches a store error inside a transaction and continues commits the earlier writes.
 
+### 10.46 D-44: when the lines are found and stored
+
+**Question.** Which model call finds the lines to keep, and when do they reach the disk?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The interpretation before the reply; commit with the reply** (chosen) | No new model and no new call. The reply can quote the stored line. A cancelled reply stores nothing (UC-09-E2) | One model call before the first word, which the working indicator covers |
+| B. A separate call after the reply | No delay before the first word | The reply cannot say what it stored. The interpretation shape changes |
+| C. A separate small model | Runs beside the reply | More memory, a larger installer, one more model to select and measure |
+| D. Commit at once after the interpretation | Simpler | A cancelled reply still stores lines, against UC-09-E2 |
+
+**Reason.** The author chose A, and A for the commit.
+
+### 10.47 D-45: the retrieval score
+
+**Question.** Which lines does a reply draw on? Min-max scaling with a sum, as in Generative Agents,
+always puts three lines in the prompt, also a line that is off the subject.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. Min-max and a sum, top three | Follows Generative Agents | A small model mentions lines that are off the subject |
+| B. Min-max, and a floor on the cosine | Keeps the ranking of A | Two rules for one choice |
+| C. Fixed scales and a sum with a threshold | The score of a line does not change when another line is added | An important line used an hour ago passes with any cosine |
+| **D. Fixed scales and a product, with a floor** (chosen) | A line off the subject scores zero | A line unused for weeks is forgotten in conversation |
+
+**Second part: the forgetting of D.** The author rejected a recency floor and a decay per day, and
+accepted that an old line is forgotten in conversation. It stays on the memory page.
+
+**Third part: the baseline (Step 0).** bge-small-en-v1.5 gives two unrelated lines a cosine of 0.38 to
+0.45, so relevance counts only the cosine above 0.45. The floor is 0.05. Both are trial values.
+
+### 10.48 D-46: choosing the lines
+
+**Question.** How does Cognia keep only lines worth keeping, without copies, with a small model?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The model, then rules, then the user. Close stored lines in the prompt; exact and near duplicates dropped** (chosen) | Each layer catches what the one before misses | Two figures belong to the embedding model |
+| B. Exact duplicates only | No embedding needed | The list fills with the same idea in other words |
+| C. The model proposes to replace a stored line | Handles a change of fact | Needs a confirmation in the interface, and the model then edits memory (section 4.3) |
+
+**Contradictions.** Both lines are kept. Each recalled line carries the day it was told, and layer 4
+says that the newer one is true. Step 0 measured paraphrases at 0.842 to 0.969 and contradictions at
+0.757 to 0.908, so no threshold separates them. The author set 0.95: it drops near copies and keeps
+every measured contradiction.
+
+### 10.49 D-47: showing the stored line back
+
+**Question.** FR-14 asks for the exact line. A small model can reword it.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Ask the reply to quote, check after, and add a missing line to the chip** (chosen) | The character's voice when the model obeys, and the exact words when it does not | Two places can show a line |
+| B. The chip always shows the line | Certain | The line can appear twice. Differs from the design |
+| C. The prompt only | As in the design | No guarantee with a small model |
+
+**Reason.** The same pattern as D-11.
+
+### 10.50 D-48: Win32 outside `infrastructure/presence`
+
+**Question.** ADR 0002 puts both servers in a job object, but rule 9 allowed `ctypes` only in
+`infrastructure/presence`.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. `infrastructure/ai` calls `ctypes` too, and rule 9 goes** (chosen) | The servers end with Cognia, also after a crash | One more place to review for Win32 calls |
+| B. No job object | No change of rules | A crash leaves the servers with memory, a GPU and a port |
+
+**Trade-off accepted.** Each module states its Win32 functions in its docstring. C-05 still holds
+through the data type of `PresenceSample`.
+
+### 10.51 D-49: the supervisor
+
+**Question.** How much of D-13 does the supervisor do, and where does it remember the CPU choice?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. All of D-13. The CPU choice holds for one run** (chosen) | A repaired driver is used again at the next start | A machine with no working GPU tries again at each start |
+| B. A minimal supervisor | Less code | No fallback |
+| C. A stored CPU choice | No new attempt | A migration, and a way to forget the choice |
+
+A process that ended starts again at the next request, and no thread watches it. Section 7.11 shows
+this.
+
+### 10.52 D-50: the model files
+
+The files are in `desktop/models/` with the names of the installer: `chat.gguf`, `embedding.gguf`,
+`runtime/vulkan/` and `runtime/cpu/`. Git ignores the folder. `settings.embedding_model` holds the file
+name and the size in bytes, and a change clears each vector. The rejected option kept the original
+file names in the configuration.
+
+### 10.53 D-51: erasure
+
+**First part: where the rules are.** The architecture gave UC-14 to no module. Erasure crosses every
+feature.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. `domain/erasure`, one list of tables per group, a test that covers every table** (chosen) | One responsibility. Pure rules. A forgotten table fails the build | The list is a second statement of which feature owns a table |
+| B. In `domain/memory` | No new package | Memory must know every table of every feature |
+| C. Each store erases its own tables now | Each feature owns its tables | Four features have no store yet, so it needs temporary code |
+| D. No domain module | The fewest layers | The rules of the ERD stay outside the domain |
+
+**Second part: the order.** The keys to `character_versions` stay `NO ACTION`. `CASCADE` would remove
+the order of the groups, but a wrong delete of one version would then delete messages, journal entries
+and feelings with no word. `SET NULL` would lose the source that UC-17 needs.
+
+**Third part: a failure part-way.** A failed group does not stop the others. A dialog states the count
+first and the result after.
+
+### 10.54 D-52: the character
+
+`CharacterService` is wired. Layer 2 is the description of the version in force. The first-run view
+shows the four characters with nothing picked, and the same view changes the character, with a Back
+button and the card in force disabled. A new version and its `character_changed` event commit in one
+transaction. The rejected option wired only what erasure needs.
+
+### 10.55 D-53: the GPU of the chat model
+
+**Question.** The server spreads the model over every GPU by default. On the author's laptop, with an
+Intel Iris Xe and an NVIDIA RTX 3050 Ti, the first word came after 13.1 s, and after 0.4 s on the
+NVIDIA alone.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| A. A list of names of integrated GPUs | No measurement | A list to keep |
+| B. Configuration only | No code | The default stays slow on many laptops |
+| C. The largest memory that Vulkan reports | No measurement | Chooses the Intel GPU: 8 044 MiB of shared memory against 3 962 MiB |
+| D. DXGI alone | Exact dedicated memory | Says nothing about speed |
+| **E. DXGI drops GPUs that are too small, then a measurement, once** (chosen) | A real measure of speed, and no integrated GPU with shared memory | More code. A machine with only an integrated GPU runs on the CPU |
+
+**Reason.** One run of the application chose the Intel GPU once, and four later runs did not, so the
+measurement now has a request that is not timed before the timed one. The choice is stored, so a later
+run does not measure again.
+
+### 10.56 D-54: long texts and the embedding model
+
+bge-small-en-v1.5 reads 512 tokens, and the server returns HTTP 500 for a longer text. Cognia cuts each
+text at 1 200 characters before it is embedded. The rejected option embedded pieces and averaged them.
+
+### 10.57 D-55: the embedding model
+
+| Option | Licence | Size | Note |
+|---|---|---|---|
+| **A. bge-small-en-v1.5 Q8_0** (chosen) | MIT | 36 685 152 bytes | 384 dimensions, 512 tokens, no prefix, so `Embedder.embed(texts)` stays |
+| B. Qwen3-Embedding-0.6B Q8_0 | Apache-2.0 | 639 150 592 bytes | About 17 times larger, slower before the first word |
+| C. nomic-embed-text-v1.5 | Apache-2.0 | 84 to 146 MB | Needs a role prefix, so the port would change |
+| D. EmbeddingGemma-300M | Gemma licence | 334 MB | Gated; the terms are unread |
+
+The figures come from the model cards and the file lists. The installer ships the MIT licence beside
+`embedding.gguf`.
+
+### 10.58 D-56: what the user can send
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. 1 200 characters, a counter from 80 %, Send stops over the limit** (chosen) | 189 tokens of English as measured, about 2 s more on a CPU, and the embedding reads the whole message | A long message must be split |
+| B. 2 000 or 4 000 characters | Room for a long story | 4.6 s or 9 s more on a CPU |
+| C. A hard stop on typing | Simple | A long paste is cut without notice |
+
+**Characters.** Emoji and invisible characters (control, format, private use, unassigned) are refused
+with a notice, because an invisible character makes the line shown differ from the line kept. Letters
+with accents and typographic punctuation stay allowed. The rejected option allowed ASCII only.
+
+**Trade-off accepted.** No budget limits the history. Forty long messages can still exceed the context
+of 8 192 tokens.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -3677,7 +3973,9 @@ These items are outside this design, or need a decision before implementation.
    months (A-02). Its size sets the NFR-14 figures and the limit in section 8.3. Its model card states
    Apache-2.0, and the Gemma pages also link to a prohibited-use page and terms of use. A person must read
    those pages before the model ships, because this design did not read them.
-4. **The embedding model.** D-07 needs one small GGUF. Candidates must be measured on English recall, and their
+4. **The embedding model.** Partly closed by D-55: bge-small-en-v1.5 Q8_0, MIT by its model card and its file
+   metadata. Its English recall is not evaluated yet, and the installer must ship its licence. The text below
+   was the item before D-55. D-07 needs one small GGUF. Candidates must be measured on English recall, and their
    licences must be read. No model is selected.
 5. **Measurements.** NFR-04, NFR-05, NFR-06 and NFR-14 have no measured values. D-13 and D-08 add one more: the
    model and VRM share a GPU, so the reply time and the frame rate must be measured together.
@@ -3696,14 +3994,15 @@ These items are outside this design, or need a decision before implementation.
 9. **The four characters.** Closed by D-33. Trial use sets their temperaments (item 17).
 10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-09 stay
     unproven until they do.
-11. **Move the code.** The code does not match this design yet. The work is:
-    - replace `OllamaAgent`, remove `langchain-*`, `langgraph` and `local_only.py` (D-06)
+11. **Move the code.** The code does not match this design yet. Done on 2026-11-05: `OllamaAgent`,
+    `langchain-*`, `langgraph` and `local_only.py` are gone (D-06); `app/` writes `character_changed` with each
+    new version; `CharacterService` is wired, and the first-run and character views show its data (D-52). The
+    work that remains is:
     - move the database connection from the GUI thread to the core thread (D-03)
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
-    - replace the crisis text in `config.system_prompt`, which is older than NFR-12 in version 5.0
-    - write `character_changed` when `CharacterService` adds a version (section 6.17)
-    - wire `CharacterService` in `app/`, and show its data in the first-run and character views. Those
-      views show `sample_data.py` today
+    - build `ModelJobs` and `ModelScheduler` (D-15). Today `app/chat_worker.py` runs one request at a time
+    - record the `user_message` event and move the feeling from it (UC-23), and add the safety instruction and
+      the check after the reply (section 6.13). Today the tripwire only stops a crisis message from being kept
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
@@ -3720,6 +4019,12 @@ These items are outside this design, or need a decision before implementation.
     - the sadness floor and the reflection threshold
     - the worth formula and the desk thresholds
     - the frame limit and the idle time of D-18
+    - the memory figures: the score floor 0.05, three recalled lines, five known lines, at most three new lines
+      of each kind, 200 characters a line (D-45, D-46)
+    - the figures of the embedding model: the baseline 0.45, the near-duplicate cosine 0.95, 1 200 characters
+      (D-45, D-46, D-54)
+    - the chat context of 8 192 tokens, the GPU margin of 512 MiB, 120 seconds to start, three starts again,
+      and 1 200 characters a message (D-53, D-56)
 18. **Size of the tuned model.** Measure the full installer against the limit in section 8.3. The options to
     test are a smaller quantisation, such as Q3_K_M, and a removal of the image and audio parts, because Cognia
     uses text only. Nobody has verified the second option. Each option needs the measurements of section 8.6.
@@ -3729,7 +4034,10 @@ These items are outside this design, or need a decision before implementation.
 20. **The generating model.** The author selects the model that generates the examples. Its terms must allow
     the use of its output to train another model. Some services limit this use, so a person must read the terms.
     A model with an open licence that runs in the training environment avoids the question.
-21. **Tool checks on Gemma 4 E2B.** A short test must show these facts:
+21. **Tool checks on Gemma 4 E2B.** D-28 replaced the model. Step 0 on 2026-11-05 checked the base GGUF of
+    Ministral 3 3B Reasoning on build `b12121`: both builds run it, the `json_schema` option works in the
+    OpenAI form of `response_format`, and it does not stop the reasoning. The merged file needs the same
+    checks. A short test must show these facts:
     - both `llama-server` builds of D-13 run the merged file
     - the `json_schema` option works on the merged file
     - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
@@ -3738,3 +4046,14 @@ These items are outside this design, or need a decision before implementation.
     `train_lora` and `merge_and_quantise` have not run. `make_examples` needs a generating model, and `measure`
     needs `LlamaClient`. Rules 11 and 12 of section 6.2 join the script of D-14 when that script exists.
 
+23. **Erasure by each store.** When sessions, learning, reflection and speech have stores, each store can erase
+    and count its own tables through a small port, and `infrastructure/storage/erasure_store.py` then holds no
+    list of tables (D-51). The test that covers every table stays.
+24. **The quality of the base model.** In a run on 2026-11-05 the base model kept "Is exhausted today" as a fact,
+    although the instruction leaves out passing moods, and it repeated stored lines in quotation marks in later
+    replies. The rules cannot judge meaning. The tuned model of D-27 must learn this, and its test sets must
+    measure it.
+25. **A history budget.** The author chose no budget (D-56). Forty long messages can exceed the context of the
+    chat server. If this happens in trial use, the history must be cut by characters as well as by count.
+26. **Chips of earlier conversations.** The chip of a stored line shows only in the conversation where it was
+    stored. No column records whether a reply quoted a line, so a conversation that loads again shows no chips.

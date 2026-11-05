@@ -57,9 +57,11 @@ class MessageRow(QWidget):
         )
         bubble.body().addWidget(self._text)
         stack.addWidget(bubble)
+        self._stack = stack
+        self._note: _NoteChip | None = None
 
         if message.note:
-            stack.addWidget(_NoteChip(message.note))
+            self.setNote(message.note)
 
         row.addLayout(stack)
         if not from_user:
@@ -74,6 +76,14 @@ class MessageRow(QWidget):
             line_height=1.6,
             max_width=MAX_WIDTH - 32,
         )
+
+    def setNote(self, text: str) -> None:  # noqa: N802 - matches Qt naming
+        """Show the chip under the bubble, in place of any earlier one."""
+        if self._note is not None:
+            self._note.setParent(None)
+            self._note.deleteLater()
+        self._note = _NoteChip(text)
+        self._stack.addWidget(self._note)
 
 
 class _NoteChip(QWidget):

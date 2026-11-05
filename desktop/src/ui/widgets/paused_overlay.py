@@ -10,10 +10,11 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from src.ui import icons, theme
-from src.ui.views import sample_data
 from src.ui.widgets.buttons import accent_button
 from src.ui.widgets.surface import StyledWidget
-from src.ui.widgets.typography import label, paragraph
+from src.ui.widgets.typography import label, paragraph, set_paragraph_text
+
+BLURB_WIDTH = 420
 
 
 class PausedOverlay(StyledWidget):
@@ -44,15 +45,12 @@ class PausedOverlay(StyledWidget):
         centre.addWidget(self._title)
         centre.addSpacing(8)
 
-        blurb = paragraph(
-            "Nothing is observed, nothing is sent, nothing is recorded for "
-            f"this period, and {sample_data.CHARACTERS[0].name} is off the "
-            "screen. The gap will not be filled in afterwards.",
-            font=theme.font(14), colour=theme.muted(0.55),
-            line_height=1.6, max_width=420,
+        self._blurb = paragraph(
+            _blurb("the companion"), font=theme.font(14), colour=theme.muted(0.55),
+            line_height=1.6, max_width=BLURB_WIDTH,
         )
-        blurb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        centre.addWidget(blurb, 0, Qt.AlignmentFlag.AlignHCenter)
+        self._blurb.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        centre.addWidget(self._blurb, 0, Qt.AlignmentFlag.AlignHCenter)
         centre.addSpacing(22)
 
         resume = accent_button("Resume now", px=14, radius=8, padding=(11, 22))
@@ -64,3 +62,17 @@ class PausedOverlay(StyledWidget):
 
     def setPauseLabel(self, label_text: str) -> None:  # noqa: N802 - Qt naming
         self._title.setText(f"Paused {label_text}".rstrip())
+
+    def setCharacterName(self, name: str) -> None:  # noqa: N802 - Qt naming
+        set_paragraph_text(
+            self._blurb, _blurb(name or "the companion"), font=theme.font(14),
+            max_width=BLURB_WIDTH,
+        )
+
+
+def _blurb(name: str) -> str:
+    return (
+        "Nothing is observed, nothing is sent, nothing is recorded for this "
+        f"period, and {name} is off the screen. The gap will not be filled in "
+        "afterwards."
+    )

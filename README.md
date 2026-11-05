@@ -229,13 +229,13 @@ flowchart TB
 
 | Component | Responsibility | Status |
 |---|---|---|
-| Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. Every screen except the Companion conversation still shows mockup copy from `ui/views/sample_data.py` |
-| Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; streams replies on a worker thread (`ChatWorker`) | Built for conversation only |
-| Conversation | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13) | Built. The adapter talks to a local Ollama daemon; ADR 0002 moves it to a llama.cpp server shipped with Cognia and removes LangChain and LangGraph, which is not yet done |
-| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations and messages only. The store for character versions and the reader for `characters.toml` exist, and nothing calls them yet |
-| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses the conversation models only. `character/` holds the versions and their rules, `emotion/` the emotion state, its rules and service (D-39), `events/` the event model with no `step` yet, and `safety/` the crisis rules. `memory/` and `awareness/` are stubs. `sessions/`, `speech/`, `initiative/`, `learning/` and `reflection/` are empty |
+| Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. The Companion conversation, Memory, Character and first-run screens show real data, and the erase dialog is new. The other screens still show mockup copy from `ui/views/sample_data.py` |
+| Application wiring (`desktop/src/app/`) | Creates the `QApplication`, the three surfaces and the stores; prepares each turn and streams replies on a worker thread (`ChatWorker`) | Built for conversation, memory, character and erasure |
+| Conversation and memory | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13). The `Interpreter` port finds lines to keep, `domain/memory` chooses them and what a reply draws on, and the `Embedder` port gives their vectors (FR-14, FR-29) | Built on two `llama-server` processes that Cognia starts and supervises (`infrastructure/ai/`). LangChain and LangGraph are gone (D-06) |
+| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations, messages, memory items, commitments, reply sources, character versions, events and `settings.chat_device`, and erases by groups (UC-14) |
+| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses `conversation/`, `memory/`, `character/`, `companion/` (which folds the event log), `erasure/` and the tripwire of `safety/`. `emotion/` computes the state, but no `user_message` event moves it yet. `awareness/` is a stub. `sessions/`, `speech/`, `initiative/`, `learning/` and `reflection/` are empty |
 | `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Not created |
-| Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | Table exists, nothing writes it |
+| Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | The application writes `character_changed` and the memory events. No other kind is written yet |
 
 ### External dependencies
 
@@ -255,7 +255,7 @@ flowchart TB
 | Python | 3.12 or later | `requires-python` in `desktop/pyproject.toml` |
 | [uv](https://docs.astral.sh/uv/) | Any recent | Installs dependencies into `desktop/.venv` |
 | [Task](https://taskfile.dev/) | 3 | Optional; runs the commands in `Taskfile.yml`. The `uv` commands below do the same |
-| Ollama with `qwen3.5:2b` | Any recent | Only for replies, and only until ADR 0002 replaces it with a bundled server. Without it the conversation says plainly that it cannot reply (UC-09-E1) |
+| `llama-server` build `b12121` and two GGUF files | Pinned | Placed by hand in `desktop/models/`, which Git ignores: `runtime/vulkan/` and `runtime/cpu/` from `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` (github.com/ggml-org/llama.cpp/releases/tag/b12121), `chat.gguf` from `Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf` (`mistralai/Ministral-3-3B-Reasoning-2512-GGUF`), and `embedding.gguf` from `bge-small-en-v1.5-q8_0.gguf` (`ggml-org/bge-small-en-v1.5-Q8_0-GGUF`). Without them the conversation says plainly that a file is missing (UC-09-E1) |
 
 ### Run it
 
@@ -301,9 +301,14 @@ created for them.
 
 | Key | Shipped value | Meaning |
 |---|---|---|
-| `OLLAMA_MODEL` | `qwen3.5:2b` | The model the conversation adapter asks for |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | The local Ollama daemon. The only endpoint |
+| `LLAMA_SERVER_VULKAN`, `LLAMA_SERVER_CPU` | `models/runtime/vulkan/llama-server.exe`, `models/runtime/cpu/llama-server.exe` | The two builds of the model server. A relative path is taken from `desktop/` |
+| `CHAT_MODEL`, `EMBEDDING_MODEL` | `models/chat.gguf`, `models/embedding.gguf` | The two model files |
+| `EMBEDDING_BASELINE`, `NEAR_DUPLICATE`, `EMBEDDING_MAX_CHARS` | `0.45`, `0.95`, `1200` | Figures of the embedding model: the cosine of unrelated lines, the cosine of a duplicate line, the longest text it reads |
+| `CHAT_CONTEXT` | `8192` | The context of the chat server, in tokens |
+| `MODEL_IDLE_SECONDS` | `null` | Seconds before an idle server frees its model; `null` keeps it loaded |
+| `MODEL_START_SECONDS`, `MODEL_RESTARTS` | `120`, `3` | How long a server may take to start, and how often it starts again in one run |
 | `HISTORY_MESSAGES` | `40` | How many past messages go to the model |
+| `MESSAGE_MAX_CHARS` | `1200` | The longest message the user can send |
 | `DATABASE_PATH` | `data/cognia.sqlite3` | The SQLite file. A relative path is taken from `desktop/`; `null` means `cognia.sqlite3` in the data directory. A synced folder would keep a second copy off the machine, which NFR-03 forbids — that is the user's choice, not a default |
 
 ### Settings the specification commits to
@@ -469,7 +474,7 @@ issue for a security problem.**
 | **Transport** | No outbound connection (C-03, NFR-01). The local model is reached on the user's own machine only (`localhost`) |
 | **Secrets** | Cognia holds none |
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
-| **Telemetry in dependencies** | LangChain's tracing is switched off in the program before the first import (`app/local_only.py`). ADR 0002 removes LangChain, and this line goes with it |
+| **Telemetry in dependencies** | None to switch off: LangChain and `langsmith` are removed (D-06), and `httpx` sends nothing by itself |
 | **Dependency scanning** | Not set up |
 | **Static analysis** | SonarQube Cloud, from CI on each push to `main` and each pull request that changes `desktop/` or the CI files. A failed quality gate fails the check |
 

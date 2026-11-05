@@ -26,11 +26,12 @@ class Replier(Protocol):
     """Turns a conversation so far into the next thing the companion says."""
 
     def stream_reply(
-        self, system_prompt: str, history: Sequence[Message]
+        self, system_prompt: str, history: Sequence[Message], turn: str
     ) -> Iterator[str]:
         """Yield the reply in pieces, in order, as they become available.
 
-        Only the answer. Whatever reasoning the model does on the way is the
-        adapter's to discard. Raises :class:`ReplyFailed` if it cannot answer.
+        ``turn`` is layer 4, added to the end of the last user message. Only the
+        answer. Whatever reasoning the model does on the way is the adapter's to
+        discard. Raises :class:`ReplyFailed` if it cannot answer.
         """
         ...
