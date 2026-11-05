@@ -25,6 +25,7 @@ from src.ui.views.sessions import SessionsView
 from src.ui.widgets.paused_overlay import PausedOverlay
 from src.ui.widgets.shadow import ShadowWindow
 from src.ui.widgets.sidebar import Sidebar
+from src.ui.widgets.spinner import Spinner
 from src.ui.widgets.titlebar import HEIGHT as TITLEBAR_HEIGHT
 from src.ui.widgets.titlebar import TitleBar
 
@@ -76,6 +77,9 @@ class MainWindow(ShadowWindow):
         self.overlay = PausedOverlay(self.body)
         self.overlay.resumed.connect(self.resumed)
         self.overlay.hide()
+
+        self.loading = Spinner(self.body)
+        self.loading.hide()
 
         self.go("chat")
 
@@ -136,6 +140,22 @@ class MainWindow(ShadowWindow):
     def setNeedsCharacter(self, needed: bool) -> None:  # noqa: N802 - Qt naming
         self._needs_character = needed
 
+    def setLoading(self, loading: bool) -> None:  # noqa: N802 - Qt naming
+        """Turn a spinner in the middle of the window while the data loads."""
+        if loading:
+            self._place_spinner()
+            self.loading.show()
+            self.loading.raise_()
+        else:
+            self.loading.hide()
+
+    def _place_spinner(self) -> None:
+        below = TITLEBAR_HEIGHT
+        self.loading.move(
+            (self.body.width() - self.loading.width()) // 2,
+            below + (self.body.height() - below - self.loading.height()) // 2,
+        )
+
     # ── paused state ──────────────────────────────────────────────────────
 
     def showPaused(self, label: str) -> None:
@@ -160,6 +180,8 @@ class MainWindow(ShadowWindow):
         super().resizeEvent(event)
         if self.overlay.isVisible():
             self._place_overlay()
+        if self.loading.isVisible():
+            self._place_spinner()
 
     def centre_on_screen(self) -> None:
         screen = self.screen().availableGeometry()

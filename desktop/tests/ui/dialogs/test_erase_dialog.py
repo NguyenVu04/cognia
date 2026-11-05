@@ -58,6 +58,36 @@ def test_complete_report(dialog: EraseDialog) -> None:
     assert "Nothing of it remains on the disk." in " ".join(texts(dialog))
 
 
+def test_not_working_at_first(dialog: EraseDialog) -> None:
+    assert dialog.working is False
+
+
+def test_working_after_show_working(dialog: EraseDialog) -> None:
+    dialog.showWorking()
+
+    assert dialog.working is True
+    assert "Erasing…" in texts(dialog)
+
+
+def test_report_ends_working(dialog: EraseDialog) -> None:
+    dialog.showWorking()
+    dialog.showReport(ErasureReport((Group.CONVERSATIONS,), (), compacted=True))
+
+    assert dialog.working is False
+
+
+def test_stopped_offers_retry(dialog: EraseDialog, qtbot) -> None:
+    dialog.showWorking()
+    dialog.showStopped()
+
+    assert dialog.working is False
+    assert "Erasing stopped partway, so some of it may still be on the disk." in (
+        " ".join(texts(dialog))
+    )
+    with qtbot.waitSignal(dialog.retryRequested):
+        dialog.retry.click()
+
+
 def test_nothing_to_erase(qtbot) -> None:
     empty = EraseDialog(Level.MEMORY, [GroupCount(Group.MEMORY, 0)], "Rin")
     qtbot.addWidget(empty)

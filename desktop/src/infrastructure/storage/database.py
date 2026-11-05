@@ -1,6 +1,6 @@
 """The one SQLite file, opened the way every store needs it.
 
-One connection, used only from the thread that opened it — the GUI thread.
+One connection, used only from the thread that opened it — the core thread.
 SQLAlchemy's default for a file is a pool with SQLite's same-thread check
 switched off, which would let the reply worker quietly open a second connection;
 ``StaticPool`` with the check on makes touching the store from the wrong

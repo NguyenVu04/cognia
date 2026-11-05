@@ -400,3 +400,13 @@ def test_parse_devices() -> None:
 
 def test_parse_no_devices() -> None:
     assert parse_devices("Available devices:\n") == []
+
+
+def test_remembered_device_skips_measuring(files, platform) -> None:
+    supervisor = make(files, platform)
+
+    supervisor.remember_device(NVIDIA.name)
+    supervisor.endpoint(CHAT)
+
+    assert [p.device for p in platform.started] == ["Vulkan1"]
+    assert platform.benchmarked == []

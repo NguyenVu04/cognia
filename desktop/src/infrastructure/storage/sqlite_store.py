@@ -10,8 +10,8 @@ defined in ``orm.py``.
 
 Times are stored in UTC. A naive ``datetime`` handed in is read as local time.
 
-Threading: every method here runs on the GUI thread. ``open_database`` keeps
-SQLite's same-thread check on, so touching the store from the reply worker
+Threading: every method here runs on the core thread. ``open_database`` keeps
+SQLite's same-thread check on, so touching the store from another thread
 raises immediately instead of corrupting the file quietly.
 """
 

@@ -2,12 +2,12 @@
 
 A model call blocks for as long as the model takes, which on a small model on a
 laptop is seconds. Doing that on the GUI thread would stop the window
-repainting, so it happens here instead, on a thread of its own, and the results
-come back as signals Qt delivers to the GUI thread in order.
+repainting, so it happens here instead, on a thread of its own. The pieces of
+a reply go to the GUI thread as signals; every result goes to the core thread.
 
 One turn has two requests. ``prepare`` finds what the reply draws on and what
 the message holds worth keeping. ``request`` streams the reply. Nothing here
-touches the database: the GUI thread holds it.
+touches the database: the core thread holds it.
 
 This lives in ``app/`` because it touches both Qt and the model ports, and
 ``ui/`` is not allowed to reach the model.

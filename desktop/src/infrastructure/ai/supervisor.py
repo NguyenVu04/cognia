@@ -145,6 +145,11 @@ class ModelSupervisor:
     def state(self, server: str) -> ServerState:
         return self._servers[server].state
 
+    def remember_device(self, name: str | None) -> None:
+        """The GPU chosen in an earlier run, read after this object exists.
+        Call it before the first request for the chat server."""
+        self._chat_device = name
+
     def endpoint(self, server: str) -> Endpoint:
         """Where ``server`` answers, after it is healthy. Blocks while it starts.
         Raises :class:`ModelUnavailable`."""

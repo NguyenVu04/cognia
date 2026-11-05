@@ -1719,16 +1719,15 @@ can delete it. The ordinary `event_class`, such as `shared_worry`, still applies
 ```mermaid
 classDiagram
     class CoreHost {
-        -queue: Queue
         -services: Services
         -state: CompanionState
         -next_wake: datetime
         +run() None
-        +post(item) None
     }
 
     class Bridge {
         <<QObject>>
+        +commands: Queue
         +viewReady Signal
         +expressionChanged Signal
         +messageChanged Signal
@@ -1744,8 +1743,7 @@ classDiagram
         +run(log_path, strategy) Report
     }
 
-    CoreHost --> Bridge : emits through
-    Bridge --> CoreHost : posts to
+    CoreHost --> Bridge : emits through, reads commands from
 ```
 
 **Key types.**
@@ -1780,7 +1778,15 @@ information. Commands are never dropped. The queue is large enough that this hap
 the core thread stalled.
 
 **Start order.** `main` shows the window first, then it folds the log on the core thread. Thus
-the window meets NFR-04, and views show a loading state until the first data arrives.
+the window meets NFR-04, and a turning spinner shows in the middle of the window until the first
+data arrives (`Bridge.ready`).
+
+**Built (2026-11-05).** `app/core_host.py` holds the thread, `app/bridge.py` the signals out and
+the queue in (D-24), and `app/commands.py` the commands as frozen dataclasses. The model thread
+puts its results into the same queue, so the core reads one ordered stream. No rule returns a
+next wake yet, so the loop waits on the queue with no timeout. A command that fails in a way
+nobody expected rolls back its transaction, the window shows one sentence, and the core handles
+the next command as usual.
 
 **A start with an open session.** The rules close a session that has no end as of the last
 recorded activity (UC-07-A2).
@@ -2290,8 +2296,7 @@ sequenceDiagram
 ```
 
 The first piece of the reply hides the working indicator. The indicator covers the
-interpretation and the retrieval, so the user never sees a blank pause (NFR-05). Until D-03 is
-built, the GUI thread does the work of the core thread in this diagram.
+interpretation and the retrieval, so the user never sees a blank pause (NFR-05).
 
 **What happens when a message trips the tripwire.** The model thread does not interpret it, so
 nothing from it is kept (section 6.13).
@@ -2496,7 +2501,8 @@ sequenceDiagram
 **What happens when erasure fails part-way.** Each group has its own transaction. A group that fails
 does not stop the groups after it, so as much as possible goes. The report states exactly which groups
 are gone and which remain, and it offers to run again. It never reports a partial erasure as complete
-(UC-14-E1, D-51).
+(UC-14-E1, D-51). If the erasure stops in a way nobody expected, so no report exists, the dialog says
+that some of it may still be on the disk, and it offers to run again.
 
 **What the user sees.** The two buttons of the erase strip on the memory page open a dialog. It lists
 the rows of each group that holds any, and it says that erasure cannot be undone. After the erasure
@@ -2508,8 +2514,6 @@ memory page, and Chat and Character open the choice of a character (D-52).
 test fails if a table of `orm.py` is in no group or in two. When sessions, learning, reflection and
 speech have their own stores, each store can erase its own tables (section 12).
 
-Until D-03 is built, the GUI thread runs the erasure, and `VACUUM` can stop the window for a moment
-while the dialog shows "Erasing…".
 
 **What this costs.** `VACUUM` can take time, and the core thread does nothing else during it. A view
 shows a waiting state. A pause still stops observation, through the stop flag.
@@ -2858,7 +2862,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-21 | A deterministic wording check | QA-08, BR-06 | Prompt only | None needed | Proposed |
 | D-22 | A per-user `Run` key, with a ticked box in the installer and a switch in the application | FR-36, UC-16 | Startup folder, Task Scheduler, an unticked box, no question | None needed | Decided |
 | D-23 | `QLockFile` and `QLocalSocket` | ADR 0001, UC-16 | A named mutex alone | None needed | Proposed |
-| D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Proposed |
+| D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Decided |
 | D-25 | End the render process when hidden or paused | QA-05 | Freeze when hidden | None needed | Proposed |
 | D-26 | Own characters from VRoid Studio | FR-01, FR-05, UC-01 | Sample models, avatar registries, marketplaces | None needed | Decided |
 | D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-03 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
@@ -3250,17 +3254,18 @@ change this.
 **Reason.** Two copies would mean two readers and two writers, which ADR 0001 forbids. This connector is
 also how an opening happens while Cognia runs in the background (section 7.6).
 
-### 10.26 D-24: between the GUI and the core (proposed)
+### 10.26 D-24: between the GUI and the core
 
 **Question.** How do the two threads exchange data?
 
 | Option | Benefit | Cost |
 |---|---|---|
-| **A. `Bridge`: Qt signals out, the queue in** (recommended) | Keeps the existing Qt pattern. The core loop stays free of Qt. Frozen dataclasses cannot change under a reader | Small classes for each command |
+| **A. `Bridge`: Qt signals out, the queue in** (chosen) | Keeps the existing Qt pattern. The core loop stays free of Qt. Frozen dataclasses cannot change under a reader | Small classes for each command |
 | B. Direct calls with locks | Less code at first | Locks everywhere, and the order of events is lost |
 | C. The GUI polls the core | Simple | Wasted wake-ups against NFR-06 |
 
-**Reason.** ADR 0001 gives one queue. All inputs reach it the same way.
+**Reason.** ADR 0001 gives one queue. All inputs reach it the same way. The author chose A on
+2026-11-05, with D-03.
 
 ### 10.27 D-25: the drawing states (proposed)
 
@@ -3967,7 +3972,7 @@ of 8 192 tokens.
 These items are outside this design, or need a decision before implementation.
 
 1. **Acceptance.** ADR 0002 to ADR 0008 are Proposed. The author accepts each one, or changes it.
-2. **Proposals.** D-15 to D-25 need the author's review.
+2. **Proposals.** D-15 to D-25 need the author's review, except D-22 and D-24, which are decided.
 3. **The chat model.** D-27 names Gemma 4 E2B as the only candidate, and measurement accepts or refuses it
    (section 8.6). If it fails, the author selects another candidate. It must hold a character in English for
    months (A-02). Its size sets the NFR-14 figures and the limit in section 8.3. Its model card states
@@ -3996,9 +4001,8 @@ These items are outside this design, or need a decision before implementation.
     unproven until they do.
 11. **Move the code.** The code does not match this design yet. Done on 2026-11-05: `OllamaAgent`,
     `langchain-*`, `langgraph` and `local_only.py` are gone (D-06); `app/` writes `character_changed` with each
-    new version; `CharacterService` is wired, and the first-run and character views show its data (D-52). The
-    work that remains is:
-    - move the database connection from the GUI thread to the core thread (D-03)
+    new version; `CharacterService` is wired, and the first-run and character views show its data (D-52); the
+    core thread holds the database and every decision (D-03, D-24). The work that remains is:
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
     - build `ModelJobs` and `ModelScheduler` (D-15). Today `app/chat_worker.py` runs one request at a time
     - record the `user_message` event and move the feeling from it (UC-23), and add the safety instruction and

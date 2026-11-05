@@ -33,3 +33,12 @@ def test_back_from_change_returns_to_character(window: MainWindow) -> None:
     window.first_run.backRequested.emit()
 
     assert window.screens.currentWidget() is window.character
+
+
+def test_loading_spinner_shows_and_hides(window: MainWindow) -> None:
+    window.setLoading(True)
+    shown = not window.loading.isHidden()
+    window.setLoading(False)
+
+    assert shown
+    assert window.loading.isHidden()
