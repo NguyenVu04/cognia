@@ -27,8 +27,8 @@ TEXT_WIDTH = WIDTH - 56
 
 GROUP_NAMES = {
     Group.CONVERSATIONS: "Messages in conversations",
-    Group.MEMORY: "Things you told me, and commitments",
-    Group.SESSIONS: "Work sessions",
+    Group.MEMORY: "Things you told me",
+    Group.DESK: "Time spent in each application",
     Group.LEARNING: "Patterns I learned",
     Group.JOURNAL: "Journal entries",
     Group.SPEECH: "Records of when I spoke",

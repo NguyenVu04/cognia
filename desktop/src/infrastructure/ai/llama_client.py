@@ -1,8 +1,8 @@
 """Replies, interpretations and vectors from the llama-server processes.
 
 The messages follow the layers: the system text, then the history, and layer 4
-at the end of the last user message, exactly as the training examples are
-built. The model's reasoning arrives apart from the answer and is dropped.
+at the end of the last user message. The model's reasoning arrives apart from
+the answer and is dropped.
 """
 
 from __future__ import annotations

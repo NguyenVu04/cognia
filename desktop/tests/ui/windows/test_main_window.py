@@ -42,3 +42,12 @@ def test_loading_spinner_shows_and_hides(window: MainWindow) -> None:
 
     assert shown
     assert window.loading.isHidden()
+
+
+def test_no_sessions_screen(window: MainWindow) -> None:
+    assert "sessions" not in window._by_id
+
+
+def test_nudge_comes_from_speaking_up(window: MainWindow, qtbot) -> None:
+    with qtbot.waitSignal(window.nudgeRequested):
+        window.proactivity.nudgeRequested.emit()

@@ -1,10 +1,9 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 import pytest
 
-from src.domain.conversation.models import SaidCommitment
 from src.domain.memory.memory_service import MemoryService
-from src.domain.memory.models import TOLD, Commitment, MemoryItem, Selection
+from src.domain.memory.models import TOLD, MemoryItem
 
 NOW = datetime(2026, 11, 5, 9, 0, tzinfo=timezone.utc)
 
@@ -16,10 +15,7 @@ class FakeStore:
         self.model: str | None = None
 
     def items(self) -> list[MemoryItem]:
-        return [e for e in self.added if isinstance(e, MemoryItem)]
-
-    def commitments(self) -> list[Commitment]:
-        return [e for e in self.added if isinstance(e, Commitment)]
+        return list(self.added)
 
     def add(self, entry) -> None:
         self.added.append(entry)
@@ -57,37 +53,36 @@ def service(store: FakeStore) -> MemoryService:
     return MemoryService(store)
 
 
-def chosen() -> Selection:
-    return Selection(
-        ("Is writing a thesis",),
-        (SaidCommitment("Send chapter 3", date(2026, 11, 6)),),
-    )
+def chosen() -> tuple[str, ...]:
+    return ("Is writing a thesis", "Has a cat")
 
 
-def test_remember_stores_told_item_and_commitment(service, store) -> None:
+def test_remember_stores_each_fact_as_told(service, store) -> None:
     vectors = {"Is writing a thesis": (1.0, 0.0)}
 
-    stored = service.remember(chosen(), 7, "m1", vectors, NOW)
+    stored = service.remember(chosen(), 6, "m1", vectors, NOW)
 
-    item, commitment = store.added
-    assert stored == (item, commitment)
-    assert (item.kind, item.text, item.importance) == (TOLD, "Is writing a thesis", 7)
-    assert (item.source_message_id, item.recorded_at) == ("m1", NOW)
-    assert item.embedding == (1.0, 0.0)
-    assert (commitment.text, commitment.due_on) == ("Send chapter 3", date(2026, 11, 6))
-    assert commitment.embedding is None
-    assert item.id != commitment.id
+    first, second = store.added
+    assert stored == (first, second)
+    assert [e.text for e in stored] == ["Is writing a thesis", "Has a cat"]
+    assert {(e.kind, e.importance, e.source_message_id) for e in stored} == {
+        (TOLD, 6, "m1")
+    }
+    assert first.recorded_at == NOW
+    assert first.embedding == (1.0, 0.0)
+    assert second.embedding is None
+    assert first.id != second.id
 
 
-def test_remember_empty_selection(service, store) -> None:
-    assert service.remember(Selection((), ()), 7, "m1", {}, NOW) == ()
+def test_remember_nothing(service, store) -> None:
+    assert service.remember((), 7, "m1", {}, NOW) == ()
     assert store.added == []
 
 
-def test_entries_holds_both_kinds(service, store) -> None:
-    service.remember(chosen(), 7, "m1", {}, NOW)
+def test_entries_returns_items(service, store) -> None:
+    stored = service.remember(chosen()[:1], 7, "m1", {}, NOW)
 
-    assert len(service.entries()) == 2
+    assert service.entries() == list(stored)
 
 
 def test_correct_tidies(service, store) -> None:
@@ -123,7 +118,7 @@ def test_use_nothing(service, store) -> None:
 def test_missing_vectors(service, store) -> None:
     service.remember(chosen(), 7, "m1", {"Is writing a thesis": (1.0,)}, NOW)
 
-    assert [e.text for e in service.missing_vectors()] == ["Send chapter 3"]
+    assert [e.text for e in service.missing_vectors()] == ["Has a cat"]
 
 
 def test_check_model_same(service, store) -> None:

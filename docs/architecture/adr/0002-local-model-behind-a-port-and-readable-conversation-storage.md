@@ -9,6 +9,9 @@
 - **Revised:** 2026-10-30 — LangChain and LangGraph are removed, the server ships in
   two builds, and ports move to `src/domain/ports/`
   ([`ARCHITECTURE.md`](../ARCHITECTURE.md), D-02, D-06, D-13)
+- **Revised:** 2026-11-06 — D-06 is deleted: LangChain and LangGraph return, for the
+  tool loop only. No model is fine-tuned, and the published GGUF ships
+  ([`ARCHITECTURE.md`](../ARCHITECTURE.md), D-58, D-66)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —

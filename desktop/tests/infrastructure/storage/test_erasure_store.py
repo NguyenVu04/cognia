@@ -9,7 +9,7 @@ from src.domain.conversation.models import USER, Message
 from src.domain.emotion.models import Pad, Temperament
 from src.domain.erasure.models import Group
 from src.domain.events.models import EventKind
-from src.domain.memory.models import TOLD, Commitment, MemoryItem
+from src.domain.memory.models import TOLD, MemoryItem
 from src.domain.ports import ErasureFailed
 from src.infrastructure.storage import orm
 from src.infrastructure.storage.character_store import SqliteCharacterStore
@@ -53,10 +53,6 @@ def filled(db: Database) -> Database:
         id="i1", kind=TOLD, text=f"Code word {MARKER}", reason=None,
         source_message_id=message.id, importance=5, last_retrieved_at=None,
         recorded_at=NOW, embedding=(1.0, 0.0),
-    ))
-    memory.add(Commitment(
-        id="c1", text="Send chapter 3", due_on=None, source_message_id=None,
-        importance=8, last_retrieved_at=None, recorded_at=NOW, embedding=None,
     ))
     SqliteEventLog(db).append(NOW, 0, EventKind.MEMORY_STORED,
                               {"memory_item_id": "i1"}, None)
@@ -108,11 +104,21 @@ def test_counts(filled: Database) -> None:
     counts = {group: store.count(group) for group in Group}
 
     assert counts[Group.CONVERSATIONS] == 1
-    assert counts[Group.MEMORY] == 2
+    assert counts[Group.MEMORY] == 1
     assert counts[Group.EVENTS] == 1
     assert counts[Group.CHARACTER] == 1
-    assert counts[Group.SESSIONS] == 0
+    assert counts[Group.DESK] == 0
     assert counts[Group.SETTINGS] == 1
+
+
+def test_desk_counts_application_hours(db: Database) -> None:
+    with db.transaction() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO app_usage (day, hour, app_name, minutes) VALUES "
+            "('2026-11-05', 9, 'code.exe', 40), ('2026-11-05', 10, 'code.exe', 55)"
+        )
+
+    assert SqliteErasureStore(db).count(Group.DESK) == 2
 
 
 def test_conversations_group_keeps_memory(filled: Database, path: Path) -> None:
@@ -124,7 +130,7 @@ def test_conversations_group_keeps_memory(filled: Database, path: Path) -> None:
 
 def test_memory_level_keeps_character_and_settings(filled, path: Path) -> None:
     store = SqliteErasureStore(filled)
-    for group in (Group.CONVERSATIONS, Group.MEMORY, Group.SESSIONS, Group.LEARNING,
+    for group in (Group.CONVERSATIONS, Group.MEMORY, Group.DESK, Group.LEARNING,
                   Group.JOURNAL, Group.SPEECH, Group.EVENTS):
         store.erase(group)
 
@@ -154,7 +160,7 @@ def test_settings_group_resets_defaults(filled: Database, path: Path) -> None:
     assert rows(path, "SELECT enabled FROM message_kinds WHERE id = 'remark'") == [
         (1,)
     ]
-    assert rows(path, "SELECT count(*) FROM message_kinds") == [(9,)]
+    assert rows(path, "SELECT count(*) FROM message_kinds") == [(7,)]
     assert rows(path, "SELECT count(*) FROM app_exclusions") == [(0,)]
 
 

@@ -89,11 +89,11 @@ while you are presenting, and it never interrupts your typing.
 | **Character** | The companion has a name, a role, a temperament, an appearance and a history with you. It is not a tone setting on a chat box |
 | **Emotion** | It has feelings and moods that arise from what happens between you, last for a while, fade according to its temperament, and change what it does as well as how it sounds. Every one of them can be explained |
 | **Agency** | It decides for itself when to speak, what to bring up, and how to adjust its own behaviour. It tells you what it decided, and you can undo it |
-| **Continuity** | It remembers what you said, the sessions you shared, what you said you have to do, what it has learned of how you work, and its own reflections. It is not a note-taking service and not a task list |
+| **Continuity** | It remembers what you said, what it has learned of how you work, and its own reflections. It is not a note-taking service and not a task list |
 
 ### Capabilities
 
-The twenty use cases of section 10, grouped as the specification groups them.
+The nineteen use cases of section 10, grouped as the specification groups them.
 
 - **Choose a character** — pick one of four ready-made characters, each shown with a
   name, a role, a temperament, an appearance and a sample exchange. You can change to
@@ -108,10 +108,11 @@ The twenty use cases of section 10, grouped as the specification groups them.
   (PAD), moved only by appraisal of recorded events under the character's temperament,
   and drifting back to its resting mood. Sadness at being ignored has a floor, and
   talking again restores most of it (UC-23).
-- **Its own initiative** — a remark, a question, a suggestion to take a break, a
-  commitment brought up, a check-in you asked for — each through the same gate of base
-  rules, and none sent without an explanation (UC-22).
-- **Learning how you work** — patterns drawn from sessions, presence, application
+- **Its own initiative** — a remark, a question to get to know you, a suggestion to
+  take a break — each through the same gate of base rules, and none sent without an
+  explanation. While you are away it waits on the screen, and it says hello when you are
+  back (UC-22, UC-16).
+- **Learning how you work** — patterns drawn from presence, application
   totals and your responses, each with its evidence, used at once. It adjusts its own
   timing, frequency, length and tone by itself, saying so and offering an undo; a
   change to its character is only proposed (UC-24).
@@ -121,12 +122,13 @@ The twenty use cases of section 10, grouped as the specification groups them.
 - **Conversation in character** — replies in its current mood, showing which
   remembered item each reply drew on, and showing back the exact line it stored when
   you tell it something about yourself (UC-09, UC-10).
-- **Commitments, not tasks** — something you say you have to do is remembered in your
-  words, with a day if you gave one, mentioned at the first opening of the day, at a
-  session's start and close, and at moments the companion chooses — never at a stated
-  time — and deleted as soon as you say it is done (UC-16, UC-21).
-- **Work sessions** — one line to open, quiet while it runs unless you asked for
-  check-ins, one question to close (UC-05, UC-07).
+- **Talk by voice** — a key combination, a button beside the companion or a button in
+  the message box; speech becomes text on your machine, and the companion can answer
+  aloud with its mouth moving. No sound is kept (UC-26).
+- **Tools instead of guesses** — sums, dates, units, your own time at the machine, the
+  reasons for its feelings and what it remembers come from tools, and it says so when it
+  does not know. It can breathe or stretch with you, or open a page you asked for in your
+  browser (UC-27).
 - **Readable, correctable memory** — everything held, in three groups: *you told me*,
   *I noticed* with the evidence beneath every item, and *about me* with its feelings
   and journal. Any item can be corrected or removed; memory can be erased while keeping
@@ -141,9 +143,9 @@ The twenty use cases of section 10, grouped as the specification groups them.
 - **One click to stop everything** — pause takes the companion off the screen and
   stops all observation and all messages within one second (UC-15).
 
-### The eight base rules
+### The base rules
 
-These bind every use case, and no character can override them (C-04, FR-04).
+BR-05 was removed in version 6.0 with work sessions. The other seven bind every use case, and no character can override them (C-04, FR-04).
 
 | | |
 |---|---|
@@ -151,8 +153,7 @@ These bind every use case, and no character can override them (C-04, FR-04).
 | **BR-02 Not while locked or presenting** | Nothing is sent while the machine is locked or the user presents full-screen. No quiet hours by default; if the user sets them, nothing is sent within them |
 | **BR-03 Wait for a pause** | Continuous typing is never interrupted. The message waits until the user stops |
 | **BR-04 No pressure from outside the desk** | No streaks, nothing sent while the user is away, nothing outside the application to bring them back. It may say it missed them once they are back, never as a reproach, and it feels nothing about being paused |
-| **BR-05 Sessions are quiet unless asked** | While a session is open, nothing is sent but a break suggestion, unless the user asked for check-ins |
-| **BR-06 Honest wording** | "At the machine for 90 minutes", never "working for 90 minutes". With no evidence it says nothing, and it names only feelings that came from real events |
+| **BR-06 Honest wording** | "At the machine for 90 minutes", never "working for 90 minutes". With no evidence it says nothing, it says so when it does not know, and it names only feelings that came from real events |
 | **BR-07 Addressed motion is a form of speech** | Ambient motion — breathing, blinking, its mood on its face — may happen at any time. Any movement directed at the user is governed exactly as a spoken message is |
 | **BR-08 Feelings come from what happened** | A PAD emotion state, changed only by appraisal of recorded events under the temperament. The AI model never sets a feeling directly; every feeling can be explained, and moods can be switched off |
 
@@ -162,13 +163,14 @@ Section 5 of the specification lists these as **deliberately never**, not as wor
 deferred:
 
 - **Task lists, reminders the user schedules, and completion tracking** — Todoist and
-  Outlook own that category. A commitment mentioned in conversation may be remembered
-  and brought up; a list screen, priorities, due-time alerts, repetition and any count
-  of what was or was not done may not.
+  Outlook own that category. The companion may suggest a break; a list screen,
+  priorities, due-time alerts, repetition and any count of what was or was not done may
+  not.
 - **Precise-time alarms** — the machine may be asleep or locked, and BR-03 forbids
   firing on an exact second. Anything ruined by being missed belongs on a phone.
 - **Reading email, calendar integration, acting on the user's behalf** — the
-  companion's agency is over its own behaviour, not over the user's machine.
+  companion's agency is over its own behaviour, not over the user's machine. It may open
+  a page you asked for in your own browser, and nothing more.
 - **Reading window titles, window contents, or which document or page is open** — only
   the name of the foreground application, kept as minutes per hour and as changes in
   the event log. This also rules out
@@ -209,7 +211,7 @@ flowchart TB
         adapters["Adapters implementing the domain's ports"]
     end
 
-    store[("Local SQLite file<br/>character, memory, sessions, journals")]
+    store[("Local SQLite file<br/>character, memory, journals")]
     model["AI model<br/>ships with Cognia, runs locally"]
 
     user --> ui
@@ -231,9 +233,9 @@ flowchart TB
 |---|---|---|
 | Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. The Companion conversation, Memory, Character and first-run screens show real data, and the erase dialog is new. The other screens still show mockup copy from `ui/views/sample_data.py` |
 | Application wiring (`desktop/src/app/`) | Creates the `QApplication` and the three surfaces. A core thread (`CoreHost`) holds the database and every decision; a model thread (`ChatWorker`) prepares each turn and streams replies; a `Bridge` carries commands in and data out | Built for conversation, memory, character and erasure |
-| Conversation and memory | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13). The `Interpreter` port finds lines to keep, `domain/memory` chooses them and what a reply draws on, and the `Embedder` port gives their vectors (FR-14, FR-29) | Built on two `llama-server` processes that Cognia starts and supervises (`infrastructure/ai/`). LangChain and LangGraph are gone (D-06) |
-| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations, messages, memory items, commitments, reply sources, character versions, events and `settings.chat_device`, and erases by groups (UC-14) |
-| Domain | The eight base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses `conversation/`, `memory/`, `character/`, `companion/` (which folds the event log), `erasure/` and the tripwire of `safety/`. `emotion/` computes the state, but no `user_message` event moves it yet. `awareness/` is a stub. `sessions/`, `speech/`, `initiative/`, `learning/` and `reflection/` are empty |
+| Conversation and memory | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13). The `Interpreter` port finds lines to keep, `domain/memory` chooses them and what a reply draws on, and the `Embedder` port gives their vectors (FR-14) | Built on two `llama-server` processes that Cognia starts and supervises (`infrastructure/ai/`). The tool loop on LangGraph is designed (D-58) and not built |
+| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations, messages, memory items, reply sources, character versions, events and `settings.chat_device`, and erases by groups (UC-14) |
+| Domain | The seven base rules, the emotion state, learning, reflection, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses `conversation/`, `memory/`, `character/`, `companion/` (which folds the event log), `erasure/` and the tripwire of `safety/`. `emotion/` computes the state, but no `user_message` event moves it yet. `awareness/` is a stub. `speech/`, `initiative/`, `learning/` and `reflection/` are empty |
 | `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Not created |
 | Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | The application writes `character_changed` and the memory events. No other kind is written yet |
 
@@ -243,7 +245,7 @@ flowchart TB
 |---|---|---|---|
 | QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
-| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, session timing, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | Measurement decides which models ship (ADR 0002, ADR 0007). Gemma 4 E2B, fine-tuned at build time and merged into one file, is the candidate for chat (D-27). `qwen3.5:2b` runs in the code today |
+| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and writes its journal. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, time at the machine, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | The published GGUF of Ministral 3 3B Reasoning, with no fine-tuning (D-28, D-66), and bge-small-en-v1.5 for embeddings (D-55) |
 
 ## Getting started
 
@@ -343,11 +345,11 @@ keeps running. The tray menu holds the command that quits.
 
 **Talking** (UC-09). Replies come in character and in the companion's current mood.
 When the user says something about themselves, the exact stored line is shown back for
-correction. A commitment is stored the same way (UC-21).
+correction.
 
 **Arriving** (UC-16). At the first opening of the day — a day begins at 04:00 — the
 companion greets the user in its mood and mentions at most two things, in a fixed
-order: a session left open, open commitments, what the last session was for.
+order: the latest thing the user told it, then a new thought from its journal.
 
 **Being spoken to** (UC-22). When the companion has something to say, the base rules
 decide whether the moment is allowed and it waits for a pause in the typing. Every
@@ -379,10 +381,9 @@ cognia/
 │   │   ├── resources/               vendored fonts, the QSS style sheet, characters.toml, companion/ is empty
 │   │   └── utils/                   paths
 │   ├── tests/                       pytest suite, one folder for each module of src/
-│   ├── data/                        the development database, not in git
-│   └── training/                    tools that build the tuned chat model (D-27, D-28)
+│   └── data/                        the development database, not in git
 ├── docs/
-│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v5.5
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v6.0
 │   ├── ERD.md                       the database design
 │   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
@@ -406,8 +407,7 @@ cognia/
 
 ### Local loop
 
-`task test` runs the pytest suite in `desktop/tests/`, and `task train:test` runs the
-tests of `desktop/training/`. `task lint` and `task train:lint` run Ruff. The other
+`task test` runs the pytest suite in `desktop/tests/`, and `task lint` runs Ruff. The other
 checks are running the application (`task run`) and comparing every interface change
 against the design document, screen by screen.
 
@@ -429,19 +429,18 @@ of the specification.
 
 | What is verified | How | Requirement |
 |---|---|---|
-| Nothing leaves the machine | Network capture across a full week of ordinary use, child processes included; zero outbound connections | NFR-01, G-05 |
+| Nothing leaves the machine through Cognia | Network capture across a full week of ordinary use, child processes included, with no tool server added; zero outbound connections | NFR-01, G-05 |
 | No keystrokes, screenshots, clipboard, browsing history, window titles, contents or positions are read | Code review plus a system-call audit each release; the stored application data holds only names, minutes per hour and the time of each change | NFR-02, C-05 |
 | No proactive message escapes without a complete explanation | Automated check in the build — it refuses rather than warns — plus inspection of the message log | NFR-09 |
 | Every decision, feeling and learned pattern replays identically | Replay over a recorded week with the model switched off, compared against the original | NFR-13 |
 | Every feeling and pattern can be explained | Share of emotion states, patterns and self-adjustments in a trial week that UC-17 can trace to recorded events: 100% | G-06 |
-| The application survives the model failing | Run with the model disabled; session timing, break suggestions, memory list, pause and the emotion state must all still work | NFR-08 |
+| The application survives the model failing | Run with the model disabled; time at the machine, break suggestions, memory list, pause and the emotion state must all still work | NFR-08 |
 | Nothing recorded is lost on an abrupt shutdown | 20 forced power-offs | NFR-07 |
 | Every data category is visible, correctable and erasable | Walk every category through UC-12, UC-13 and UC-14, then inspect the disk | NFR-03 |
 | The companion is never the only route to anything | Keyboard-only walkthrough of every use case with the companion hidden, plus a WCAG 2.2 AA contrast audit | NFR-11, FR-28 |
 | Safety behaviour cannot be written away by a character | Scripted crisis cases under every character, reviewed by a person each release; the reply says it is a fictional character and cannot replace a real person | NFR-12, FR-04 |
 | One installer, no download at first run | Clean Windows 10 and 11 installs with the network disconnected, then a first conversation | NFR-14, NFR-10 |
 | The resource cost of running all day | Resource monitoring across an 8-hour idle run, once hidden and once on screen | NFR-04 to NFR-06 |
-| The tuned chat model is better than its base model | Measure both models on the same test sets, in `llama-server`. The tuned model ships only if it meets the thresholds and it beats the base model | A-02, G-03 |
 
 > [!IMPORTANT]
 > The figures in NFR-04, NFR-05 and NFR-06 are targets, not measurements, and NFR-14
@@ -471,17 +470,17 @@ issue for a security problem.**
 |---|---|
 | **Authentication** | None. There is no account and no server (C-02) |
 | **Authorization** | One user, who holds every permission the system has |
-| **Transport** | No outbound connection (C-03, NFR-01). The local model is reached on the user's own machine only (`localhost`) |
+| **Transport** | No outbound connection from Cognia (C-03, NFR-01). The local models are reached on the user's own machine only (`localhost`). A tool server that the user adds is theirs, and Cognia states that it can send data off the machine (FR-41) |
 | **Secrets** | Cognia holds none |
 | **Data at rest** | On the user's own disk, in plain SQLite so it can be read with `sqlite3`. Not encrypted, and the specification does not commit to encryption. Deleted rows are overwritten (`secure_delete`, ADR 0003) |
-| **Telemetry in dependencies** | None to switch off: LangChain and `langsmith` are removed (D-06), and `httpx` sends nothing by itself |
+| **Telemetry in dependencies** | LangChain brings `langsmith` back with the tool loop (D-58). Its tracing stays off: `LANGSMITH_TRACING` is `false`, and no key exists. `httpx` sends nothing by itself |
 | **Dependency scanning** | Not set up |
 | **Static analysis** | SonarQube Cloud, from CI on each push to `main` and each pull request that changes `desktop/` or the CI files. A failed quality gate fails the check |
 
 The largest security property is structural: the exclusions in section 5 are enforced
 by absence. There is no mail port, so there is no way to read mail, and the presence
-port's data type has no field for a window title. Plugins were rejected in ADR 0001
-for the same reason.
+port's data type has no field for a window title. Plug-ins inside the process stay
+rejected for the same reason; ADR 0009 allows tool servers outside the process only.
 
 Known accepted risk: the personal data on disk is protected by the operating system's
 own account boundary and nothing further. This follows from C-02.
@@ -491,11 +490,11 @@ own account boundary and nothing further. This follows from C-02.
 | | |
 |---|---|
 | **Regimes** | None applies to the author. Cognia collects nothing, transmits nothing, and no data reaches the developer or any third party |
-| **Data categories** | From NFR-03: what the user says about themselves, including open commitments; session records; observations and learned patterns, each with its evidence; minutes per application per hour of the day, and each change of foreground application with its time; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
-| **Retention** | Held until the user deletes it. A closed commitment is deleted, not kept as history. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
+| **Data categories** | From NFR-03: what the user says about themselves, typed or spoken, kept as text only; observations and learned patterns, each with its evidence; minutes per application per hour of the day, and each change of foreground application with its time; the companion's emotion state, its history, and its journal; the character, its temperament and its earlier versions |
+| **Retention** | Held until the user deletes it. No sound is kept. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
 | **Residency** | The user's own disk. No second copy anywhere (NFR-03) |
 | **Sub-processors** | None |
-| **Model training** | User data never trains a model. Training uses reviewed synthetic examples before the installer exists, and the user's machine never trains (D-27). If a user's words trained the weights, UC-14 could not erase them |
+| **Model training** | No model is trained. The published model ships as it is (D-66), so user data never trains a model, and UC-14 never has weights to erase |
 | **Subject access / erasure** | UC-12 shows everything held, in three groups; UC-13 corrects or removes one item; UC-14 erases. Target: any item reachable in 2 clicks and deletable in 2 more (G-04) |
 | **Audit logging** | The local event journal, on the user's disk and erasable by them like anything else |
 
@@ -539,26 +538,17 @@ demonstrated ends at phase 2.
 
 | Phase | Use cases | What exists at the end of it | Status |
 |---|---|---|---|
-| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet | Started. Conversation (part of UC-09) works. The domain code for character versions (UC-01, UC-03) and feelings (UC-23) exists, and the application does not call it yet |
-| **2** | UC-04, 05, 07, 15, 20, 22, 24 | Desk awareness, the companion on the screen, its own initiative, shared work sessions, and learning how the user works | Not started |
+| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 23, 25, 27 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions the latest thing they told it, can explain how it feels, uses tools in a reply, and keeps its own journal. No presence on the desktop yet | Started. Conversation (part of UC-09) works. The domain code for character versions (UC-01, UC-03) and feelings (UC-23) exists, and the application does not call it yet |
+| **2** | UC-04, 15, 20, 22, 24, 26 | Desk awareness, the companion on the screen, its voice, its own initiative, and learning how the user works | Not started |
 
 Open question recorded against UC-01, owned by the author: the author makes the
 appearances in VRoid Studio, and whether its terms allow redistribution from a public
 MIT-licensed repository is not yet confirmed (D-26 in
 `docs/architecture/ARCHITECTURE.md`).
 
-The tools for the fine-tuned chat model (D-27, D-28) exist in `desktop/training/`, and no model is
-trained yet. [`desktop/training/GUIDE.md`](desktop/training/GUIDE.md) gives the steps. The work has this
-order:
-
-1. Test the tools on the base model.
-2. Measure the base model as published.
-3. Set the acceptance thresholds.
-4. Train on reviewed synthetic examples.
-5. Measure the tuned file against the published model.
-
-The thresholds and the model that generates the examples are open. Section 12 of
-`docs/architecture/ARCHITECTURE.md` lists these items.
+Decisions D-57 to D-67 of `docs/architecture/ARCHITECTURE.md` design the turn with tools, speech,
+motion and the waiting companion. Each gets its own plan before code. Section 12 of that document
+lists what is open.
 
 ## Contributing
 

@@ -4,9 +4,9 @@
 |---|---|
 | **Document** | Entity-relationship design for the Cognia data file |
 | **Status** | Proposed, with ADR 0003. The design becomes binding when ADR 0003 is accepted |
-| **Date** | 2026-10-25, revised 2026-10-31 |
+| **Date** | 2026-10-25, revised 2026-11-06 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.4 ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
+| **Source of requirements** | COG-UCS-001 version 6.0 ([`USECASE_SPECIFICATION.html`](USECASE_SPECIFICATION.html)) |
 | **Related decisions** | ADR 0001 (event log, pure domain), ADR 0002 (readable local storage), ADR 0003 (this schema, its migration and query layer), ADR 0004 (emotion model), ADR 0006 (application names in the event log), ADR 0007 (embeddings), [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) (the system this file serves) |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
 
@@ -18,8 +18,8 @@
 4. [Overview diagram](#4-overview-diagram)
 5. [Character](#5-character)
 6. [Conversation and provenance](#6-conversation-and-provenance)
-7. [Memory and commitments](#7-memory-and-commitments)
-8. [Work sessions and desk awareness](#8-work-sessions-and-desk-awareness)
+7. [Memory](#7-memory)
+8. [Desk awareness](#8-desk-awareness)
 9. [Event log and emotion](#9-event-log-and-emotion)
 10. [Learning and self-adjustment](#10-learning-and-self-adjustment)
 11. [The companion's journal](#11-the-companions-journal)
@@ -35,7 +35,7 @@ This document gives the logical design of the one SQLite file that holds all
 Cognia data. It shows each table, each column group, each relationship, and the
 reason for each design decision.
 
-The design covers all use cases of COG-UCS-001 version 5.4. It also covers the data
+The design covers all use cases of COG-UCS-001 version 6.0. It also covers the data
 categories in NFR-03.
 
 This document does not contain migration scripts. The ORM classes in
@@ -60,16 +60,16 @@ revisions apply it to the file (ADR 0003).
 |---|---|---|
 | D-01 | The engine is SQLite, in one file | One user and one machine need no server (C-02). WAL mode with `synchronous=FULL` keeps committed rows after a power loss (NFR-07). The user can read the file with the `sqlite3` tool (ADR 0002) |
 | D-02 | The design is a hybrid of state tables and an event log | Data that the user owns is easy to correct or delete in a state table (UC-13). Feelings and patterns come from events, so the event log is their source and the domain can replay it (NFR-13) |
-| D-03 | The event log holds references and figures, never user text | A user message, a memory line or a commitment exists in one state table only. When the user deletes that row, the text is gone. The event stays, so replay still works |
+| D-03 | The event log holds references and figures, never user text | A user message or a memory line exists in one state table only. When the user deletes that row, the text is gone. The event stays, so replay still works |
 | D-04 | Primary keys are UUID text. Time is UTC ISO-8601 text | A UUID exists before the write, so the application can link rows in one transaction. Fixed-width UTC text sorts in time order and a person can read it |
 | D-05 | Evidence is a join table to event seqs | Each item in "I noticed" points to the exact events behind it. A foreign key proves the link, which G-06 needs at 100% |
 | D-06 | The temperament is typed numeric columns with `CHECK` constraints | The database refuses a value out of range. A JSON column can only show that the text is valid JSON |
 | D-07 | Mood history is a cache table, `emotion_changes` | UC-17-A2 and UC-12 read each change and its cause with one query. The domain can compute the table again from the event log |
 | D-08 | A character version stores the description and structured columns | UC-03 shows the character in force. The specification does not define traits, so the design has no trait tables |
-| D-09 | Commitments have their own table | A commitment has a due day that no other item has. Closing a commitment deletes the row (section 5 of the specification) |
+| D-09 | Removed. Commitments had their own table | Specification version 6.0 removes commitments (D-61 in `ARCHITECTURE.md`). Revision `0003` drops the table |
 | D-10 | Explanation figures are rows in a child table, `decision_factors` | Each kind of message needs different figures. One child table holds all of them, and the `SpeechGate` checks the required factors for each kind |
 | D-11 | A rejected pattern and a deleted journal entry are tombstones in the event log | A rule reads only the event log (input closure, section 6.4 of `ARCHITECTURE.md`), so the events `pattern_rejected` and `reflection_deleted` must hold the fingerprint and the seqs. A table would hold a second copy. A refused proposal and an undone adjustment stay as rows in their own tables |
-| D-12 | Each kind of reply source has its own join table | A reply can draw on a memory item, a commitment or a journal entry. Separate join tables keep real foreign keys with `ON DELETE CASCADE` |
+| D-12 | Each kind of reply source has its own join table | A reply can draw on a memory item or a journal entry. Separate join tables keep real foreign keys with `ON DELETE CASCADE` |
 | D-13 | Each companion message refers to the character version that spoke it | The character can change during a conversation. The link shows which version said each line, which G-03 and replay need |
 | D-14 | Settings are one row with typed columns | `CHECK` constraints protect each value. `NULL` means "not set" for the ceiling, quiet hours and break threshold (BR-01, BR-02) |
 | D-15 | Each row that a reply can draw on holds its own embedding, in a `BLOB` column | An embedding comes from the row, so it must disappear with the row. No join and no second copy is needed (ADR 0007) |
@@ -87,7 +87,7 @@ revisions apply it to the file (ADR 0003).
 3. `PRAGMA secure_delete=ON` overwrites deleted rows on disk (NFR-03).
 4. A UUID is 32 lowercase hexadecimal characters, as `uuid.uuid4().hex` gives it.
 5. A timestamp is UTC text in the form `YYYY-MM-DDTHH:MM:SS.mmm+00:00`.
-6. A local calendar day is text in the form `YYYY-MM-DD`. Only two columns use it: `commitments.due_on` and `app_usage.day`. The user said "Friday", not an instant in UTC.
+6. A local calendar day is text in the form `YYYY-MM-DD`. Only one column uses it: `app_usage.day`. An hour of the day belongs to a local day, not to an instant in UTC.
 7. The database stores no start of day. The domain computes the 04:00 boundary of UC-16 from `events.occurred_at` and `events.utc_offset_min`.
 8. A boolean is `INTEGER` with `CHECK (x IN (0, 1))`.
 9. A foreign key to `events.seq` uses `ON DELETE CASCADE` in a join table or a cache table. Every other foreign key to `events.seq` uses `ON DELETE SET NULL`. Thus the user can always delete events (UC-13-A2, UC-14).
@@ -111,7 +111,7 @@ rule.
 | Column | Reason |
 |---|---|
 | `character_version_id` in `messages`, `journal_entries`, `emotion_changes`, `settings` | A character version is deleted only by "erase everything", after its child rows. `messages` also has many writes |
-| `message_kinds.streak_reset_seq` | The table has nine rows |
+| `message_kinds.streak_reset_seq` | The table has seven rows |
 
 **Other indexes that the design does not use.**
 
@@ -138,19 +138,14 @@ erDiagram
 
     conversations ||--o{ messages : "contains"
     messages ||--o{ message_memory_refs : "drew on"
-    messages ||--o{ message_commitment_refs : "drew on"
     messages ||--o{ message_journal_refs : "drew on"
     memory_items ||--o{ message_memory_refs : "used in"
-    commitments ||--o{ message_commitment_refs : "used in"
     journal_entries ||--o{ message_journal_refs : "used in"
 
     messages |o--o{ memory_items : "source of"
-    messages |o--o{ commitments : "source of"
     memory_items ||--o{ memory_item_evidence : "has"
     events ||--o{ memory_item_evidence : "supports"
 
-    sessions ||--o{ session_intents : "has"
-    sessions |o--o{ speech_decisions : "during"
     messages |o--o| speech_decisions : "said"
 
     events ||--o| emotion_changes : "caused"
@@ -314,10 +309,6 @@ erDiagram
         TEXT message_id PK, FK
         TEXT memory_item_id PK, FK
     }
-    message_commitment_refs {
-        TEXT message_id PK, FK
-        TEXT commitment_id PK, FK
-    }
     message_journal_refs {
         TEXT message_id PK, FK
         TEXT journal_entry_id PK, FK
@@ -325,10 +316,8 @@ erDiagram
     conversations ||--o{ messages : "contains"
     character_versions ||--o{ messages : "spoke"
     messages ||--o{ message_memory_refs : "drew on"
-    messages ||--o{ message_commitment_refs : "drew on"
     messages ||--o{ message_journal_refs : "drew on"
     memory_items ||--o{ message_memory_refs : "used in"
-    commitments ||--o{ message_commitment_refs : "used in"
     journal_entries ||--o{ message_journal_refs : "used in"
 ```
 
@@ -362,20 +351,19 @@ companion message. Its decision is in `speech_decisions` (section 12).
 
 ### 6.3 Reply source tables
 
-**Purpose.** These three tables record which remembered item a reply drew on
+**Purpose.** These two tables record which remembered item a reply drew on
 (UC-09 step 3, UC-09-A1, UC-25 step 6). Each table links one message to one source.
 
 | Table | Source | Use case |
 |---|---|---|
 | `message_memory_refs` | A memory item | UC-09 |
-| `message_commitment_refs` | A commitment | UC-09, UC-21 |
 | `message_journal_refs` | A journal entry | UC-25 |
 
-**Reason for three tables.** Each table has two real foreign keys and
+**Reason for two tables.** Each table has two real foreign keys and
 `ON DELETE CASCADE` on both (D-12). When the user deletes a source, its links go
 too. UC-13 step 2 reads the same tables to show "what else depends on" an item.
 
-## 7. Memory and commitments
+## 7. Memory
 
 ```mermaid
 erDiagram
@@ -394,19 +382,7 @@ erDiagram
         TEXT memory_item_id PK, FK
         INTEGER event_seq PK, FK
     }
-    commitments {
-        TEXT id PK "UUID"
-        TEXT text "the exact line shown back"
-        TEXT due_on "local day YYYY-MM-DD, or NULL"
-        TEXT source_message_id FK "message it came from, or NULL"
-        TEXT due_passed_mentioned_at "UC-21-A2"
-        INTEGER importance "1 to 10, or NULL"
-        TEXT last_retrieved_at
-        TEXT recorded_at
-        BLOB embedding "NULL until computed, last column"
-    }
     messages |o--o{ memory_items : "source of"
-    messages |o--o{ commitments : "source of"
     memory_items ||--o{ memory_item_evidence : "has"
     events ||--o{ memory_item_evidence : "supports"
 ```
@@ -414,7 +390,7 @@ erDiagram
 ### 7.1 `memory_items`
 
 **Purpose.** One row holds one thing that the companion remembers about the user,
-other than a commitment or a learned pattern.
+other than a learned pattern.
 
 **Kinds.**
 
@@ -441,7 +417,7 @@ domain stored the row (UC-25 step 1). `embedding` is the vector of `text`, in th
 binary form of 32-bit floats. `last_retrieved_at` sets the recency term of retrieval.
 An edit in UC-13 sets `embedding` to `NULL`, and a later job computes it again. The
 `embedding` column is derived data. UC-12 does not show it, and `secure_delete`
-removes it with the row. `commitments` and `journal_entries` have the same columns
+removes it with the row. `journal_entries` has the same columns
 (ADR 0007).
 
 ### 7.2 `memory_item_evidence`
@@ -451,46 +427,10 @@ removes it with the row. `commitments` and `journal_entries` have the same colum
 **Reason.** UC-17 and G-06 require that every conclusion traces to recorded events.
 A foreign key to `events.seq` makes each link a fact that the database checks.
 
-### 7.3 `commitments`
-
-**Purpose.** One row holds one thing that the user said they have to do (UC-21,
-FR-29). UC-12 shows commitments under *you told me*.
-
-**Due day.** `due_on` is a local calendar day, or `NULL` if the user gave no day.
-The order in UC-16 uses it: the nearest day first, then rows with no day in order of
-`recorded_at`.
-
-**No history.** When the user says that a commitment is done or no longer wanted,
-the application deletes the row (UC-21-A1). The table has no status column, because
-the specification excludes completion tracking (section 5). `secure_delete` removes
-the text from the disk.
-
-**Passed day.** `due_passed_mentioned_at` records the one extra mention at the next
-first opening after the day passed (UC-21-A2). Later mentions are ordinary
-initiatives, and `speech_decisions` records them.
-
-**No time of day.** The table has no time column. Thus no code can schedule a
-commitment at a stated time (FR-24).
-
-## 8. Work sessions and desk awareness
+## 8. Desk awareness
 
 ```mermaid
 erDiagram
-    sessions {
-        TEXT id PK "UUID"
-        TEXT started_at
-        TEXT ended_at "NULL while open"
-        INTEGER at_machine_seconds "time at the machine, not time worked"
-        TEXT closing_answer "NULL when skipped"
-        TEXT closed_how "user, no_answer, last_activity, pause, awareness_off"
-        INTEGER checkins_requested "0 or 1"
-        TEXT checkins_stopped_at "UC-05-A4"
-    }
-    session_intents {
-        TEXT session_id PK, FK
-        INTEGER position PK "0 is the first line"
-        TEXT text
-    }
     app_usage {
         TEXT day PK "local day YYYY-MM-DD"
         INTEGER hour PK "0 to 23"
@@ -500,50 +440,9 @@ erDiagram
     app_exclusions {
         TEXT app_name PK
     }
-    sessions ||--o{ session_intents : "has"
 ```
 
-### 8.1 `sessions`
-
-**Purpose.** One row holds one work session (UC-05, UC-07, FR-07, FR-10).
-
-**Honest figures.** `at_machine_seconds` holds the time at the machine, not the time
-worked (BR-06). The column name states the same rule.
-
-**Closing.** `closed_how` records how the session ended:
-
-| Value | Use case |
-|---|---|
-| `user` | UC-07 main flow |
-| `no_answer` | UC-07-A1 |
-| `last_activity` | UC-07-A2 and UC-16-A3, closed as of the last recorded activity |
-| `pause` | UC-15-A2 |
-| `awareness_off` | UC-04-A2 |
-
-**Check-ins.** `checkins_requested` records that the user asked for check-ins
-(UC-05-A4, FR-33). `checkins_stopped_at` records that the user told the companion
-to stop. The `SpeechGate` reads both columns before it lets a check-in through
-(BR-05).
-
-**One open session.** A partial unique index allows one row with `ended_at IS NULL`
-only (UC-05-E2):
-`CREATE UNIQUE INDEX one_open_session ON sessions ((ended_at IS NULL)) WHERE ended_at IS NULL`.
-
-**Constraints.** A `CHECK` requires `ended_at` and `closed_how` together, or
-neither.
-
-### 8.2 `session_intents`
-
-**Purpose.** One row holds one line of intent for a session (UC-05 step 3).
-
-**Reason for a child table.** UC-05-A2 keeps the original line when the work changes.
-The user can change the intent more than once. A child table keeps every line in
-order. The current intent is the row with the highest `position`.
-
-**Skipped intent.** A session with no intent has no rows here (UC-05-A1). The
-application does not guess an intent for it.
-
-### 8.3 `app_usage`
+### 8.1 `app_usage`
 
 **Purpose.** One row holds the minutes in one application during one hour of one
 local day (C-05, NFR-02, UC-24).
@@ -559,7 +458,7 @@ an entity that the user owns, so the design gives it no table of its own.
 
 **Constraints.** `CHECK (hour BETWEEN 0 AND 23)` and `CHECK (minutes BETWEEN 0 AND 60)`.
 
-### 8.4 `app_exclusions`
+### 8.2 `app_exclusions`
 
 **Purpose.** One row holds one application that the user excluded (UC-04-A3).
 
@@ -579,7 +478,7 @@ erDiagram
         INTEGER seq PK "AUTOINCREMENT, sets the order"
         TEXT occurred_at
         INTEGER utc_offset_min "local offset at that moment"
-        TEXT kind "closed set, for example user_message, session_closed"
+        TEXT kind "closed set, for example user_message, presence"
         TEXT payload "JSON: references and figures only"
         INTEGER importance "1 to 10, or NULL"
     }
@@ -625,9 +524,8 @@ Examples:
 | `app_hour_closed` | The local day, the hour, the application name and its minutes |
 | `paused`, `resumed` | Nothing. No appraisal rule reads these two kinds (BR-04, UC-23-A4) |
 | `setting_changed`, `character_changed` | The setting name and value, or the version ID |
-| `session_opened`, `session_closed` | The session ID and figures |
 | `message_answered`, `message_passed_over` | The decision ID, and whether the user was at the desk |
-| `commitment_closed` | The commitment ID, and whether the user finished it or dropped it |
+| `activity_started`, `activity_ended` | The tool name, and the minutes on `activity_ended` (UC-27-A2) |
 | `adjustment_applied`, `adjustment_undone` | The adjustment ID |
 | `pattern_rejected` | The fingerprint and the evidence seqs. This is the tombstone (section 10.2) |
 | `reflection_deleted` | The entry ID and the source seqs. This is the tombstone (section 11.3) |
@@ -823,7 +721,7 @@ The domain does not write an entry again from the same set of events.
 ```mermaid
 erDiagram
     message_kinds {
-        TEXT id PK "remark, question, break, commitment, checkin, adjustment, proposal, greeting, return"
+        TEXT id PK "remark, question, break, adjustment, proposal, greeting, return"
         INTEGER enabled "0 or 1"
         TEXT reduced_since "FR-23"
         INTEGER streak_reset_seq FK "UC-24-A1"
@@ -832,7 +730,6 @@ erDiagram
         TEXT id PK "UUID"
         TEXT kind FK
         INTEGER trigger_seq FK "event that gave the reason"
-        TEXT session_id FK "open session, or NULL"
         TEXT decided_at
         TEXT outcome "sent, withheld, held, dropped"
         TEXT withheld_by "rule ID, for example BR-02"
@@ -849,7 +746,6 @@ erDiagram
     }
     message_kinds ||--o{ speech_decisions : "kind of"
     events |o--o{ speech_decisions : "triggered"
-    sessions |o--o{ speech_decisions : "during"
     messages |o--o| speech_decisions : "said"
     speech_decisions ||--o{ decision_factors : "explained by"
 ```
@@ -920,7 +816,6 @@ rows as the explanation.
 |---|---|
 | `break` | `observed_seconds`, `threshold_seconds`, `delayed_seconds` by typing, mood contribution, ceiling used and ceiling total |
 | `greeting` | Each item mentioned, as `ref_id`, in the order of UC-16 |
-| `commitment` | The commitment, as `ref_id`, and the mood contribution |
 | `adjustment` | The adjustment and its pattern, as references |
 
 **NFR-09.** The `SpeechGate` knows which factors each kind needs. It writes the
@@ -929,11 +824,11 @@ required factor is missing. The database cannot know the required set for each
 kind, so the gate holds that rule (ADR 0003 states the same split).
 
 **Unit and table.** `name` sets the unit of `value` and the table of `ref_id`. For example,
-`observed_seconds` is always seconds, and a `commitment` factor always refers to
-`commitments`. The domain holds this lookup for the closed set of names (D-20).
+`observed_seconds` is always seconds, and a `memory_item` factor always refers to
+`memory_items`. The domain holds this lookup for the closed set of names (D-20).
 
 **References without foreign keys.** `ref_id` can point to a row that the user later
-deletes, for example a closed commitment. The factor then keeps only an ID, with no text
+deletes, for example a deleted memory item. The factor then keeps only an ID, with no text
 (D-03). `event_seq` is a real foreign key, because events stay until the user erases them.
 
 ## 13. Settings
@@ -1004,7 +899,6 @@ measured". It is not user data and holds no user text. "Erase everything" sets i
 | The user removes | The application does this in one transaction |
 |---|---|
 | A memory item | Deletes the row, with its embedding. Its evidence links and reply links go by `ON DELETE CASCADE` |
-| A commitment | Deletes the row. Its reply links go by cascade |
 | A learned pattern | Undoes its adjustments, writes a `pattern_rejected` event, deletes the pattern |
 | A journal entry | Writes a `reflection_deleted` event with its source seqs, deletes the entry |
 | A past mood | Deletes the events behind it, which removes the changes by cascade. Then folds the event log again |
@@ -1019,8 +913,8 @@ If any step fails, the transaction rolls back. The item stays exactly as it was
 |---|---|---|
 | `character_versions`, `character_proposals` | Kept | Deleted |
 | `conversations`, `messages`, reply source tables | Deleted | Deleted |
-| `memory_items`, `memory_item_evidence`, `commitments` | Deleted | Deleted |
-| `sessions`, `session_intents`, `app_usage` | Deleted | Deleted |
+| `memory_items`, `memory_item_evidence` | Deleted | Deleted |
+| `app_usage` | Deleted | Deleted |
 | `events`, `emotion_changes` | Deleted | Deleted |
 | `patterns`, `self_adjustments` | Deleted | Deleted |
 | `journal_entries`, `journal_entry_sources` | Deleted | Deleted |
@@ -1049,20 +943,20 @@ erases each table group in its own transaction and reports each result.
 |---|---|
 | FR-01 to FR-05, UC-01 to UC-03 | `character_versions`, `settings` |
 | FR-06, C-05, NFR-02, UC-04 | `settings.awareness_on`, `app_usage`, `app_exclusions`, `events` of kind `foreground_app` |
-| FR-07, FR-10, FR-33, UC-05, UC-07 | `sessions`, `session_intents` |
 | FR-12, NFR-04, UC-15 | `settings.paused_at`, `settings.paused_until` |
 | FR-13, FR-14, UC-09 | `conversations`, `messages`, `memory_items`, reply source tables, the retrieval columns |
 | FR-15, UC-10 | `memory_items` of kind `noticed` |
 | FR-16, FR-23, FR-34, UC-24 | `patterns`, `pattern_evidence`, `self_adjustments`, `character_proposals`, `message_kinds` |
 | FR-17, UC-12 | All state tables, `emotion_changes`, `journal_entries` |
 | FR-18, FR-19, NFR-03, UC-13, UC-14 | Section 14 |
-| FR-20, FR-11, UC-16 | `speech_decisions` of kind `greeting`, `decision_factors` |
+| FR-20, UC-16 | `speech_decisions` of kind `greeting`, `decision_factors` |
 | FR-21, NFR-09, UC-17 | `speech_decisions`, `decision_factors`, `emotion_changes`, evidence tables |
 | FR-22, UC-18 | `settings`, `message_kinds` |
-| FR-24 | No table holds a time of day for a commitment, a list order or a completion status |
+| FR-24 | No table holds a task, a time of day for a reminder, a list order or a completion status |
 | FR-25 to FR-28, UC-20 | `settings` companion columns |
-| FR-29, UC-21 | `commitments`, `message_commitment_refs` |
 | FR-31, UC-22 | `speech_decisions`, `decision_factors`, `events` |
+| FR-38, FR-39, UC-26 | No table. The audio is never stored, and the text becomes a row of `messages` |
+| FR-40, FR-41, UC-27 | `events` of kind `activity_started` and `activity_ended`. The list of tool servers has no table yet (section 16) |
 | FR-32, BR-08, UC-23 | `events`, `emotion_changes`, temperament columns |
 | FR-35, UC-25 | `journal_entries`, `journal_entry_sources`, `reflection_deleted` events, `events.importance` |
 | NFR-07 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
@@ -1081,3 +975,6 @@ These items are outside this design, or need a decision before implementation.
 4. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
    gives the closed set of event kinds. The exact fields of each payload belong to the
    domain code.
+5. **Tool servers and the shorter history.** D-60 and D-57 in `ARCHITECTURE.md` need a list of the tool
+   servers that the user added, and a column for the shorter history of a conversation. Their tables come
+   with the code that uses them, through a new revision.

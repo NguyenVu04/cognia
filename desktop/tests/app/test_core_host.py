@@ -128,7 +128,7 @@ def send_turn(core: Core, facts=("Has a cat",)) -> None:
     choose_rin(core)
     core.bridge.send(SendMessage("I have a cat."))
     core.recorder.wait("askPrepare")
-    found = Interpretation(5, tuple(facts), ())
+    found = Interpretation(5, tuple(facts))
     core.bridge.send(TurnPrepared(Prepared(1, (), found, {})))
     core.recorder.wait("askReply")
 
@@ -217,11 +217,11 @@ def test_remove_records_event(core: Core, path: Path) -> None:
     send_turn(core)
     core.bridge.send(ReplyArrived("Noted: “Has a cat”."))
     # The first list comes at start, the second after the reply.
-    items, _ = core.recorder.wait("memoryShown", 2)
+    (items,) = core.recorder.wait("memoryShown", 2)
 
     core.bridge.send(RemoveEntry(items[0]))
 
-    assert core.recorder.wait("memoryShown", 3) == ([], [])
+    assert core.recorder.wait("memoryShown", 3) == ([],)
     assert ("memory_removed",) in rows(path, "SELECT kind FROM events")
 
 

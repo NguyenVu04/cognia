@@ -19,7 +19,6 @@ CALM_RADIUS = 0.25
 
 _ZERO = Pad(0.0, 0.0, 0.0)
 _IGNORED = Pad(-0.30, 0.0, 0.0)
-_COMMITMENT_FINISHED = Pad(0.30, 0.10, 0.05)
 
 _MESSAGE_APPRAISAL = {
     MessageClass.PRAISE: Pad(0.50, 0.20, 0.10),
@@ -33,8 +32,6 @@ _MESSAGE_APPRAISAL = {
 # have no row.
 _KIND_APPRAISAL = {
     EventKind.MESSAGE_ANSWERED: Pad(0.20, 0.10, 0.00),
-    EventKind.SESSION_OPENED: Pad(0.05, 0.10, 0.00),
-    EventKind.SESSION_CLOSED: Pad(0.20, 0.00, 0.05),
 }
 
 _TALK = (EventKind.USER_MESSAGE, EventKind.MESSAGE_ANSWERED)
@@ -87,8 +84,6 @@ def appraise(event: Event) -> Pad:
         return _MESSAGE_APPRAISAL.get(event.payload.get("class"), _ZERO)
     if _is_ignored(event):
         return _IGNORED
-    if event.kind == EventKind.COMMITMENT_CLOSED and event.payload.get("finished"):
-        return _COMMITMENT_FINISHED
     return _KIND_APPRAISAL.get(event.kind, _ZERO)
 
 

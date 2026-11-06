@@ -99,14 +99,6 @@ def test_appraise_passed_over_away() -> None:
     assert rules.appraise(event) == ZERO
 
 
-def test_appraise_commitment() -> None:
-    finished = _event(EventKind.COMMITMENT_CLOSED, {"finished": True})
-    dropped = _event(EventKind.COMMITMENT_CLOSED, {"finished": False})
-
-    assert rules.appraise(finished) == Pad(0.30, 0.10, 0.05)
-    assert rules.appraise(dropped) == ZERO
-
-
 def test_apply_praise_from_rest() -> None:
     state = rules.apply(_state(), PRAISE, TEMPERAMENT)
 
@@ -210,7 +202,7 @@ def test_feel_records_seq_and_time() -> None:
     at = MONDAY + timedelta(minutes=5)
 
     state = rules.feel(
-        _state(), _event(EventKind.SESSION_OPENED, at=at, seq=7), TEMPERAMENT
+        _state(), _event(EventKind.PRESENCE, at=at, seq=7), TEMPERAMENT
     )
 
     assert state.computed_to_seq == 7

@@ -27,16 +27,11 @@ class EventKind(StrEnum):
     CLOCK_GAP = "clock_gap"
     TIMER = "timer"
     WINDOW_OPENED = "window_opened"
-    SESSION_OPENED = "session_opened"
-    INTENT_CHANGED = "intent_changed"
-    SESSION_CLOSED = "session_closed"
     MESSAGE_SHOWN = "message_shown"
     MESSAGE_ANSWERED = "message_answered"
     MESSAGE_PASSED_OVER = "message_passed_over"
     MEMORY_STORED = "memory_stored"
     MEMORY_REMOVED = "memory_removed"
-    COMMITMENT_ADDED = "commitment_added"
-    COMMITMENT_CLOSED = "commitment_closed"
     PATTERN_FOUND = "pattern_found"
     ADJUSTMENT_APPLIED = "adjustment_applied"
     ADJUSTMENT_UNDONE = "adjustment_undone"
@@ -68,9 +63,8 @@ class Event:
 
     The payload keys the rules read: ``class`` on ``user_message``, a
     :class:`MessageClass` value; ``at_desk`` on ``message_answered`` and
-    ``message_passed_over``; ``finished`` on ``commitment_closed``;
-    ``version_id`` on ``character_changed``; ``name``, a column of the settings,
-    and ``value`` on ``setting_changed``.
+    ``message_passed_over``; ``version_id`` on ``character_changed``; ``name``,
+    a column of the settings, and ``value`` on ``setting_changed``.
 
     Raises ``ValueError`` for a value the stored event would refuse.
     """

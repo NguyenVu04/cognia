@@ -1,9 +1,9 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 import pytest
 from PySide6.QtWidgets import QLabel
 
-from src.domain.memory.models import TOLD, Commitment, MemoryItem
+from src.domain.memory.models import TOLD, MemoryItem
 from src.ui.views.memory import MemoryItemCard, MemoryView
 
 NOW = datetime(2026, 11, 5, 9, 0, tzinfo=timezone.utc)
@@ -16,18 +16,11 @@ def item(id: str, text: str) -> MemoryItem:
     )
 
 
-COMMITMENT = Commitment(
-    id="c1", text="Send chapter 3", due_on=date(2026, 11, 6), source_message_id=None,
-    importance=8, last_retrieved_at=None, recorded_at=NOW, embedding=None,
-)
-
-
 @pytest.fixture
 def view(qtbot) -> MemoryView:
     shown = MemoryView()
     qtbot.addWidget(shown)
-    shown.setEntries([item("i1", "Is writing a thesis"), item("i2", "Has a cat")],
-                     [COMMITMENT])
+    shown.setEntries([item("i1", "Is writing a thesis"), item("i2", "Has a cat")])
     return shown
 
 
@@ -41,26 +34,27 @@ def collect(signal) -> list:
     return caught
 
 
-def test_told_column_holds_items_and_commitments(view: MemoryView) -> None:
+def test_told_column_holds_items(view: MemoryView) -> None:
     told = cards(view._told)
 
-    assert len(told) == 3
+    assert len(told) == 2
     assert cards(view._noticed) == []
-    assert "(3 items)" in view.strip_text.text()
+    assert "(2 items)" in view.strip_text.text()
 
 
-def test_commitment_shows_due_day(view: MemoryView) -> None:
-    texts = [w.text() for w in cards(view._told)[2].findChildren(QLabel)]
+def test_card_shows_the_day_told(view: MemoryView) -> None:
+    texts = [w.text() for w in cards(view._told)[1].findChildren(QLabel)]
 
-    assert "5 Nov · due 6 Nov" in texts
+    assert "5 Nov" in texts
+    assert not any("due" in text for text in texts)
 
 
 def test_delete_emits_entry(view: MemoryView) -> None:
     caught = collect(view.removeRequested)
 
-    cards(view._told)[2].remove_button.click()
+    cards(view._told)[1].remove_button.click()
 
-    assert caught == [(COMMITMENT,)]
+    assert caught[0][0].id == "i2"
 
 
 def test_edit_emits_correction(view: MemoryView) -> None:

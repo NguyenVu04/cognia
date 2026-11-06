@@ -7,7 +7,7 @@ from src.ui.dialogs.erase_dialog import EraseDialog
 COUNTS = [
     GroupCount(Group.CONVERSATIONS, 12),
     GroupCount(Group.MEMORY, 3),
-    GroupCount(Group.SESSIONS, 0),
+    GroupCount(Group.DESK, 0),
 ]
 
 
@@ -26,9 +26,16 @@ def test_lists_groups_with_rows(dialog: EraseDialog) -> None:
     shown = " ".join(texts(dialog))
 
     assert "Messages in conversations" in shown
-    assert "Things you told me, and commitments" in shown
-    assert "Work sessions" not in shown
+    assert "Things you told me" in shown
+    assert "Time spent in each application" not in shown
     assert "This cannot be undone." in shown
+
+
+def test_names_the_desk_group(qtbot) -> None:
+    shown = EraseDialog(Level.MEMORY, [GroupCount(Group.DESK, 4)], "Rin")
+    qtbot.addWidget(shown)
+
+    assert "Time spent in each application" in " ".join(texts(shown))
 
 
 def test_erase_button_counts(dialog: EraseDialog) -> None:
@@ -47,7 +54,7 @@ def test_partial_report_offers_retry(dialog: EraseDialog, qtbot) -> None:
     shown = " ".join(texts(dialog))
 
     assert "Removed: messages in conversations." in shown
-    assert "Not removed: things you told me, and commitments." in shown
+    assert "Not removed: things you told me." in shown
     with qtbot.waitSignal(dialog.retryRequested):
         dialog.retry.click()
 

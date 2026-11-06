@@ -7,7 +7,7 @@ from src.domain.erasure.models import Group, Level
 _MEMORY = (
     Group.CONVERSATIONS,
     Group.MEMORY,
-    Group.SESSIONS,
+    Group.DESK,
     Group.LEARNING,
     Group.JOURNAL,
     Group.SPEECH,

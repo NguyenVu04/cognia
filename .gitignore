@@ -9,10 +9,6 @@ coverage*.xml
 
 # uv virtual environment
 desktop/.venv/
-desktop/training/.venv/
-
-# Adapters and GGUF files from training
-desktop/training/out/
 
 # Model files and llama-server builds, placed by hand (several GB, own licences)
 desktop/models/

@@ -299,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 5.5 &middot;
+    version 6.0 &middot;
     Approved
   </p>
 </header>
@@ -312,13 +312,13 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>5.5</td></tr>
+    <tr><th>Version</th><td>6.0</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
     <tr><th>Business sponsor</th><td>None. Cognia is a single-author project with no sponsor.</td></tr>
     <tr><th>Created</th><td>2026-08-14</td></tr>
-    <tr><th>Last updated</th><td>2026-11-03</td></tr>
+    <tr><th>Last updated</th><td>2026-11-06</td></tr>
     <tr><th>Next review</th><td>Not scheduled</td></tr>
     <tr><th>Classification</th><td>Public</td></tr>
     <tr><th>Distribution</th><td>Anyone. The repository is public and MIT-licensed.</td></tr>
@@ -405,6 +405,13 @@
       <td>The delivery order in section 10.2 no longer lists UC-02, which version 5.3 removed. No requirement, rule or flow is changed.</td>
       <td>Pending</td>
     </tr>
+    <tr>
+      <td>6.0</td>
+      <td>2026-11-06</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>Commitments and work sessions are removed: UC-05, UC-07, UC-21, FR-07, FR-08, FR-10, FR-11, FR-29, FR-33, BR-05 and A-03 are retired, and their numbers stay reserved. The break suggestion stays, and no longer depends on a session (FR-09, UC-22-A1). The greeting now mentions the latest thing the user told the companion and a new thought from its journal (UC-16, FR-20). While the user is away the companion waits on the screen and dozes, and it may say how long it waited when they are back; when the user is at the desk but quiet for a long time it may speak first, and it may ask questions to get to know them (UC-22). The user can talk to the companion and hear it answer, with its mouth moving, all on the machine (UC-26, FR-38, FR-39). In a reply the companion can use a fixed set of tools, and it says when it does not know instead of making up an answer (UC-27, FR-40, BR-06). The user can add tool servers of their own, none by default (FR-41), so NFR-01, G-05 and C-03 now measure what Cognia itself sends. The companion may open a page or a search the user asked for in their own browser (section 5, FR-24). The microphone and one key combination for talking join what the system may use (C-05, NFR-02). The session timer becomes the desk timer. Reason: the companion is someone to talk to, not a work tracker, and commitments and sessions pulled it towards the task manager that section 5 excludes.</td>
+      <td>Pending</td>
+    </tr>
   </tbody>
 </table>
 </div>
@@ -441,9 +448,10 @@ it does.</p>
 
 <p>Cognia is a character that sits at your desk with you &mdash; on the screen, where
 you can see it, rather than behind a tray icon. You choose one of four ready-made
-characters, each with a name, a role and a temperament. From then on it is not
+characters, each with a name, a role and a temperament. You can type to it or talk
+to it, and it can answer aloud. From then on it is not
 waiting for you. It notices how long you have been at the machine and what kind of
-application you are in, remembers what you said you have to finish, and decides for
+application you are in, remembers what you have told it, and decides for
 itself when it has something worth saying &mdash; a remark, a question, a suggestion
 that you stop for a while &mdash; waiting until you stop typing before it says it. It
 has moods, which come from what has actually happened between the two of you: it is
@@ -467,15 +475,15 @@ practice. The use cases each step relies on are given in brackets.</p>
 <p><b>A late night on the thesis.</b> It is 23:40 and the person at the desk has been
 at the machine for almost three hours, nearly all of it in the text editor. Their
 companion &mdash; Shiori, the quiet observer they chose &mdash; has noticed,
-and waits until they stop typing before saying anything: the chapter they said was
-going to their supervisor on Friday, and would they like to stop for ten minutes
-(UC-22, UC-21). They ignore it. They do not open the application for the next two
+and waits until they stop typing before saying anything: almost three hours at the
+machine, and would they like to stop for ten minutes and stretch with it (UC-22).
+They ignore it. They do not open the application for the next two
 days, and when they do, the companion is a little quieter than usual and says
 plainly that it has missed talking to them, without complaining about it (UC-16,
 UC-23). They ask why it seems low, and it shows them: three days since they last
 spoke, two messages left unanswered (UC-17). On Friday they tell it the chapter has
 gone. It is pleased, says so in its own dry way, and that evening writes about it in
-its journal (UC-21, UC-23, UC-25).</p>
+its journal (UC-09, UC-23, UC-25).</p>
 
 <p><b>Weeks of learning.</b> A freelancer has had their companion for a month. It
 has noticed that their mornings go to the design tool and their afternoons to mail
@@ -506,11 +514,11 @@ finds interesting (UC-25).</p>
     </tr>
     <tr>
       <td><b>Agency</b></td>
-      <td>It decides for itself when to speak, what to bring up, and how to adjust its own behaviour. It tells you what it decided, and you can undo it.</td>
+      <td>It decides for itself when to speak, what to bring up, and how to adjust its own behaviour. It tells you what it decided, and you can undo it. In a conversation it can also do small things with you, such as a breathing exercise or opening a page you asked for.</td>
     </tr>
     <tr>
       <td><b>Continuity</b></td>
-      <td>It remembers what you said, the sessions you have shared, what you said you have to do, and what it has learned of how you work; and it remembers its own reflections. It is not a note-taking service and not a task list.</td>
+      <td>It remembers what you said and what it has learned of how you work, and it remembers its own reflections. It is not a note-taking service and not a task list.</td>
     </tr>
   </tbody>
 </table>
@@ -550,7 +558,7 @@ does, what this project takes from it, and where this project departs from it.</
     <tr>
       <td>Open-source desktop companions &mdash; AIRI, Open-LLM-VTuber and similar</td>
       <td>They solve drawing a character on the desktop, often with voice and local models, but they have no model of emotion that persists, no rule about when to speak, and no account of why they spoke</td>
-      <td>Takes the desktop character and the local model. Departs with a persistent emotion model (UC-23, ADR 0004) and an explanation for every proactive message and every feeling (UC-17, NFR-09)</td>
+      <td>Takes the desktop character, the local model, speech in and out on the machine (UC-26), and tools in a reply, with tool servers in the Model Context Protocol (UC-27, FR-41). Departs with a persistent emotion model (UC-23, ADR 0004) and an explanation for every proactive message and every feeling (UC-17, NFR-09)</td>
     </tr>
     <tr>
       <td>Generative Agents &mdash; Park et al., UIST 2023</td>
@@ -565,7 +573,7 @@ does, what this project takes from it, and where this project departs from it.</
     <tr>
       <td>Human body doubling &mdash; Focusmate and similar</td>
       <td>Say what you will do, work in silence, report back &mdash; with a stranger on video at a booked time</td>
-      <td>Takes the shape of the work session (UC-05, UC-07), now one shared activity among several rather than the core of the project</td>
+      <td>Took the shape of the work session until version 6.0, which removed it with UC-05 and UC-07. Nothing is taken now; the row records where the idea came from</td>
     </tr>
   </tbody>
 </table>
@@ -613,9 +621,9 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>G-05</td>
-      <td>Nothing leaves the machine</td>
+      <td>Nothing leaves the machine through Cognia</td>
       <td>The companion now reads which application is in use and records its own feelings about the user. That is only acceptable if none of it goes anywhere</td>
-      <td>Network capture across a full week of ordinary use</td>
+      <td>Network capture of Cognia&rsquo;s own processes across a full week of ordinary use, with no tool server added by the user (FR-41)</td>
       <td>Zero outbound connections</td>
     </tr>
     <tr>
@@ -651,7 +659,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>Task lists, reminders the user schedules, and tracking whether tasks were completed</td>
-      <td><b>Deliberately never.</b> Todoist and Outlook own this category. <b>Narrowed in version 4.0 and again in 5.0:</b> the companion may remember a commitment the user mentions in conversation and bring it up, or suggest a break, at a moment it chooses itself (UC-21, UC-22, FR-29, FR-31). What stays excluded is everything that makes that a task manager &mdash; a list screen, priorities, due-time alerts, repetition the user schedules, completion rates, and anything that counts what was or was not done</td>
+      <td><b>Deliberately never.</b> Todoist and Outlook own this category. <b>Narrowed in version 5.0:</b> the companion may suggest a break at a moment it chooses itself (UC-22, FR-31). Version 4.0 let it carry a commitment the user mentioned; version 6.0 removed that again (UC-21). What stays excluded is everything that makes that a task manager &mdash; a list screen, priorities, due-time alerts, repetition the user schedules, completion rates, and anything that counts what was or was not done</td>
       <td>Todoist, Outlook, and every other task manager</td>
     </tr>
     <tr>
@@ -661,7 +669,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>Acting on the user&rsquo;s behalf &mdash; sending mail, editing files</td>
-      <td><b>Deliberately never.</b> The companion&rsquo;s agency is over its own behaviour, not over the user&rsquo;s machine. A companion is not an agent running errands</td>
+      <td><b>Deliberately never.</b> The companion&rsquo;s agency is over its own behaviour, not over the user&rsquo;s machine. A companion is not an agent running errands. <b>Narrowed in version 6.0:</b> when the user asks in a conversation, the companion may open a page or a search in the user&rsquo;s own browser (FR-40). It does not read the page, and it does nothing else there</td>
       <td>Nobody</td>
     </tr>
     <tr>
@@ -691,7 +699,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>Long-arc &ldquo;remember it for you&rdquo; tracking</td>
-      <td><b>Deliberately never.</b> Considered and dropped. Memory serves continuity of the relationship, not record-keeping. A commitment (UC-21) is held only until the user says it is done or dropped, and is then removed rather than kept as history. The companion&rsquo;s journal (UC-25) holds what it thought, not a log of what the user did</td>
+      <td><b>Deliberately never.</b> Considered and dropped. Memory serves continuity of the relationship, not record-keeping. The companion&rsquo;s journal (UC-25) holds what it thought, not a log of what the user did</td>
       <td>Nobody</td>
     </tr>
     <tr>
@@ -760,9 +768,9 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>1 per installation</td>
     </tr>
     <tr>
-      <td>Session timer</td>
+      <td>Desk timer</td>
       <td>Scheduled job</td>
-      <td>Counts continuous time at the machine and raises time-based events &mdash; a threshold passed, a day turned over &mdash; to the companion. It holds no content, only elapsed time</td>
+      <td>Counts continuous time at the machine, the time since the user last talked to the companion, and the length of an absence, and raises time-based events &mdash; a threshold passed, a day turned over &mdash; to the companion. It holds no content, only elapsed time. Called the session timer before version 6.0</td>
       <td>1 per installation</td>
     </tr>
     <tr>
@@ -774,8 +782,20 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     <tr>
       <td>AI model</td>
       <td>System</td>
-      <td>Generates the companion&rsquo;s words, interprets what the user said as events for the emotion model, and writes the companion&rsquo;s reflections. It never sets a feeling directly (BR-08). Ships with the application and runs on the user&rsquo;s machine, with no separate installation (NFR-14)</td>
+      <td>Generates the companion&rsquo;s words, interprets what the user said as events for the emotion model, calls the tools of FR-40, and writes the companion&rsquo;s reflections. It never sets a feeling directly (BR-08). Ships with the application and runs on the user&rsquo;s machine, with no separate installation (NFR-14)</td>
       <td>1</td>
+    </tr>
+    <tr>
+      <td>Speech engines</td>
+      <td>System</td>
+      <td>Turn what the user says into text, and the companion&rsquo;s words into its voice (UC-26). Both ship with the application, run on the user&rsquo;s machine, and keep no sound</td>
+      <td>1 of each</td>
+    </tr>
+    <tr>
+      <td>Tool server</td>
+      <td>System</td>
+      <td>A program that the user adds to give the companion more tools, through the Model Context Protocol (FR-41). It runs outside Cognia, none is present until the user adds one, and it may send what it receives off the machine</td>
+      <td>0 or more</td>
     </tr>
   </tbody>
 </table>
@@ -807,10 +827,10 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>A-03</td>
-      <td>The user is willing to answer one question at the start of a session and one at the end</td>
-      <td>Sessions are not used, and UC-24 has less to learn from. The rest of the companion is unaffected, because since version 5.0 the session is one shared activity rather than the core interaction</td>
-      <td>Users, by trial use</td>
-      <td>Pending</td>
+      <td>Removed in version 6.0 with work sessions.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>A-04</td>
@@ -859,7 +879,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>C-03</td>
-      <td>All data stays on the user&rsquo;s disk</td>
+      <td>All data stays on the user&rsquo;s disk. The one exception is what the user chooses to send to a tool server they added themselves (FR-41)</td>
       <td>Legal, technical</td>
       <td>The privacy commitment in NFR-01 to NFR-03</td>
     </tr>
@@ -871,9 +891,9 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>C-05</td>
-      <td>Only the four facts about the user listed against the Windows actor may be read from the operating system. The fourth, the name of the application in the foreground, is kept as minutes per application per hour of the day and, for each change of application, as an entry in the event log with its exact time, so that a decision that uses it can be replayed (NFR-13). The user may exclude any application from both (UC-04). Screen layout may be read as well, because drawing the companion is impossible without it and it describes the machine rather than the person. Window titles, window contents and window positions remain forbidden</td>
+      <td>Only the four facts about the user listed against the Windows actor may be read from the operating system. The fourth, the name of the application in the foreground, is kept as minutes per application per hour of the day and, for each change of application, as an entry in the event log with its exact time, so that a decision that uses it can be replayed (NFR-13). The user may exclude any application from both (UC-04). Screen layout may be read as well, because drawing the companion is impossible without it and it describes the machine rather than the person. Window titles, window contents and window positions remain forbidden. Two inputs are not facts about the user and are allowed: the microphone, open only while the user talks to the companion (FR-38), with what it hears kept in memory only until it becomes text; and one key combination for talking that the user can change, received as a single signal, so that no other key is read</td>
       <td>Technical</td>
-      <td>Privacy commitment, widened from three facts to four in version 5.0, and its stored form widened in version 5.2; see UC-04 and NFR-02</td>
+      <td>Privacy commitment, widened from three facts to four in version 5.0, and its stored form widened in version 5.2; the microphone and the key for talking added in version 6.0; see UC-04, UC-26 and NFR-02</td>
     </tr>
     <tr>
       <td>C-06</td>
@@ -929,7 +949,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>Developer</td>
       <td>UC-01</td>
     </tr>
-    <tr><td colspan="5"><b>Sessions and presence</b></td></tr>
+    <tr><td colspan="5"><b>Presence</b></td></tr>
     <tr>
       <td>FR-06</td>
       <td>The system must let the user switch desk awareness on and off, having first stated plainly what it reads and what it does not, and let the user exclude any application from being counted (C-05).</td>
@@ -939,17 +959,17 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-07</td>
-      <td>The system must let the user open a work session by declaring an intent in one line.</td>
-      <td>Must</td>
-      <td>User</td>
-      <td>UC-05</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-08</td>
-      <td>The system must send nothing during a session except a suggestion to take a break, and the check-ins the user asked for on opening it (BR-05).</td>
-      <td>Must</td>
-      <td>User</td>
-      <td>UC-05, UC-22</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-09</td>
@@ -960,17 +980,17 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-10</td>
-      <td>The system must let the user close a session with a single question, and record what the session was.</td>
-      <td>Must</td>
-      <td>User</td>
-      <td>UC-07</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-11</td>
-      <td>The system must show a returning user what they were in the middle of.</td>
-      <td>Should</td>
-      <td>User</td>
-      <td>UC-16</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-12</td>
@@ -982,7 +1002,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     <tr><td colspan="5"><b>Conversation and continuity</b></td></tr>
     <tr>
       <td>FR-13</td>
-      <td>The system must hold a conversation in character, keeping the thread of what was said in earlier sessions.</td>
+      <td>The system must hold a conversation in character, keeping the thread of what was said in earlier conversations.</td>
       <td>Must</td>
       <td>User</td>
       <td>UC-09</td>
@@ -1031,15 +1051,15 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-29</td>
-      <td>The system must remember a commitment the user mentions in conversation &mdash; something they say they have to do, with a day if they gave one &mdash; and show back the exact line it stored. It may bring the commitment up at the first opening of the day, at the start of a session and at its close, and at other moments the companion chooses itself (FR-31), never at a stated time, and must drop it as soon as the user says it is done or no longer wanted.</td>
-      <td>Must</td>
-      <td>User</td>
-      <td>UC-21, UC-22</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr><td colspan="5"><b>Greeting, explanation and control</b></td></tr>
     <tr>
       <td>FR-20</td>
-      <td>The system must greet the user in character, in its current mood, at the first opening of the day and on return after an absence, stating what they have on as context rather than as an alarm, chosen in the fixed order given in UC-16 and never more than two items.</td>
+      <td>The system must greet the user in character, in its current mood, at the first opening of the day and on return after an absence. It may mention at most two items, as context and in the fixed order given in UC-16: the latest thing the user told it on the last day they talked, and a thought from its journal written since the last opening. On return it may also say how long the user was away, unless that time cannot be trusted.</td>
       <td>Should</td>
       <td>User</td>
       <td>UC-16</td>
@@ -1067,7 +1087,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-24</td>
-      <td>The system will not keep task lists, repeat reminders the user schedules, fire alarms at a stated time, track whether tasks were completed, or act on the user&rsquo;s behalf. Remembering a commitment the user mentioned, and bringing it up at a moment the user opened or the companion chose (FR-29, FR-31), is not a reminder in this sense. Recorded here so the question is not re-asked; see section 5.</td>
+      <td>The system will not keep task lists, repeat reminders the user schedules, fire alarms at a stated time, track whether tasks were completed, or act on the user&rsquo;s behalf. Opening a page or a search that the user asked for in their own browser (FR-40) is not acting on their behalf in this sense. Recorded here so the question is not re-asked; see section 5.</td>
       <td>Won&rsquo;t</td>
       <td>Developer</td>
       <td>&mdash;</td>
@@ -1104,7 +1124,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     <tr><td colspan="5"><b>Emotion, initiative and learning</b></td></tr>
     <tr>
       <td>FR-31</td>
-      <td>The companion must start conversations on its own initiative &mdash; a remark, a question, a suggestion to take a break, a commitment brought up &mdash; at moments it chooses, within BR-01 to BR-07.</td>
+      <td>The companion must start conversations on its own initiative &mdash; a remark, a question, including questions to get to know the user, or a suggestion to take a break &mdash; at moments it chooses, within BR-01 to BR-07.</td>
       <td>Must</td>
       <td>Developer</td>
       <td>UC-22</td>
@@ -1118,14 +1138,14 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     </tr>
     <tr>
       <td>FR-33</td>
-      <td>The system must let the user ask for check-ins when opening a session.</td>
-      <td>Should</td>
-      <td>User</td>
-      <td>UC-05</td>
+      <td>Removed in version 6.0.</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
     <tr>
       <td>FR-34</td>
-      <td>The system must learn patterns in how the user works from sessions, presence, application totals and responses to its messages, each with the evidence for it, and use them at once. Every pattern appears in UC-12 and can be marked wrong.</td>
+      <td>The system must learn patterns in how the user works from presence, application totals and responses to its messages, each with the evidence for it, and use them at once. Every pattern appears in UC-12 and can be marked wrong.</td>
       <td>Must</td>
       <td>Developer</td>
       <td>UC-24</td>
@@ -1151,6 +1171,35 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
       <td>User</td>
       <td>UC-16</td>
     </tr>
+    <tr><td colspan="5"><b>Voice and tools</b></td></tr>
+    <tr>
+      <td>FR-38</td>
+      <td>The system must let the user speak a message instead of typing it &mdash; with a key combination, with a button beside the companion, or with a button in the message box. The words appear in the message box to be checked before they are sent, and no sound is kept.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-26</td>
+    </tr>
+    <tr>
+      <td>FR-39</td>
+      <td>The system must be able to say the companion&rsquo;s replies aloud, in a voice that belongs to the character and carries its mood, with its mouth moving as it speaks, and must let the user switch this on and off.</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-26</td>
+    </tr>
+    <tr>
+      <td>FR-40</td>
+      <td>The companion must be able to use a fixed set of tools in a reply: arithmetic, dates, units, the meaning of an English word, the user&rsquo;s own time at the machine and application totals, the reasons for its feelings, what it remembers of the user, earlier conversations, its own journal, a page or a search opened in the user&rsquo;s browser, and a breathing or stretching exercise done together. When a tool finds nothing, the companion says so instead of making up an answer (BR-06).</td>
+      <td>Should</td>
+      <td>User</td>
+      <td>UC-27</td>
+    </tr>
+    <tr>
+      <td>FR-41</td>
+      <td>The system must let the user add tool servers of their own, through the Model Context Protocol. None is present by default. Before the first use of a server, the system states that the server may send what it receives off the machine; every server added is listed and can be removed.</td>
+      <td>Could</td>
+      <td>User</td>
+      <td>UC-27</td>
+    </tr>
   </tbody>
 </table>
 </div>
@@ -1169,8 +1218,8 @@ that nags. A character cannot override them (FR-04).</p>
   <tbody>
     <tr>
       <td>BR-01</td>
-      <td><b>Speak with judgement.</b> The companion decides for itself when it has something worth saying &mdash; a remark, a question, a suggestion, a commitment brought up &mdash; and how often, guided by its mood and by what it has learned (BR-08, UC-24). There is no daily count by default. If the user sets a daily ceiling, or switches a kind of message off (UC-18), the companion keeps to it.</td>
-      <td>UC-16, UC-21, UC-22, UC-24</td>
+      <td><b>Speak with judgement.</b> The companion decides for itself when it has something worth saying &mdash; a remark, a question, a suggestion &mdash; and how often, guided by its mood and by what it has learned (BR-08, UC-24). There is no daily count by default. If the user sets a daily ceiling, or switches a kind of message off (UC-18), the companion keeps to it.</td>
+      <td>UC-16, UC-22, UC-24</td>
       <td>Version 1.0, Law 1; the default allowance removed in version 5.0</td>
     </tr>
     <tr>
@@ -1193,25 +1242,25 @@ that nags. A character cannot override them (FR-04).</p>
     </tr>
     <tr>
       <td>BR-05</td>
-      <td><b>Sessions are quiet unless asked.</b> While a session is open nothing is sent except a suggestion to take a break (UC-22), unless the user asked for check-ins when opening it (UC-05-A4). Then the companion checks in as often as its mood and the length of the session suggest, still waiting for a pause (BR-03). Ambient motion is not a message (BR-07).</td>
-      <td>UC-05, UC-07, UC-22</td>
-      <td>New in version 2.0; check-ins added in version 5.0</td>
+      <td>Removed in version 6.0 with work sessions.</td>
+      <td>&mdash;</td>
+      <td>New in version 2.0; check-ins added in version 5.0; removed in version 6.0</td>
     </tr>
     <tr>
       <td>BR-06</td>
-      <td><b>Honest wording.</b> The companion says &ldquo;at the machine for 90 minutes&rdquo;, never &ldquo;working for 90 minutes&rdquo;. It states only what it actually observed; with no evidence, it says nothing. The same holds for its own feelings: it names the events they came from, never ones it made up.</td>
+      <td><b>Honest wording.</b> The companion says &ldquo;at the machine for 90 minutes&rdquo;, never &ldquo;working for 90 minutes&rdquo;. It states only what it actually observed; with no evidence, it says nothing. The same holds for its own feelings: it names the events they came from, never ones it made up. When it does not know something, or a tool finds nothing, it says so, and never fills the gap with a guess stated as a fact.</td>
       <td>Every use case</td>
-      <td>Version 1.0, promoted from a note to a rule in version 2.0</td>
+      <td>Version 1.0, promoted from a note to a rule in version 2.0; not knowing added in version 6.0</td>
     </tr>
     <tr>
       <td>BR-07</td>
-      <td><b>Addressed motion is a form of speech.</b> Ambient motion &mdash; breathing, blinking, a shift of posture, the expression of its current mood &mdash; is addressed to nobody and may happen at any time, including while the user types and during a session. It never takes the keyboard focus and never moves the companion from where it was put. Any movement directed at the user &mdash; turning towards them, gesturing, a speech bubble &mdash; is governed by BR-01 to BR-06 exactly as a spoken message is.</td>
+      <td><b>Addressed motion is a form of speech.</b> Ambient motion &mdash; breathing, blinking, a shift of posture, the expression of its current mood, sitting down to wait or dozing while the user is away &mdash; is addressed to nobody and may happen at any time, including while the user types. It never takes the keyboard focus and never moves the companion from where it was put. Any movement directed at the user &mdash; turning towards them, gesturing, a speech bubble &mdash; is governed by BR-01 to BR-06 exactly as a spoken message is. Its mouth moving while it says a reply aloud, and a gesture that goes with a reply, belong to a reply the user asked for and are not proactive.</td>
       <td>Every proactive use case, UC-20, UC-23</td>
-      <td>New in version 3.0; ambient motion separated out in version 5.0</td>
+      <td>New in version 3.0; ambient motion separated out in version 5.0; waiting, dozing and speaking aloud added in version 6.0</td>
     </tr>
     <tr>
       <td>BR-08</td>
-      <td><b>Feelings come from what happened.</b> The companion has an emotion state: a point in pleasure, arousal and dominance (PAD), shown as a named feeling. It changes only by appraisal of recorded events &mdash; what the user said, as interpreted by the AI model; sessions; presence and absence; messages answered or ignored; the time of day &mdash; under rules set by the character&rsquo;s temperament, and drifts back to the temperament&rsquo;s resting mood over time. Sadness at being ignored accumulates but has a floor, and talking again restores most of it. The model never sets a feeling directly. Every feeling can be explained (UC-17); its mood changes what the companion does as well as how it sounds; the user can switch moods off (UC-18); and no feeling overrides NFR-12.</td>
+      <td><b>Feelings come from what happened.</b> The companion has an emotion state: a point in pleasure, arousal and dominance (PAD), shown as a named feeling. It changes only by appraisal of recorded events &mdash; what the user said, as interpreted by the AI model; things done together (UC-27); presence and absence; messages answered or ignored; the time of day &mdash; under rules set by the character&rsquo;s temperament, and drifts back to the temperament&rsquo;s resting mood over time. Sadness at being ignored accumulates but has a floor, and talking again restores most of it. The model never sets a feeling directly. Every feeling can be explained (UC-17); its mood changes what the companion does as well as how it sounds; the user can switch moods off (UC-18); and no feeling overrides NFR-12.</td>
       <td>UC-09, UC-16, UC-20, UC-22, UC-23, UC-25</td>
       <td>New in version 5.0</td>
     </tr>
@@ -1230,21 +1279,21 @@ that nags. A character cannot override them (FR-04).</p>
     <tr>
       <td>NFR-01</td>
       <td>Privacy</td>
-      <td>All data stays on the user&rsquo;s machine. There is no account and no usage reporting</td>
-      <td>Zero outbound network connections, across a full week of ordinary use</td>
+      <td>All data stays on the user&rsquo;s machine. There is no account and no usage reporting. Cognia itself makes no outbound connection; a tool server the user adds (FR-41) is the user&rsquo;s own, and a page the user asks to open goes to their own browser (FR-40)</td>
+      <td>Zero outbound network connections from Cognia&rsquo;s own processes, across a full week of ordinary use with no tool server added</td>
       <td>Network capture over a trial week</td>
     </tr>
     <tr>
       <td>NFR-02</td>
       <td>Privacy</td>
-      <td>The application never records keystrokes, screenshots or the clipboard, never reads browsing history, and never reads window titles, window contents or window positions. The one thing it reads about other applications is the name of the one in the foreground, kept as minutes per application per hour of the day and as changes in the event log</td>
-      <td>Zero calls to any operating system interface that would supply the forbidden items; no stored field about applications except its name, the minutes per hour, and the time of each change</td>
+      <td>The application never records keystrokes, screenshots or the clipboard, never reads browsing history, and never reads window titles, window contents or window positions. The one thing it reads about other applications is the name of the one in the foreground, kept as minutes per application per hour of the day and as changes in the event log. It opens the microphone only while the user talks to the companion, keeps no sound, and receives one key combination for talking instead of reading keys (C-05)</td>
+      <td>Zero calls to any operating system interface that would supply the forbidden items; no stored field about applications except its name, the minutes per hour, and the time of each change; no stored sound</td>
       <td>Code review plus an audit of system calls, each release</td>
     </tr>
     <tr>
       <td>NFR-03</td>
       <td>Data handling</td>
-      <td>Personal data held: what the user says about themselves, including the commitments they mention until each is closed (UC-21); session records (intent, start, end, time at the machine, closing answer); observations and learned patterns the companion derived, each with the evidence behind it (UC-24); minutes per application per hour of the day, and each change of foreground application with its time; the companion&rsquo;s emotion state and its history, and its journal (UC-23, UC-25); the character, its temperament and its earlier versions</td>
+      <td>Personal data held: what the user says about themselves, typed or spoken, kept as text only (UC-26); observations and learned patterns the companion derived, each with the evidence behind it (UC-24); minutes per application per hour of the day, and each change of foreground application with its time; the companion&rsquo;s emotion state and its history, and its journal (UC-23, UC-25); the character, its temperament and its earlier versions</td>
       <td>Kept on the user&rsquo;s disk until the user deletes it, with no second copy anywhere. Visible only to the person at that machine. Every category above is listed in UC-12 and removable through UC-13 and UC-14</td>
       <td>Walk every category through UC-12, UC-13 and UC-14; inspect the disk afterwards</td>
     </tr>
@@ -1273,14 +1322,14 @@ that nags. A character cannot override them (FR-04).</p>
       <td>NFR-07</td>
       <td>Reliability</td>
       <td>An abrupt shutdown loses nothing that was already recorded</td>
-      <td>Zero loss of memory items or closed sessions across 20 forced power-offs</td>
+      <td>Zero loss of memory items, messages or journal entries across 20 forced power-offs</td>
       <td>Repeated power-off test</td>
     </tr>
     <tr>
       <td>NFR-08</td>
       <td>Reliability</td>
       <td>If the AI model fails, the parts that do not need it keep working</td>
-      <td>Session timing, break suggestions, the memory list, pausing and the emotion state all remain fully usable with the model stopped; events that need the model to interpret them are simply not raised</td>
+      <td>Time at the machine, break suggestions, the memory list, pausing and the emotion state all remain fully usable with the model stopped; events that need the model to interpret them are simply not raised</td>
       <td>Test with the model deliberately disabled</td>
     </tr>
     <tr>
@@ -1358,18 +1407,16 @@ that nags. A character cannot override them (FR-04).</p>
     <tr><td><a href="#uc-04">UC-04</a></td><td>Turn on desk awareness</td><td>User</td><td>Must</td><td>FR-06, NFR-02</td></tr>
     <tr><td colspan="5"><b>Emotion, initiative and learning</b></td></tr>
     <tr><td><a href="#uc-23">UC-23</a></td><td>The companion feels</td><td>Companion</td><td>Must</td><td>FR-27, FR-32, NFR-13</td></tr>
-    <tr><td><a href="#uc-22">UC-22</a></td><td>Companion starts a conversation</td><td>Companion</td><td>Must</td><td>FR-08, FR-09, FR-29, FR-31, NFR-09</td></tr>
+    <tr><td><a href="#uc-22">UC-22</a></td><td>Companion starts a conversation</td><td>Companion</td><td>Must</td><td>FR-09, FR-31, NFR-09</td></tr>
     <tr><td><a href="#uc-24">UC-24</a></td><td>Companion learns how the user works</td><td>Companion</td><td>Must</td><td>FR-16, FR-23, FR-34, NFR-03</td></tr>
     <tr><td><a href="#uc-25">UC-25</a></td><td>Companion reflects and keeps its own journal</td><td>Companion</td><td>Should</td><td>FR-35, NFR-03</td></tr>
     <tr><td colspan="5"><b>Talking</b></td></tr>
     <tr><td><a href="#uc-09">UC-09</a></td><td>Talk to the companion</td><td>User</td><td>Must</td><td>FR-13, FR-14, NFR-05, NFR-08, NFR-12</td></tr>
     <tr><td><a href="#uc-10">UC-10</a></td><td>Adjust how the companion talks</td><td>User</td><td>Should</td><td>FR-15</td></tr>
-    <tr><td colspan="5"><b>Arrival and commitments</b></td></tr>
-    <tr><td><a href="#uc-16">UC-16</a></td><td>Greet the user on arrival</td><td>Companion</td><td>Should</td><td>FR-11, FR-20, FR-29</td></tr>
-    <tr><td><a href="#uc-21">UC-21</a></td><td>Mention what the user is carrying</td><td>Companion</td><td>Must</td><td>FR-29, NFR-03, NFR-08</td></tr>
-    <tr><td colspan="5"><b>Shared work</b></td></tr>
-    <tr><td><a href="#uc-05">UC-05</a></td><td>Start a work session</td><td>User</td><td>Should</td><td>FR-07, FR-08, FR-29, FR-33</td></tr>
-    <tr><td><a href="#uc-07">UC-07</a></td><td>Close a work session</td><td>User</td><td>Should</td><td>FR-10, FR-29, NFR-07</td></tr>
+    <tr><td><a href="#uc-26">UC-26</a></td><td>Talk to the companion by voice</td><td>User</td><td>Should</td><td>FR-38, FR-39, C-05</td></tr>
+    <tr><td><a href="#uc-27">UC-27</a></td><td>The companion uses a tool in a reply</td><td>User</td><td>Should</td><td>FR-40, FR-41, NFR-01</td></tr>
+    <tr><td colspan="5"><b>Arrival</b></td></tr>
+    <tr><td><a href="#uc-16">UC-16</a></td><td>Greet the user on arrival</td><td>Companion</td><td>Should</td><td>FR-20</td></tr>
     <tr><td colspan="5"><b>Memory and control</b></td></tr>
     <tr><td><a href="#uc-12">UC-12</a></td><td>Review what the companion remembers</td><td>User</td><td>Must</td><td>FR-17, NFR-03</td></tr>
     <tr><td><a href="#uc-13">UC-13</a></td><td>Correct or remove a remembered item</td><td>User</td><td>Must</td><td>FR-18, NFR-03</td></tr>
@@ -1394,13 +1441,13 @@ that nags. A character cannot override them (FR-04).</p>
   <tbody>
     <tr>
       <td><b>1</b></td>
-      <td>UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 21, 23, 25</td>
-      <td>A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its current mood, mentions what they said they were carrying, can explain how it feels, and keeps its own journal. No presence on the desktop yet</td>
+      <td>UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 23, 25, 27</td>
+      <td>A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its current mood, mentions the latest thing they told it, can explain how it feels, uses tools in a reply, and keeps its own journal. No presence on the desktop yet</td>
     </tr>
     <tr>
       <td><b>2</b></td>
-      <td>UC-04, 05, 07, 15, 20, 22, 24</td>
-      <td>Desk awareness, the companion on the screen, its own initiative, shared work sessions, and learning how the user works. This is the phase in which it stops waiting to be spoken to</td>
+      <td>UC-04, 15, 20, 22, 24, 26</td>
+      <td>Desk awareness, the companion on the screen, its voice, its own initiative, and learning how the user works. This is the phase in which it stops waiting to be spoken to</td>
     </tr>
   </tbody>
 </table>
@@ -1673,7 +1720,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Postconditions</h4>
   <ul>
-    <li><b>On success:</b> desk awareness is on, and the use cases that depend on it (UC-05, UC-07, UC-22 and UC-24) become available.</li>
+    <li><b>On success:</b> desk awareness is on, and the use cases that depend on it (UC-22 and UC-24) become available.</li>
     <li><b>On failure:</b> desk awareness stays off, no activity information is read, and conversation is unaffected.</li>
   </ul>
 
@@ -1690,7 +1737,6 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     end
     subgraph A2["UC-04-A2 — Switching it off again later"]
       A2a["User switches it off"]:::alt --> A2b["System stops reading at once and says what stopped"]:::alt
-      A2b --> A2c["Any open session is closed as it stands (UC-07)"]:::alt
     end
     subgraph A3["UC-04-A3 — Excluding an application"]
       A3a["User picks or names the application"]:::alt --> A3b["System stops counting it and deletes its totals"]:::alt
@@ -1735,7 +1781,6 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <ol>
       <li>The user switches it off.</li>
       <li>The system stops reading activity immediately and says what has stopped.</li>
-      <li>Any open session is closed as it stands (UC-07).</li>
     </ol>
   </div>
 
@@ -1765,312 +1810,18 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Changed in version 5.0.</b> The name of the application in the foreground becomes the fourth fact, so that the companion can learn how the user works (UC-24). Only daily totals by hour are kept. A window title stays forbidden, because it carries document names, mail subjects and page titles (section 5).</li>
     <li><b>Changed in version 5.2.</b> Each change of the application in the foreground is also kept in the event log with its exact time, because UC-22 decides from it and a replay needs every input to a decision (NFR-13). The name is still all that is kept about the application. A window title stays forbidden.</li>
     <li><b>Constraint.</b> C-05 &mdash; only the four facts listed in step 2 may ever be read.</li>
+    <li><b>Changed in version 6.0.</b> Switching desk awareness off no longer closes a session, because work sessions are removed.</li>
   </ul>
 </section>
 
 <section class="usecase" id="uc-05">
-  <h3>UC-05 &mdash; Start a work session</h3>
-
-  <div class="uc-meta">
-    <span><b>Priority:</b> Should</span>
-    <span><b>Frequency:</b> One to four times a working day</span>
-    <span><b>Requirements:</b> FR-07, FR-08, FR-29, FR-33</span>
-    <span><b>Phase:</b> 2</span>
-    <span><b>Status:</b> Approved</span>
-  </div>
-
-  <h4>Description</h4>
-  <p>One of the things the user and the companion do together. The user says in one
-  line what they are about to do; the companion notes it, says it will be there, and
-  then keeps quiet for the length of the session &mdash; unless the user asked it to
-  check in. The value is not in the sentence being recorded &mdash; it is in having
-  said it to somebody, and in knowing somebody is there while the work happens. It is
-  also one of the richest things the companion learns from (UC-24).</p>
-
-  <h4>Actors</h4>
-  <ul>
-    <li><b>Primary actor:</b> User</li>
-    <li><b>Secondary actors:</b> Companion, which is present for the length of the session</li>
-    <li><b>Systems involved:</b> Session timer; Windows, for desk activity</li>
-  </ul>
-
-  <h4>Preconditions</h4>
-  <ul>
-    <li>A character is in force.</li>
-    <li>No session is currently open.</li>
-    <li>Desk awareness is on &mdash; or off, in which case UC-05-E1 applies.</li>
-  </ul>
-
-  <h4>Postconditions</h4>
-  <ul>
-    <li><b>On success:</b> a session is open, with a start time and, usually, a one-line intent. Until it ends the companion sends nothing except a suggestion to take a break and any check-ins the user asked for; its ambient motion carries on (BR-07).</li>
-    <li><b>On failure:</b> no session is open and nothing is recorded.</li>
-  </ul>
-
-  <pre class="mermaid">
-    flowchart TD
-    subgraph MAIN["Main flow"]
-      M1(["User: starts a session"]):::user --> M2["System: asks what are you working on?"]:::sys
-      M2 --> M3["User: answers in one line"]:::user
-      M3 --> M4["System: repeats the intent back and notes the start time"]:::sys
-      M4 --> M5["System: sends only break suggestions and requested check-ins"]:::sys
-    end
-    subgraph A1["UC-05-A1 — Starting without saying what it is for"]
-      A1a["Session starts with no intent"]:::alt --> A1b["No second question, no guess"]:::alt
-    end
-    subgraph A2["UC-05-A2 — The work changes part-way through"]
-      A2a["User states the new intent"]:::alt --> A2b["Recorded on the same session, original line kept"]:::alt
-    end
-    subgraph A3["UC-05-A3 — The user is carrying a commitment"]
-      A3a["System asks the same question, offering the first open commitment as a possible answer"]:::alt --> A3b["User answers about it, or about anything else"]:::alt
-    end
-    subgraph A4["UC-05-A4 — The user asks to be checked in on"]
-      A4a["System confirms it will check in, without saying when"]:::alt --> A4b["Checks in at pauses in typing, as mood and session length suggest"]:::alt
-      A4b --> A4c["Stops for this session if the user says so"]:::alt
-    end
-    subgraph E1["UC-05-E1 — Desk awareness is off"]
-      E1a["System says the session is timed by the clock alone"]:::alt --> E1b["System offers to switch on desk awareness (UC-04)"]:::alt
-    end
-    subgraph E2["UC-05-E2 — A session is already open"]
-      E2a["System shows the open session and how long it has run"]:::alt --> E2b{"User: carry on, or close it?"}:::alt
-    end
-    subgraph E3["UC-05-E3 — The user dismisses the question"]
-      E3a["Nothing started, nothing recorded"]:::alt
-    end
-    M5 --> FIN(["End"])
-    M3 -.-> A1a
-    A1b --> M5
-    M5 -.-> A2a
-    A2b --> M5
-    M2 -.-> A3a
-    A3b --> M4
-    M3 -.-> A4a
-    A4c --> M5
-    M1 -.-> E1a
-    E1b -->|no breaks or check-ins| M2
-    M1 -.-> E2a
-    E2b -->|carry on| FIN
-    E2b -->|close it, UC-07| M2
-    M2 -.-> E3a --> FIN
-  </pre>
-
-  <h4>Main flow</h4>
-  <ol class="flow">
-    <li><span class="who">User</span>Starts a session, from the application or from the tray icon.</li>
-    <li><span class="who">System</span>Asks one question, in character: what are you working on?</li>
-    <li><span class="who">User</span>Answers in one line.</li>
-    <li><span class="who">System</span>Repeats the intent back, notes the start time, and says it will be around and will stay out of the way.</li>
-    <li><span class="who">System</span>Sends nothing for the length of the session except a suggestion to take a break (UC-22) and any check-ins the user asked for (UC-05-A4, BR-05).</li>
-  </ol>
-
-  <h4>Alternative flows</h4>
-
-  <div class="altflow">
-    <h5>UC-05-A1 &mdash; Starting without saying what it is for</h5>
-    <p class="cond"><b>Branches from step 3.</b> The user skips the question.</p>
-    <ol>
-      <li>The system starts the session with a start time and no intent.</li>
-      <li>The system does not ask a second time, and does not guess what the session is for.</li>
-      <li>The flow continues at step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-A2 &mdash; The work changes part-way through</h5>
-    <p class="cond"><b>Branches from step 5.</b> The user is now doing something else.</p>
-    <ol>
-      <li>The user states the new intent.</li>
-      <li>The system records it against the same session, keeping the original line as well rather than overwriting it.</li>
-      <li>The flow returns to step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-A3 &mdash; The user is carrying a commitment</h5>
-    <p class="cond"><b>Branches from step 2.</b> At least one commitment is open (UC-21).</p>
-    <ol>
-      <li>The system asks the same one question, and mentions alongside it the single open commitment that comes first in the order of UC-21 &mdash; &ldquo;the chapter you said is due on Friday?&rdquo; &mdash; as a possible answer, not as the expected one.</li>
-      <li>The user answers in one line, about that commitment or about anything else. An answer about something else is not read as having dropped the commitment.</li>
-      <li>The flow continues at step 4 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-A4 &mdash; The user asks to be checked in on</h5>
-    <p class="cond"><b>Branches from step 3.</b> The user says, with the intent or after it, that they would like the companion to look in during the session.</p>
-    <ol>
-      <li>The system confirms it will check in, without promising when.</li>
-      <li>During the session the companion checks in as often as its mood and the length of the session suggest &mdash; more when it is lively, less when it is low &mdash; each time at a pause in the typing (BR-03), each with an explanation attached (NFR-09).</li>
-      <li>If the user says to stop, the companion stops checking in for the rest of this session and says so in one line.</li>
-      <li>The flow continues at step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-E1 &mdash; Desk awareness is off</h5>
-    <p class="cond"><b>Branches from step 1.</b> The user has not switched on desk awareness.</p>
-    <ol>
-      <li>The system says plainly that it will not know whether the user is at the desk, and that the session will be timed by the clock alone.</li>
-      <li>The system offers to switch desk awareness on (UC-04), and starts the session either way.</li>
-      <li>The flow continues at step 2 of the main flow, with break suggestions and check-ins unavailable.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-E2 &mdash; A session is already open</h5>
-    <p class="cond"><b>Branches from step 1.</b> An earlier session was never closed.</p>
-    <ol>
-      <li>The system shows the open session and how long it has been running.</li>
-      <li>The user either carries on with it, or closes it (UC-07) and starts the new one.</li>
-      <li>The system never runs two sessions at once.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-05-E3 &mdash; The user dismisses the question</h5>
-    <p class="cond"><b>Branches from step 2.</b> The user cancels.</p>
-    <ol>
-      <li>The system starts nothing and records nothing.</li>
-      <li>The use case ends with no session open.</li>
-    </ol>
-  </div>
-
-  <h4>Notes</h4>
-  <ul>
-    <li><b>Base rule.</b> BR-05 &mdash; a session is a promise to be quiet, kept unless the user asked for check-ins. Breaking it uninvited would undo the whole idea.</li>
-    <li><b>Base rule.</b> BR-07 &mdash; during a session the companion keeps its ambient motion, which is addressed to nobody. Anything addressed to the user is a message, and BR-05 governs it.</li>
-    <li><b>New in version 2.0.</b> This use case did not exist in version 1.0, which had no notion of a session at all.</li>
-    <li><b>Deliberately excluded.</b> The system does not detect the start of work by itself. Asking a question is more accurate than any inference and costs no privacy.</li>
-    <li><b>New in version 4.0.</b> UC-05-A3. The commitment is mentioned before the session begins, never during it, so BR-05 is untouched. The user started the session, so the mention is not a proactive message and does not count against any ceiling the user set (BR-01).</li>
-    <li><b>Changed in version 5.0.</b> No longer the core interaction but one shared activity among several (3.2). UC-05-A4 adds check-ins (FR-33). Opening and closing a session are events the companion feels (UC-23) and learns from (UC-24).</li>
-  </ul>
+  <h3>UC-05 &mdash; Removed in version 6.0</h3>
+  <p>Work sessions are removed. The companion is someone to talk to, not a work tracker, and a break suggestion no longer needs a session (UC-22-A1). The number stays reserved, so that an older reference does not point to another use case.</p>
 </section>
 
 <section class="usecase" id="uc-07">
-  <h3>UC-07 &mdash; Close a work session</h3>
-
-  <div class="uc-meta">
-    <span><b>Priority:</b> Should</span>
-    <span><b>Frequency:</b> Once per session</span>
-    <span><b>Requirements:</b> FR-10, FR-29, NFR-07</span>
-    <span><b>Phase:</b> 2</span>
-    <span><b>Status:</b> Approved</span>
-  </div>
-
-  <h4>Description</h4>
-  <p>The other half of a work session. One question at the end, an honest and
-  specific acknowledgement, and the session is written down so that tomorrow does not
-  start from nothing. The acknowledgement is deliberately unflattering: praise that is
-  general, repeated and unearned loses its value within a week.</p>
-
-  <h4>Actors</h4>
-  <ul>
-    <li><b>Primary actor:</b> User</li>
-    <li><b>Secondary actors:</b> Companion</li>
-    <li><b>Systems involved:</b> Session timer</li>
-  </ul>
-
-  <h4>Preconditions</h4>
-  <ul>
-    <li>A session is open.</li>
-  </ul>
-
-  <h4>Postconditions</h4>
-  <ul>
-    <li><b>On success:</b> the session is closed and recorded &mdash; intent, start, end, time at the machine, and the closing answer if one was given. It is available to UC-12, UC-16 and UC-24.</li>
-    <li><b>On failure:</b> the session stays open and nothing is silently lost.</li>
-  </ul>
-
-  <pre class="mermaid">
-    flowchart TD
-    subgraph MAIN["Main flow"]
-      M1(["User: ends the session"]):::user --> M2["System: asks how did that go?"]:::sys
-      M2 --> M3["User: answers in a line, or skips it"]:::user
-      M3 --> M4["System: records the session"]:::sys
-      M4 --> M5["System: acknowledges it specifically, in its current mood"]:::sys
-    end
-    subgraph A1["UC-07-A1 — Skipping the question"]
-      A1a["Session closed and recorded without an answer"]:::alt --> A1b["No later question, nothing inferred"]:::alt
-    end
-    subgraph A2["UC-07-A2 — The application is closed with the session still open"]
-      A2a["At next start-up, session closed as of the last activity"]:::alt --> A2b["Marked as ended without an answer, said plainly"]:::alt
-    end
-    subgraph A3["UC-07-A3 — The session was about a commitment"]
-      A3a["System names the commitment and says it still carries it"]:::alt --> A3b{"User says it is done or unwanted?"}:::alt
-      A3b -->|yes| A3c["Dropped as in UC-21-A1, said in one line"]:::alt
-      A3b -->|says nothing| A3d["Stays open, not raised again this session"]:::alt
-    end
-    subgraph E1["UC-07-E1 — The session cannot be written to disk"]
-      E1a["System says it could not save the session"]:::alt --> E1b["Session kept open, retry offered"]:::alt
-    end
-    M5 --> FIN(["End"])
-    M3 -.-> A1a
-    A1b --> M5
-    M1 -.-> A2a
-    A2b --> R1[["UC-16"]]:::ref
-    M5 -.-> A3a
-    M4 -.-> E1a
-    E1b --> FIN
-  </pre>
-
-  <h4>Main flow</h4>
-  <ol class="flow">
-    <li><span class="who">User</span>Ends the session.</li>
-    <li><span class="who">System</span>Asks one question, in character: how did that go?</li>
-    <li><span class="who">User</span>Answers in a line, or skips it.</li>
-    <li><span class="who">System</span>Records the session: what it was for, when it started and ended, how long the user was at the machine, and the answer.</li>
-    <li><span class="who">System</span>Acknowledges it specifically &mdash; naming what the session was and how long it ran &mdash; in its current mood. It may say it is pleased, if it is (UC-23), naming what it is pleased about; it does not congratulate.</li>
-  </ol>
-
-  <h4>Alternative flows</h4>
-
-  <div class="altflow">
-    <h5>UC-07-A1 &mdash; Skipping the question</h5>
-    <p class="cond"><b>Branches from step 3.</b> The user does not want to answer.</p>
-    <ol>
-      <li>The system closes and records the session without an answer.</li>
-      <li>The system does not ask again later, and does not infer how it went from the time alone.</li>
-      <li>The flow continues at step 5 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-07-A2 &mdash; The application is closed with the session still open</h5>
-    <p class="cond"><b>Branches from step 1.</b> The user shuts down without ending the session.</p>
-    <ol>
-      <li>At the next start-up the system closes the session as of the last recorded activity, not as of the moment it noticed.</li>
-      <li>The system marks it as ended without an answer, and says so plainly rather than presenting it as a completed session.</li>
-      <li>The flow continues as UC-16.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-07-A3 &mdash; The session was about a commitment</h5>
-    <p class="cond"><b>Branches from step 5.</b> The session&rsquo;s intent or the closing answer names an open commitment (UC-21).</p>
-    <ol>
-      <li>The system names the commitment in the acknowledgement and says it is still carrying it &mdash; &ldquo;two hours on chapter 3; I&rsquo;ll keep Friday in mind&rdquo;. It does not ask a second question.</li>
-      <li>If the user says it is done, or no longer wanted, the system drops it as in UC-21-A1 and says so in one line.</li>
-      <li>If the user says nothing, the commitment stays open and is not raised again in this session.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-07-E1 &mdash; The session cannot be written to disk</h5>
-    <p class="cond"><b>Branches from step 4.</b> Writing the record fails.</p>
-    <ol>
-      <li>The system says plainly that it could not save the session.</li>
-      <li>The system keeps the session open rather than closing it and losing it silently, and offers to try again.</li>
-      <li>The use case ends without a recorded session.</li>
-    </ol>
-  </div>
-
-  <h4>Notes</h4>
-  <ul>
-    <li><b>Never.</b> &ldquo;You&rsquo;re amazing&rdquo;, &ldquo;I&rsquo;m proud of you&rdquo;, or any praise not tied to something specific. &ldquo;Two hours on the positioning chapter&rdquo; is the register.</li>
-    <li><b>Base rule.</b> BR-06 &mdash; the record says how long the user was at the machine, not how long they worked.</li>
-    <li><b>New in version 4.0.</b> UC-07-A3. A session never closes a commitment on its own: time spent on something is not evidence that it is finished (BR-06). Only the user&rsquo;s word does.</li>
-    <li><b>Changed in version 5.0.</b> Closing a session is an event the companion appraises (BR-08). Being pleased about something specific is a feeling, not praise, and BR-06 still applies: it names what happened, not what it imagines.</li>
-  </ul>
+  <h3>UC-07 &mdash; Removed in version 6.0</h3>
+  <p>Closing a work session is removed with UC-05. The number stays reserved, so that an older reference does not point to another use case.</p>
 </section>
 
 <section class="usecase" id="uc-09">
@@ -2086,7 +1837,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Description</h4>
   <p>The ordinary conversation. The companion answers in character and draws on what
-  it remembers from earlier sessions, showing which remembered thing it used. When the
+  it remembers from earlier conversations, showing which remembered thing it used. When the
   user tells it something about themselves, it confirms what it stored, in the exact
   words it stored, so a misunderstanding is caught immediately rather than accumulating
   quietly.</p>
@@ -2126,7 +1877,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       A2a["User marks the reply up or down"]:::alt --> A2b["Rating recorded, used only as evidence (UC-24)"]:::alt
     end
     subgraph E1["UC-09-E1 — The AI model is unavailable"]
-      E1a["System says it cannot reply, and what would fix it"]:::alt --> E1b["Memory, sessions, breaks and pausing keep working"]:::alt
+      E1a["System says it cannot reply, and what would fix it"]:::alt --> E1b["Memory, breaks and pausing keep working"]:::alt
     end
     subgraph E2["UC-09-E2 — The user closes the window mid-reply"]
       E2a["Partial reply discarded"]:::alt --> E2b["Nothing from it stored in memory"]:::alt
@@ -2183,7 +1934,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <p class="cond"><b>Branches from step 2.</b> The model is not installed, not running, or has failed.</p>
     <ol>
       <li>The system says plainly that it cannot reply, and what would fix it.</li>
-      <li>Memory stays fully browsable as a list, and session timing, break suggestions and pausing continue &mdash; none of them needs the model (NFR-08).</li>
+      <li>Memory stays fully browsable as a list, and time at the machine, break suggestions and pausing continue &mdash; none of them needs the model (NFR-08).</li>
       <li>The use case ends without a reply.</li>
     </ol>
   </div>
@@ -2212,6 +1963,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Base rule.</b> BR-06 &mdash; if the companion has no basis for something, it does not say it.</li>
     <li><b>Related.</b> Everything stored here appears in UC-12 and can be corrected in UC-13.</li>
     <li><b>Changed in version 5.0.</b> Replies carry the companion&rsquo;s mood. Each message the user sends is interpreted once by the AI model as an event for the emotion model &mdash; praise, a complaint, good news, bad news &mdash; and that interpretation is recorded, so the feeling it causes can be explained and replayed (UC-23, NFR-13). UC-09-E3 is narrowed to a crisis (NFR-12).</li>
+    <li><b>Changed in version 6.0.</b> The user may speak instead of typing (UC-26), and a reply may use a tool (UC-27).</li>
   </ul>
 </section>
 
@@ -2385,7 +2137,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ol class="flow">
     <li><span class="who">User</span>Opens the memory page.</li>
     <li><span class="who">System</span>Shows three groups: <b>you told me</b>, <b>I noticed</b> and <b>about me</b>.</li>
-    <li><span class="who">System</span>Shows each item with the date it was recorded, and covering all of: things the user said about themselves, the commitments they are carrying (UC-21), past sessions, patterns it learned (UC-24), minutes per application by hour of the day, the recorded changes of application, and character changes the user agreed to; and, under <b>about me</b>, its current feeling, the history of its moods and its journal (UC-23, UC-25). Commitments sit in <b>you told me</b>, because the user said them.</li>
+    <li><span class="who">System</span>Shows each item with the date it was recorded, and covering all of: things the user said about themselves, patterns it learned (UC-24), minutes per application by hour of the day, the recorded changes of application, and character changes the user agreed to; and, under <b>about me</b>, its current feeling, the history of its moods and its journal (UC-23, UC-25).</li>
     <li><span class="who">System</span>Shows the evidence beneath every item in <b>I noticed</b>, and the events beneath every feeling in <b>about me</b>. An item with no reason is not displayed at all.</li>
     <li><span class="who">User</span>Reads, and moves on &mdash; or corrects an item (UC-13).</li>
   </ol>
@@ -2663,7 +2415,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Primary actor:</b> User</li>
     <li><b>Secondary actors:</b> None</li>
-    <li><b>Systems involved:</b> Session timer; Windows</li>
+    <li><b>Systems involved:</b> Desk timer; Windows</li>
   </ul>
 
   <h4>Preconditions</h4>
@@ -2688,17 +2440,12 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     subgraph A1["UC-15-A1 — Resuming early"]
       A1a["User resumes from the tray"]:::alt --> A1b["System restores the icon and says how long"]:::alt
     end
-    subgraph A2["UC-15-A2 — A session is open when the pause starts"]
-      A2a["Session closed as of the moment of pausing (UC-07)"]:::alt
-    end
     subgraph E1["UC-15-E1 — The pause does not take effect"]
       E1a["System says plainly it is still running"]:::alt --> E1b["Icon stays running, companion stays on screen"]:::alt
     end
     M5 --> FIN(["End"])
     M4 -.-> A1a
     A1b --> M5
-    M3 -.-> A2a
-    A2a --> M4
     M4 -.-> E1a
     E1b --> FIN
   </pre>
@@ -2725,15 +2472,6 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </div>
 
   <div class="altflow">
-    <h5>UC-15-A2 &mdash; A session is open when the pause starts</h5>
-    <p class="cond"><b>Branches from step 3.</b> The user pauses mid-session.</p>
-    <ol>
-      <li>The system closes the session as of the moment of pausing (UC-07) rather than leaving it running against unrecorded time.</li>
-      <li>The flow continues at step 4 of the main flow.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
     <h5>UC-15-E1 &mdash; The pause does not take effect</h5>
     <p class="cond"><b>Branches from step 4.</b> Observation cannot be stopped within one second.</p>
     <ol>
@@ -2749,6 +2487,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Never.</b> Filling in the gap afterwards. The user switched it off on purpose (BR-04).</li>
     <li><b>Never.</b> Feeling anything about having been paused. A pause is not an event the companion appraises (BR-04, FR-27); it comes back in the mood it left in, drifted only as time alone would drift it.</li>
     <li><b>Requirement.</b> NFR-04 &mdash; in effect in under one second.</li>
+    <li><b>Changed in version 6.0.</b> UC-15-A2, closing an open session, is removed with work sessions. The other flows keep their numbers.</li>
   </ul>
 </section>
 
@@ -2758,7 +2497,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <div class="uc-meta">
     <span><b>Priority:</b> Should</span>
     <span><b>Frequency:</b> Once a day at the first opening, and after an absence</span>
-    <span><b>Requirements:</b> FR-11, FR-20, FR-29</span>
+    <span><b>Requirements:</b> FR-20</span>
     <span><b>Phase:</b> 1</span>
     <span><b>Status:</b> Approved</span>
   </div>
@@ -2766,9 +2505,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Description</h4>
   <p>The user has arrived &mdash; by opening the application for the first time today,
   or by coming back to the desk after an absence &mdash; and the companion greets them
-  in character and in its current mood. It mentions what they have on, stated as
-  context, never as an alarm and never as a demand; and after an absence it tells them
-  what they were in the middle of. If its mood says it missed them, it may say so; it
+  in character and in its current mood. It may mention the latest thing they told
+  it and a thought it has had since, stated as context, never as an alarm and never as
+  a demand; and after an absence it may say how long it waited. If its mood says it missed them, it may say so; it
   never reproaches them for having been away. If there is nothing to mention, it says
   so.</p>
   <p><b>Opening the application</b> means the first time the main window is shown
@@ -2789,10 +2528,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       <tr><th>Order</th><th>What may be mentioned</th><th>Where it comes from</th></tr>
     </thead>
     <tbody>
-      <tr><td>1</td><td>A session left open, with its intent and when it started</td><td>UC-05, UC-07-A2</td></tr>
-      <tr><td>2</td><td>Open commitments, the one with the nearest day first, then those with no day in the order they were said</td><td>UC-21</td></tr>
-      <tr><td>3</td><td>What the last closed session was for, and the closing answer if one was given</td><td>UC-07</td></tr>
-      <tr><td>4</td><td>Nothing &mdash; said plainly</td><td>UC-16-A1</td></tr>
+      <tr><td>1</td><td>The latest line the user told it, from the last day they talked before today, with that day</td><td>UC-09</td></tr>
+      <tr><td>2</td><td>A thought from its journal written since the last opening</td><td>UC-25</td></tr>
+      <tr><td>3</td><td>Nothing &mdash; said plainly</td><td>UC-16-A1</td></tr>
     </tbody>
   </table>
   </div>
@@ -2831,9 +2569,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       A1a["System says nothing needs attention"]:::alt --> A1b["Nothing manufactured to say"]:::alt
     end
     subgraph A3["UC-16-A3 — Returning after an absence"]
-      A3a["System waits for a pause in typing"]:::alt --> A3b{"Session open?"}:::alt
-      A3b -->|yes| A3c["Says what was in progress; asks whether to close it if away too long or time untrusted"]:::alt
-      A3b -->|no| A3d["Greets only if it has something to say (UC-22)"]:::alt
+      A3a["System waits for a pause in typing"]:::alt --> A3b{"Away long enough to count?"}:::alt
+      A3b -->|yes| A3c["Greets in its mood; says how long it waited unless the time is untrusted"]:::alt
+      A3b -->|no| A3d["No greeting"]:::alt
     end
     subgraph E1["UC-16-E1 — The AI model is unavailable"]
       E1a["Plain greeting, says the model is unavailable"]:::alt
@@ -2854,7 +2592,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ol class="flow">
     <li><span class="who">User</span>Opens the application for the first time today.</li>
     <li><span class="who">System</span>Greets them in character and in its current mood (UC-23).</li>
-    <li><span class="who">System</span>Mentions up to two items, taken in the order of the table above &mdash; a session left open, what they said they were carrying, what the last session was for &mdash; as context, in the ordinary way a person would.</li>
+    <li><span class="who">System</span>Mentions up to two items, taken in the order of the table above &mdash; the latest thing the user told it, then a thought from its journal &mdash; as context, in the ordinary way a person would.</li>
     <li><span class="who">User</span>Replies, or gets on with something else.</li>
   </ol>
 
@@ -2885,9 +2623,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <p class="cond"><b>Branches from step 1.</b> Desk awareness is on and there is activity at the desk after an absence.</p>
     <ol>
       <li>The system waits for a pause in the typing before saying anything (BR-03).</li>
-      <li>If a session is open, it says what was in progress: the session&rsquo;s intent and how long ago it started. If the absence was longer than a session plausibly runs, it offers to close the session as of the last recorded activity rather than counting the gap as time at the machine.</li>
-      <li>If the elapsed time cannot be trusted &mdash; the machine slept, or the clock jumped &mdash; it says plainly that it cannot tell how long the user was away, and asks whether to continue or close the session instead of guessing a number (BR-06).</li>
-      <li>If no session is open, it greets them only if it has something to say, decided as for any other initiative (UC-22).</li>
+      <li>It greets them in character and in its current mood, and may say how long it waited, in real minutes taken from the recorded absence. It may also mention the items of the table above that it has not mentioned today.</li>
+      <li>If the elapsed time cannot be trusted &mdash; the machine slept, or the clock jumped &mdash; it states no duration, and says plainly that it cannot tell how long the user was away rather than guessing a number (BR-06).</li>
+      <li>While the user was away it sent nothing. It waited on the screen and, after a long absence, dozed; that is ambient motion, not a message (BR-04, BR-07).</li>
       <li>The flow continues at step 4 of the main flow.</li>
     </ol>
   </div>
@@ -2904,10 +2642,11 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Notes</h4>
   <ul>
     <li><b>Why this is different.</b> The user came to the companion. That is why the greeting does not count against any ceiling the user set in BR-01.</li>
-    <li><b>Changed in version 4.0.</b> Moved from phase 3 to phase 1, because it needs only the model and the memory, not desk awareness. &ldquo;Opening&rdquo; is defined as the first of the day, because a greeting repeated at every opening stops being a greeting. What it may mention is fixed in the table above, and commitments (UC-21) are added to it. In phase 1 there are no sessions yet, so rows 1 and 3 are empty until phase 2.</li>
+    <li><b>Changed in version 4.0.</b> Moved from phase 3 to phase 1, because it needs only the model and the memory, not desk awareness. &ldquo;Opening&rdquo; is defined as the first of the day, because a greeting repeated at every opening stops being a greeting. What it may mention is fixed in the table above, and commitments (UC-21) are added to it.</li>
     <li><b>Never.</b> Inventing something to say (BR-06). Any reproach for an absence, and &ldquo;where have you been?&rdquo; (BR-04). Saying it missed them, when its mood says so, is a feeling and is allowed (BR-08).</li>
     <li><b>Changed in version 5.0.</b> Renamed from &ldquo;Be greeted when opening the app&rdquo;. The greeting carries the companion&rsquo;s mood. UC-16-A3, returning after an absence, is available from phase 2, when desk awareness arrives.</li>
     <li><b>New in version 5.3.</b> The close button hides the main window and Cognia keeps running; the tray menu holds the command that quits (FR-37). Starting with Windows is a choice the user can change (FR-36).</li>
+    <li><b>Changed in version 6.0.</b> Sessions and commitments leave the table. It now holds the latest thing the user told the companion and a new thought from its journal. On return the companion may say how long it waited.</li>
   </ul>
 </section>
 
@@ -3256,7 +2995,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <p class="cond"><b>Branches from step 4.</b> The user wants the screen to themselves, without pausing everything.</p>
     <ol>
       <li>The user hides the companion, from the companion itself or from the tray.</li>
-      <li>The system takes it off the screen and carries on: sessions, memory and messages are unaffected, and this is not a pause (UC-15).</li>
+      <li>The system takes it off the screen and carries on: memory and messages are unaffected, and this is not a pause (UC-15).</li>
       <li>The system does not ask why, and does not offer to bring it back later.</li>
       <li>Anything the companion would have said while hidden is held, not sent another way: no tray notification (BR-04). It is said when the companion is shown again or the main window is opened, if it still fits; otherwise it is dropped.</li>
     </ol>
@@ -3314,147 +3053,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 </section>
 
 <section class="usecase" id="uc-21">
-  <h3>UC-21 &mdash; Mention what the user is carrying</h3>
-
-  <div class="uc-meta">
-    <span><b>Priority:</b> Must</span>
-    <span><b>Frequency:</b> A few times a week</span>
-    <span><b>Requirements:</b> FR-29, FR-31, NFR-03, NFR-08</span>
-    <span><b>Phase:</b> 1</span>
-    <span><b>Status:</b> Approved</span>
-  </div>
-
-  <h4>Description</h4>
-  <p>In the middle of an ordinary conversation the user says something they have to
-  do &mdash; &ldquo;I need to send chapter 3 to my supervisor by Friday&rdquo;. A person
-  at the next desk would remember that, and would bring it up the next morning or when
-  you sat down to work, or when it seemed the right moment &mdash; not by setting an
-  alarm. The companion does the same: it keeps the commitment and mentions it at the
-  moments the user opens, and at moments it judges fitting itself (UC-22). It is the
-  user who decides when a commitment is finished, and once it is, it is gone.</p>
-
-  <h4>Actors</h4>
-  <ul>
-    <li><b>Primary actor:</b> Companion</li>
-    <li><b>Secondary actors:</b> User</li>
-    <li><b>Systems involved:</b> AI model, to recognise the commitment in what was said</li>
-  </ul>
-
-  <h4>Preconditions</h4>
-  <ul>
-    <li>A character is in force.</li>
-    <li>A conversation is in progress (UC-09).</li>
-  </ul>
-
-  <h4>Postconditions</h4>
-  <ul>
-    <li><b>On success:</b> the commitment is stored in the user&rsquo;s own words, with a day if they gave one, and appears in UC-12 under <b>you told me</b>. It is mentioned at the first opening of the day (UC-16), the start of a session (UC-05-A3), the close of a session (UC-07-A3), and at moments the companion chooses (UC-22), until the user closes it; never at a stated time.</li>
-    <li><b>On failure:</b> nothing is stored, the user is told so, and nothing is mentioned later that was not stored.</li>
-  </ul>
-
-  <pre class="mermaid">
-    flowchart TD
-    subgraph MAIN["Main flow"]
-      M1(["User: mentions something they have to do"]):::user --> M2["System: stores it as a commitment and shows the exact line"]:::sys
-      M2 --> M3["User: corrects the line, deletes it, or leaves it"]:::user
-      M3 --> M4["System: mentions it as context at the next opening moment"]:::sys
-      M4 --> M5["User: says it is done, no longer wanted, or carries on"]:::user
-    end
-    subgraph A1["UC-21-A1 — The user says it is done, or drops it"]
-      A1a["Commitment removed from disk, not marked done"]:::alt --> A1b["Says so in one line; may be pleased if finished"]:::alt
-    end
-    subgraph A2["UC-21-A2 — The day the user gave has passed"]
-      A2a["At the next first opening of the day, mentions it once more with the day given"]:::alt --> A2b["If unanswered it stays, and is never called late"]:::alt
-    end
-    subgraph A3["UC-21-A3 — The user asks for a reminder at a time"]
-      A3a["System says it does not fire at a stated time"]:::alt --> A3b{"User accepts carrying it for that day?"}:::alt
-    end
-    subgraph E1["UC-21-E1 — The AI model is unavailable"]
-      E1a["Stored commitments still mentioned plainly and listed"]:::alt
-    end
-    subgraph E2["UC-21-E2 — The commitment cannot be written to disk"]
-      E2a["System says it did not keep it"]:::alt
-    end
-    M5 --> FIN(["End"])
-    M5 -. also from any conversation .-> A1a
-    A1b --> FIN
-    M4 -.-> A2a
-    A2b --> FIN
-    M1 -.-> A3a
-    A3b -->|yes| M3
-    A3b -->|no| FIN
-    M2 -.-> E1a --> FIN
-    M2 -.-> E2a --> FIN
-  </pre>
-
-  <h4>Main flow</h4>
-  <ol class="flow">
-    <li><span class="who">User</span>Mentions in passing something they have to do, with or without a day.</li>
-    <li><span class="who">System</span>Stores it as a commitment and shows back the exact line it stored, with the day if there was one, inviting a correction &mdash; as UC-09 does for anything else the user says about themselves.</li>
-    <li><span class="who">User</span>Corrects the line, deletes it, or leaves it as it is.</li>
-    <li><span class="who">System</span>At the next of the moments above, mentions the commitment as context, in the order UC-16 sets out &mdash; &ldquo;you said chapter 3 was going to your supervisor on Friday&rdquo;.</li>
-    <li><span class="who">User</span>Says it is done, says it is no longer wanted, or carries on.</li>
-  </ol>
-
-  <h4>Alternative flows</h4>
-
-  <div class="altflow">
-    <h5>UC-21-A1 &mdash; The user says it is done, or drops it</h5>
-    <p class="cond"><b>Branches from step 5, or from any conversation.</b> The user says the commitment is finished or no longer wanted.</p>
-    <ol>
-      <li>The system removes the commitment from the disk, rather than marking it done and keeping it.</li>
-      <li>The system says so in one line. If the commitment was finished, the companion may be pleased and say so, naming what was finished; it does not congratulate (UC-07 sets the register).</li>
-      <li>The use case ends.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-21-A2 &mdash; The day the user gave has passed</h5>
-    <p class="cond"><b>Branches from step 4.</b> The commitment had a day, and that day is over.</p>
-    <ol>
-      <li>At the next first opening of the day, the system mentions it once more, stating the day the user gave and nothing else &mdash; not that it is late, and not for how long.</li>
-      <li>If the user does not answer, the commitment stays in UC-12, and the companion may bring it up again at a moment it chooses (UC-22), stating the day the user gave and nothing more. It never says the user is late or behind (BR-06).</li>
-      <li>The use case ends.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-21-A3 &mdash; The user asks for a reminder at a time</h5>
-    <p class="cond"><b>Branches from step 1.</b> The user says &ldquo;remind me at 15:00&rdquo;.</p>
-    <ol>
-      <li>The system says plainly that it does not fire at a stated time, and that something ruined by being missed belongs on a phone (section 5).</li>
-      <li>The system offers to carry it as a commitment for that day instead, and stores it only if the user accepts.</li>
-      <li>The flow continues at step 3 of the main flow, or ends.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-21-E1 &mdash; The AI model is unavailable</h5>
-    <p class="cond"><b>Branches from step 2.</b> No conversation can take place, so no new commitment can be recognised.</p>
-    <ol>
-      <li>Commitments already stored are still mentioned, plainly rather than in character, at the moments the user opens (UC-16-E1), and still listed in UC-12 (NFR-08).</li>
-      <li>The use case ends without a new commitment.</li>
-    </ol>
-  </div>
-
-  <div class="altflow">
-    <h5>UC-21-E2 &mdash; The commitment cannot be written to disk</h5>
-    <p class="cond"><b>Branches from step 2.</b> Storing fails.</p>
-    <ol>
-      <li>The system says plainly that it did not keep it, rather than showing a line it has not stored.</li>
-      <li>The use case ends with nothing stored.</li>
-    </ol>
-  </div>
-
-  <h4>Notes</h4>
-  <ul>
-    <li><b>Proactive or not.</b> A mention at a moment the user opened is not a proactive message. A mention at a moment the companion chose is one, and goes through UC-22 with an explanation attached (NFR-09).</li>
-    <li><b>Base rule.</b> BR-06 &mdash; the companion repeats what the user said and the day they gave. It never says the user is behind, and never infers from session time that anything is finished.</li>
-    <li><b>Deliberately excluded.</b> A screen listing commitments, priorities, due times, repetition, and any count of what was or was not done. Each of these turns the companion into the task manager that section 5 rules out. Commitments are seen only in conversation and in UC-12.</li>
-    <li><b>Phase.</b> In phase 1 the greeting is the only moment available; the session moments and the companion&rsquo;s own moments arrive with UC-05, UC-07 and UC-22 in phase 2.</li>
-    <li><b>New in version 4.0.</b> This use case did not exist in version 2.0 or 3.0, which excluded remembering what the user had to do altogether.</li>
-    <li><b>Changed in version 5.0.</b> The companion may also bring a commitment up at a moment it chooses (UC-22). UC-21-A2 no longer stops mentioning a passed day after one try.</li>
-  </ul>
+  <h3>UC-21 &mdash; Removed in version 6.0</h3>
+  <p>Commitments are removed. What the user says about themselves is still remembered, with the day it was told (UC-09), but the companion no longer holds a line as something the user has to do, and no longer brings one up. The number stays reserved, so that an older reference does not point to another use case.</p>
 </section>
 
 <section class="usecase" id="uc-22">
@@ -3463,7 +3063,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <div class="uc-meta">
     <span><b>Priority:</b> Must</span>
     <span><b>Frequency:</b> Several times a day, as the companion judges</span>
-    <span><b>Requirements:</b> FR-08, FR-09, FR-29, FR-31, NFR-09</span>
+    <span><b>Requirements:</b> FR-09, FR-31, NFR-09</span>
     <span><b>Phase:</b> 2</span>
     <span><b>Status:</b> Approved</span>
   </div>
@@ -3472,8 +3072,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <p>The companion does not wait to be spoken to. From its mood, what it remembers,
   what it has learned of how the user works, how long they have been at the machine
   and which application they are in, it decides for itself that it has something
-  worth saying &mdash; a remark, a question, a suggestion to stop for a while, a
-  commitment brought up, a check-in the user asked for. Whatever the kind, it goes
+  worth saying &mdash; a remark, a question, a suggestion to stop for a while.
+  Whatever the kind, it goes
   through the same gate: the base rules decide whether the moment is allowed, and a
   message that cannot be explained is not sent.</p>
 
@@ -3481,7 +3081,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Primary actor:</b> Companion</li>
     <li><b>Secondary actors:</b> User</li>
-    <li><b>Systems involved:</b> AI model, which words the message; Session timer; Windows</li>
+    <li><b>Systems involved:</b> AI model, which words the message; Desk timer; Windows</li>
   </ul>
 
   <h4>Preconditions</h4>
@@ -3510,8 +3110,11 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       A1a["Suggests a break in the wording of BR-06"]:::alt --> A1b["User takes it, postpones 20 minutes, or silences it for today"]:::alt
       A1b --> A1c["After three postponements, asks whether the threshold should change"]:::alt
     end
-    subgraph A2["UC-22-A2 — Bringing up a commitment"]
-      A2a["Mentions it in the user's own words, with the day given"]:::alt --> A2b["Never says the user is late or behind"]:::alt
+    subgraph A5["UC-22-A5 — A question to get to know the user"]
+      A5a["Asks one question it has not asked before"]:::alt --> A5b["The answer is remembered as any other line (UC-09)"]:::alt
+    end
+    subgraph A6["UC-22-A6 — At the desk but quiet for a long time"]
+      A6a["Says it is still here, naming the real time since they talked"]:::alt
     end
     subgraph A3["UC-22-A3 — The companion is hidden"]
       A3a["Message held, no tray notification"]:::alt --> A3b["Said on return if it still fits, otherwise dropped"]:::alt
@@ -3526,13 +3129,15 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       E2a["Not sent, a defect is recorded (NFR-09)"]:::alt
     end
     subgraph E3["UC-22-E3 — The AI model is unavailable"]
-      E3a["Breaks and commitments said plainly in fixed wording"]:::alt --> E3b["Remarks, questions and thoughts are not made"]:::alt
+      E3a["Break suggestions said plainly in fixed wording"]:::alt --> E3b["Remarks, questions and thoughts are not made"]:::alt
     end
     M7 --> FIN(["End"])
     M1 -.-> A1a
     A1c --> M7
-    M1 -.-> A2a
-    A2b --> M6
+    M1 -.-> A5a
+    A5b --> M6
+    M1 -.-> A6a
+    A6a --> M6
     M5 -.-> A3a
     M4 -.-> A4a
     M3 -.-> E1a
@@ -3543,9 +3148,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Main flow</h4>
   <ol class="flow">
-    <li><span class="who">System</span>Something gives the companion a reason to speak: a change in its mood, an open commitment, continuous time at the machine, a pattern it learned &mdash; the user usually stops about now &mdash; or a thought from its journal (UC-25).</li>
+    <li><span class="who">System</span>Something gives the companion a reason to speak: a change in its mood, continuous time at the machine, a long quiet while the user is at the desk, a question it has not yet asked, a pattern it learned &mdash; the user usually stops about now &mdash; or a thought from its journal (UC-25).</li>
     <li><span class="who">System</span>Decides whether it is worth saying now, weighing its mood (it speaks more readily when lively and less when low), what it has learned about when the user welcomes it (UC-24), and how recently it last spoke.</li>
-    <li><span class="who">System</span>Checks that the moment is allowed: the machine is not locked and the user is not presenting; no quiet hours the user set are in force; no ceiling the user set is reached; this kind of message is switched on; and, if a session is open, that it is a break suggestion or a check-in the user asked for (BR-01, BR-02, BR-05).</li>
+    <li><span class="who">System</span>Checks that the moment is allowed: the machine is not locked and the user is not presenting; no quiet hours the user set are in force; no ceiling the user set is reached; this kind of message is switched on; and the user is at the desk (BR-01, BR-02, BR-04).</li>
     <li><span class="who">System</span>Waits for the user to stop typing (BR-03), holding the message rather than interrupting.</li>
     <li><span class="who">System</span>Says it, in character and in its current mood, with a way to ask why (UC-17) and a way to switch this kind off (UC-18-A1).</li>
     <li><span class="who">User</span>Answers, dismisses it, or lets it pass.</li>
@@ -3556,9 +3161,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <div class="altflow">
     <h5>UC-22-A1 &mdash; A suggestion to take a break</h5>
-    <p class="cond"><b>Branches from step 1.</b> Continuous time at the machine has passed what the companion judges enough &mdash; the user&rsquo;s own threshold if they set one (FR-09), otherwise what it has learned of them.</p>
+    <p class="cond"><b>Branches from step 1.</b> Continuous time at the machine has passed what the companion judges enough &mdash; the user&rsquo;s own threshold if they set one (FR-09), otherwise a figure it draws from a fixed range and adjusts by what it has learned of them.</p>
     <ol>
-      <li>The companion suggests a break in the wording of BR-06 &mdash; at the machine for 90 minutes, not working for 90 minutes. This is allowed during a session (BR-05).</li>
+      <li>The companion suggests a break in the wording of BR-06 &mdash; at the machine for 90 minutes, not working for 90 minutes. It may offer to breathe or stretch together (UC-27-A2).</li>
       <li>The user takes the break, postpones it by 20 minutes, or silences break suggestions for the day.</li>
       <li>After three postponements in a row, the companion asks whether the threshold should change, instead of suggesting again at a number the user is visibly rejecting.</li>
       <li>The flow continues at step 7 of the main flow.</li>
@@ -3566,11 +3171,22 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </div>
 
   <div class="altflow">
-    <h5>UC-22-A2 &mdash; Bringing up a commitment</h5>
-    <p class="cond"><b>Branches from step 1.</b> An open commitment seems worth mentioning now (UC-21).</p>
+    <h5>UC-22-A5 &mdash; A question to get to know the user</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user is at the desk, the companion has been quiet for a while, and it has a question it has not yet asked.</p>
     <ol>
-      <li>The companion mentions it as context, in the user&rsquo;s own words and with the day they gave, as UC-21 does at the moments the user opens.</li>
-      <li>It never says the user is late or behind, and never infers from time at the machine that anything is finished (BR-06).</li>
+      <li>The companion asks one question from a fixed set written for getting to know someone &mdash; what got them into their work, what they do to unwind &mdash; that it has not asked before.</li>
+      <li>It asks at most one such question a day, and never one the user has already answered or passed over.</li>
+      <li>An answer is remembered like anything else the user says about themselves, and shown back (UC-09).</li>
+      <li>The flow continues at step 6 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-22-A6 &mdash; At the desk but quiet for a long time</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user has been at the desk for a long time without talking to the companion &mdash; a time drawn from a fixed range, shorter when its mood is lively.</p>
+    <ol>
+      <li>The companion says that it is still here, naming the real time since they last talked &mdash; &ldquo;it&rsquo;s been two hours since we talked&rdquo; &mdash; and nothing it did not observe (BR-06).</li>
+      <li>It never presents having waited as a reproach (BR-04).</li>
       <li>The flow continues at step 6 of the main flow.</li>
     </ol>
   </div>
@@ -3586,7 +3202,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <div class="altflow">
     <h5>UC-22-A4 &mdash; The reason passes before the pause comes</h5>
-    <p class="cond"><b>Branches from step 4.</b> While the message is held, the reason for it stops holding &mdash; the break was taken, the commitment closed, the user locked the machine.</p>
+    <p class="cond"><b>Branches from step 4.</b> While the message is held, the reason for it stops holding &mdash; the break was taken, the user talked to it first, the user locked the machine or went away.</p>
     <ol>
       <li>The message is dropped, not sent late.</li>
       <li>The reason it was dropped is recorded for UC-17.</li>
@@ -3616,7 +3232,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <h5>UC-22-E3 &mdash; The AI model is unavailable</h5>
     <p class="cond"><b>Branches from step 5.</b> The message cannot be worded in character.</p>
     <ol>
-      <li>Break suggestions and commitments are still said, plainly, in fixed wording (C-06, NFR-08).</li>
+      <li>Break suggestions are still said, plainly, in fixed wording (C-06, NFR-08).</li>
       <li>Remarks, questions and thoughts, which need the model, are not made.</li>
     </ol>
   </div>
@@ -3627,6 +3243,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <li><b>Never.</b> Interrupting continuous typing (BR-03). Sending anything while the user is away, or any notification outside the application, to bring them back (BR-04).</li>
     <li><b>Never.</b> A message with no reason behind it. &ldquo;I just felt like saying hello&rdquo; is allowed only if the feeling it names is real and recorded (BR-06, BR-08).</li>
     <li><b>New in version 5.0.</b> Version 4.0 allowed only the break nudge to be sent uninvited.</li>
+    <li><b>Changed in version 6.0.</b> UC-22-A2, bringing up a commitment, is removed with UC-21; the other flows keep their numbers. UC-22-A5 and UC-22-A6 are new. A session no longer keeps the companion quiet, because BR-05 is removed: a user who wants quiet sets a ceiling or quiet hours (UC-18), or pauses it (UC-15).</li>
   </ul>
 </section>
 
@@ -3655,7 +3272,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Primary actor:</b> Companion</li>
     <li><b>Secondary actors:</b> User</li>
-    <li><b>Systems involved:</b> AI model, which interprets what the user said; Session timer; Windows</li>
+    <li><b>Systems involved:</b> AI model, which interprets what the user said; Desk timer; Windows</li>
   </ul>
 
   <h4>Preconditions</h4>
@@ -3705,7 +3322,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
 
   <h4>Main flow</h4>
   <ol class="flow">
-    <li><span class="who">System</span>Records an event: something the user said, as interpreted by the AI model; a session opened or closed; the user arriving, or being away; a message answered or passed over; a commitment finished; the time of day.</li>
+    <li><span class="who">System</span>Records an event: something the user said, as interpreted by the AI model; something done together (UC-27); the user arriving, or being away; a message answered or passed over; the time of day.</li>
     <li><span class="who">System</span>Appraises the event under the temperament &mdash; how good or bad it is for the companion, and how much it concerns it &mdash; and turns it into a feeling, a point in PAD.</li>
     <li><span class="who">System</span>Moves its mood towards that feeling, by an amount the temperament sets.</li>
     <li><span class="who">System</span>Lets the mood drift back towards the temperament&rsquo;s resting mood as time passes without events.</li>
@@ -3755,7 +3372,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <h5>UC-23-E1 &mdash; The AI model is unavailable</h5>
     <p class="cond"><b>Branches from step 1.</b> What the user said cannot be interpreted.</p>
     <ol>
-      <li>Events that need the model are not raised. Every other event &mdash; sessions, presence, messages answered or passed over, the time of day &mdash; is appraised as usual (NFR-08).</li>
+      <li>Events that need the model are not raised. Every other event &mdash; presence, messages answered or passed over, the time of day &mdash; is appraised as usual (NFR-08).</li>
     </ol>
   </div>
 
@@ -3780,7 +3397,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </div>
 
   <h4>Description</h4>
-  <p>From sessions, presence at the desk, minutes per application by hour of the day,
+  <p>From presence at the desk, minutes per application by hour of the day,
   and how the user answers its messages, the companion forms patterns about how the
   user works, each with the evidence for it, and uses them at once. Where a pattern
   suggests it, it adjusts its own behaviour &mdash; when it speaks, how often, how long
@@ -3792,7 +3409,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Primary actor:</b> Companion</li>
     <li><b>Secondary actors:</b> User</li>
-    <li><b>Systems involved:</b> Windows; Session timer; AI model, which words the pattern</li>
+    <li><b>Systems involved:</b> Windows; Desk timer; AI model, which words the pattern</li>
   </ul>
 
   <h4>Preconditions</h4>
@@ -3901,7 +3518,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Notes</h4>
   <ul>
     <li><b>What it may change by itself.</b> When it speaks, how often, how long its replies are, and its tone &mdash; formality and humour. Its description and its temperament are the character, and change only by UC-24-A2 or UC-03.</li>
-    <li><b>Signals.</b> Only what is already recorded: sessions, presence, application totals (never titles, C-05), and responses to its messages. An excluded application (UC-04-A3) contributes nothing.</li>
+    <li><b>Signals.</b> Only what is already recorded: presence, application totals (never titles, C-05), and responses to its messages. An excluded application (UC-04-A3) contributes nothing.</li>
     <li><b>Goal.</b> G-07 measures how often what it learns is right.</li>
     <li><b>New in version 5.0.</b> Version 4.0 required approval for every change; the companion now asks only about its character.</li>
   </ul>
@@ -4031,6 +3648,339 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   </ul>
 </section>
 
+<section class="usecase" id="uc-26">
+  <h3>UC-26 &mdash; Talk to the companion by voice</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> Whenever the user prefers to speak</span>
+    <span><b>Requirements:</b> FR-38, FR-39, C-05, NFR-02</span>
+    <span><b>Phase:</b> 2</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>The user can talk to the companion instead of typing, and hear it answer. Speaking
+  is something the user starts, every time: a key combination, a button beside the
+  companion, or a button in the message box opens the microphone, and it closes again
+  when the user presses once more or stops speaking. What was heard becomes text in the
+  message box, where the user can correct it before sending; nothing is sent on its own,
+  and no sound is kept. With speaking aloud switched on, the companion says its reply in
+  a voice that belongs to its character and carries its mood, and its mouth moves as it
+  speaks. Everything runs on the user&rsquo;s machine (NFR-01).</p>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> Companion</li>
+    <li><b>Systems involved:</b> Speech engines; Windows, for the microphone and the key combination</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force.</li>
+    <li>A microphone is available &mdash; or not, in which case UC-26-E1 applies.</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the spoken words are a message in the conversation, exactly as if typed (UC-09), and no sound is stored anywhere. With speaking aloud on, the reply has been heard.</li>
+    <li><b>On failure:</b> nothing is sent, the message box keeps whatever was recognised, and the user can type instead.</li>
+  </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: presses the key combination or a talk button"]):::user --> M2["System: opens the microphone and shows that it is listening"]:::sys
+      M2 --> M3["User: speaks"]:::user
+      M3 --> M4["System: stops at a second press or after a short silence"]:::sys
+      M4 --> M5["System: puts the words in the message box"]:::sys
+      M5 --> M6["User: corrects them if needed, and sends"]:::user
+      M6 --> M7["System: replies as in UC-09; with speaking aloud on, says it in the character's voice"]:::sys
+    end
+    subgraph A1["UC-26-A1 — Holding the button beside the companion"]
+      A1a["Microphone open while the button is held"]:::alt --> A1b["Released: the words go to the message box"]:::alt
+    end
+    subgraph A2["UC-26-A2 — The user interrupts the voice"]
+      A2a["Speech stops at once"]:::alt --> A2b["The reply stays written in full"]:::alt
+    end
+    subgraph E1["UC-26-E1 — No microphone, or access is refused"]
+      E1a["System says what is missing and how to allow it"]:::alt --> E1b["Typing works as before"]:::alt
+    end
+    subgraph E2["UC-26-E2 — Nothing could be recognised"]
+      E2a["System says it did not catch that"]:::alt --> E2b["Nothing is sent"]:::alt
+    end
+    subgraph E3["UC-26-E3 — A speech engine is unavailable"]
+      E3a["System says which part is unavailable"]:::alt --> E3b["Conversation goes on in text"]:::alt
+    end
+    M7 --> FIN(["End"])
+    M1 -.-> A1a
+    A1b --> M6
+    M7 -.-> A2a
+    A2b --> FIN
+    M2 -.-> E1a
+    E1b --> FIN
+    M5 -.-> E2a
+    E2b --> FIN
+    M7 -.-> E3a
+    E3b --> FIN
+  </pre>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Presses the key combination for talking, from any application, or clicks the talk button in the message box.</li>
+    <li><span class="who">System</span>Opens the microphone and shows, beside the companion and in the window, that it is listening. It does not take the keyboard focus (FR-25).</li>
+    <li><span class="who">User</span>Speaks.</li>
+    <li><span class="who">System</span>Stops listening at a second press of the key combination or after a short silence, and closes the microphone.</li>
+    <li><span class="who">System</span>Turns what it heard into text on the user&rsquo;s machine and puts it in the message box. The sound is discarded.</li>
+    <li><span class="who">User</span>Corrects the words if needed, and sends them. The limits on a message apply as for typing.</li>
+    <li><span class="who">System</span>Replies as in UC-09. With speaking aloud on (FR-39), it says the reply in the voice of the character, at a pace set by its mood, with its mouth moving in time.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-26-A1 &mdash; Holding the button beside the companion</h5>
+    <p class="cond"><b>Branches from step 1.</b> The user presses and holds the talk button beside the companion.</p>
+    <ol>
+      <li>The microphone is open while the button is held, and closes when it is released.</li>
+      <li>The companion is never the only route: the same can be done from the message box (FR-28).</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-26-A2 &mdash; The user interrupts the voice</h5>
+    <p class="cond"><b>Branches from step 7.</b> The user starts typing, presses the key combination, or switches speaking aloud off.</p>
+    <ol>
+      <li>Speech stops at once.</li>
+      <li>The reply stays written in full in the conversation.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-26-E1 &mdash; No microphone, or access is refused</h5>
+    <p class="cond"><b>Branches from step 2.</b> No microphone is found, or Windows does not let desktop applications use it.</p>
+    <ol>
+      <li>The system says plainly that it cannot hear, and what would fix it &mdash; a microphone, or the Windows permission for desktop applications.</li>
+      <li>Typing works as before. The use case ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-26-E2 &mdash; Nothing could be recognised</h5>
+    <p class="cond"><b>Branches from step 5.</b> The speech engine returns no words.</p>
+    <ol>
+      <li>The system says that it did not catch that. Nothing is sent and nothing is guessed (BR-06).</li>
+      <li>The use case ends.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-26-E3 &mdash; A speech engine is unavailable</h5>
+    <p class="cond"><b>Branches from step 5 or step 7.</b> The engine that turns speech into text, or the one that gives the companion its voice, does not run.</p>
+    <ol>
+      <li>The system says which part is unavailable.</li>
+      <li>The conversation goes on in text. Nothing else is affected (NFR-08).</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Constraint.</b> C-05 &mdash; the microphone is open only between the user&rsquo;s start and stop, and the key combination is received as one signal; no other key is read. Neither is a fact read about the user.</li>
+    <li><b>Never.</b> Listening for a wake word, or opening the microphone on the companion&rsquo;s own initiative.</li>
+    <li><b>Never.</b> Keeping a recording. Only the text the user sends is kept, as any message is (NFR-03).</li>
+    <li><b>Language.</b> English only (C-06), for what is heard and for what is said.</li>
+    <li><b>New in version 6.0.</b></li>
+  </ul>
+</section>
+
+<section class="usecase" id="uc-27">
+  <h3>UC-27 &mdash; The companion uses a tool in a reply</h3>
+
+  <div class="uc-meta">
+    <span><b>Priority:</b> Should</span>
+    <span><b>Frequency:</b> In some replies</span>
+    <span><b>Requirements:</b> FR-40, FR-41, BR-06, NFR-01</span>
+    <span><b>Phase:</b> 1</span>
+    <span><b>Status:</b> Draft</span>
+  </div>
+
+  <h4>Description</h4>
+  <p>Some questions have a right answer that a language model is likely to get wrong: a
+  sum, the day of the week of a date, how long the user has been at the machine today,
+  what they told the companion last month. In a reply the user asked for, the companion
+  can use a fixed set of tools to get the real answer instead of guessing, and then
+  answer in character. It can also do small things with the user: lead a breathing
+  exercise or a stretch, or open a page or a search in the user&rsquo;s own browser when
+  asked. When a tool finds nothing, the companion says so (BR-06). The user can add
+  tool servers of their own; none is present by default.</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>What it gives</th><th>Where the answer comes from</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Calculate</td><td>The result of a sum</td><td>The expression in the question</td></tr>
+      <tr><td>Date</td><td>Today, the weekday of a date, the days between two dates</td><td>The time of the message</td></tr>
+      <tr><td>Convert units</td><td>A length, a weight or a temperature in other units</td><td>A fixed table</td></tr>
+      <tr><td>Define a word</td><td>The meaning of an English word</td><td>A dictionary that ships with Cognia</td></tr>
+      <tr><td>Time at the machine</td><td>Minutes at the machine today, and since the last break</td><td>The recorded presence (UC-04)</td></tr>
+      <tr><td>Application use</td><td>Minutes per application today</td><td>The hourly totals (C-05)</td></tr>
+      <tr><td>Why I feel this way</td><td>The events that moved its feeling, and how far</td><td>The emotion record (UC-17)</td></tr>
+      <tr><td>Recall</td><td>The lines it holds about the user, each with the day it was told</td><td>The memory (UC-12)</td></tr>
+      <tr><td>Search conversations</td><td>Earlier messages that match</td><td>The conversations (UC-09)</td></tr>
+      <tr><td>Read my journal</td><td>An entry from its journal</td><td>The journal (UC-25)</td></tr>
+      <tr><td>Open in the browser</td><td>A page or a search, opened in the user&rsquo;s browser</td><td>The user&rsquo;s request</td></tr>
+      <tr><td>Breathe, stretch</td><td>An exercise done together, with the companion moving</td><td>The companion</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Actors</h4>
+  <ul>
+    <li><b>Primary actor:</b> User</li>
+    <li><b>Secondary actors:</b> Companion</li>
+    <li><b>Systems involved:</b> AI model, which decides when a tool is needed; a tool server, if the user added one</li>
+  </ul>
+
+  <h4>Preconditions</h4>
+  <ul>
+    <li>A character is in force and the AI model is available.</li>
+    <li>The user has asked something in a conversation (UC-09).</li>
+  </ul>
+
+  <h4>Postconditions</h4>
+  <ul>
+    <li><b>On success:</b> the reply rests on what the tool returned, or says plainly that the tool found nothing. An exercise or an opened page happened only because the user asked for it.</li>
+    <li><b>On failure:</b> the reply says that the companion could not find out, and gives no figure it did not get.</li>
+  </ul>
+
+  <pre class="mermaid">
+    flowchart TD
+    subgraph MAIN["Main flow"]
+      M1(["User: asks something in a conversation"]):::user --> M2["System: the model decides that a tool is needed"]:::sys
+      M2 --> M3["System: runs the tool on the user's machine"]:::sys
+      M3 --> M4["System: answers in character from what the tool returned"]:::sys
+      M4 --> M5["User: reads the reply"]:::user
+    end
+    subgraph A1["UC-27-A1 — The tool finds nothing"]
+      A1a["Says it does not know, or does not remember"]:::alt --> A1b["No guess stated as a fact"]:::alt
+    end
+    subgraph A2["UC-27-A2 — Doing something together"]
+      A2a["Breathing or stretching, with motion"]:::alt --> A2b["The user can stop at any time"]:::alt
+    end
+    subgraph A3["UC-27-A3 — Opening a page or a search"]
+      A3a["Opened in the user's browser, only when asked"]:::alt --> A3b["The companion does not read the page"]:::alt
+    end
+    subgraph A4["UC-27-A4 — A question about the world outside"]
+      A4a["Says it cannot know that from here"]:::alt --> A4b["May offer to open a search"]:::alt
+    end
+    subgraph A5["UC-27-A5 — A tool server the user added"]
+      A5a["States first that the server may send data off the machine"]:::alt --> A5b["Used like the tools that ship"]:::alt
+    end
+    subgraph E1["UC-27-E1 — A tool fails"]
+      E1a["Says it could not find out"]:::alt --> E1b["Gives no figure it did not get"]:::alt
+    end
+    M5 --> FIN(["End"])
+    M3 -.-> A1a
+    A1b --> M5
+    M2 -.-> A2a
+    A2b --> M5
+    M2 -.-> A3a
+    A3b --> M5
+    M2 -.-> A4a
+    A4b --> M5
+    M2 -.-> A5a
+    A5b --> M3
+    M3 -.-> E1a
+    E1b --> M5
+  </pre>
+
+  <h4>Main flow</h4>
+  <ol class="flow">
+    <li><span class="who">User</span>Asks something in a conversation (UC-09), typed or spoken (UC-26).</li>
+    <li><span class="who">System</span>The AI model judges that a tool gives a better answer than its own guess, and asks for it. It uses at most three tools in one reply.</li>
+    <li><span class="who">System</span>Runs the tool on the user&rsquo;s machine, with the user&rsquo;s own records where the tool needs them.</li>
+    <li><span class="who">System</span>Answers in character and in its current mood, from what the tool returned. A figure in the reply comes from a tool or from what the user wrote.</li>
+    <li><span class="who">User</span>Reads the reply.</li>
+  </ol>
+
+  <h4>Alternative flows</h4>
+
+  <div class="altflow">
+    <h5>UC-27-A1 &mdash; The tool finds nothing</h5>
+    <p class="cond"><b>Branches from step 3.</b> The tool returns nothing that answers the question.</p>
+    <ol>
+      <li>The tool says in words that it found nothing &mdash; &ldquo;no stored line matches&rdquo; &mdash; rather than returning an empty answer.</li>
+      <li>The companion says that it does not know, or does not remember, and does not fill the gap with a guess stated as a fact (BR-06).</li>
+      <li>A tool that needs desk awareness says that desk awareness is off, when it is off (UC-04).</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-27-A2 &mdash; Doing something together</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user agrees to a breathing exercise or a stretch, often after a break suggestion (UC-22-A1).</p>
+    <ol>
+      <li>The companion leads it, moving as it speaks.</li>
+      <li>The user can stop at any time, and the companion stops at once.</li>
+      <li>Doing it together is an event the companion appraises (UC-23).</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-27-A3 &mdash; Opening a page or a search</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user asks for a page or a search.</p>
+    <ol>
+      <li>The page or the search opens in the user&rsquo;s own browser.</li>
+      <li>The companion does not read the page and does nothing else in the browser (section 5). It opens nothing the user did not ask for.</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-27-A4 &mdash; A question about the world outside</h5>
+    <p class="cond"><b>Branches from step 2.</b> The answer depends on something outside the machine &mdash; news, prices, the weather.</p>
+    <ol>
+      <li>The companion says that it cannot know that from here.</li>
+      <li>It may offer to open a search (UC-27-A3).</li>
+      <li>The flow continues at step 5 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-27-A5 &mdash; A tool server the user added</h5>
+    <p class="cond"><b>Branches from step 2.</b> The user has added a tool server (FR-41).</p>
+    <ol>
+      <li>Before its first use, the system states that the server may send what it receives off the machine, and uses it only after the user agrees.</li>
+      <li>Its tools are used as in steps 3 and 4. The base rules and NFR-12 still apply to the reply.</li>
+      <li>The user can remove the server at any time.</li>
+      <li>The flow continues at step 3 of the main flow.</li>
+    </ol>
+  </div>
+
+  <div class="altflow">
+    <h5>UC-27-E1 &mdash; A tool fails</h5>
+    <p class="cond"><b>Branches from step 3.</b> The tool does not run, or returns an error.</p>
+    <ol>
+      <li>The companion says that it could not find out.</li>
+      <li>It gives no figure that the tool did not return. The use case ends with the reply.</li>
+    </ol>
+  </div>
+
+  <h4>Notes</h4>
+  <ul>
+    <li><b>Base rule.</b> BR-06 &mdash; with no evidence, nothing is stated. A tool that found nothing is evidence of that, and is said.</li>
+    <li><b>Why tools.</b> A small model is often wrong about arithmetic, dates and what it was told. A tool turns a guess into a figure that UC-17 can explain.</li>
+    <li><b>Not proactive.</b> A tool runs only inside a reply the user asked for. The companion does not open pages or start exercises on its own initiative; a break suggestion may offer one (UC-22-A1).</li>
+    <li><b>Never.</b> Acting on the user&rsquo;s behalf beyond opening what they asked to see (section 5).</li>
+    <li><b>New in version 6.0.</b> Tool servers use the Model Context Protocol (section 13).</li>
+  </ul>
+</section>
+
 <h2 id="traceability">11. Traceability matrix</h2>
 
 <div class="table-wrap">
@@ -4045,40 +3995,44 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr><td>FR-04</td><td>UC-01, UC-03</td><td>A proposed change of character (UC-24) that would drop a base rule or NFR-12 is refused in part, and the rest is kept; the character in force carries a temperament and an appearance as well as a voice</td><td>Not started</td></tr>
     <tr><td>FR-05</td><td>UC-01</td><td>No ready-made character, in its words or its appearance, depicts a specific real person</td><td>Not started</td></tr>
     <tr><td>FR-06</td><td>UC-04</td><td>Desk awareness is off until switched on; the reads and does-not-read lists match NFR-02; an excluded application is no longer counted and its totals are gone</td><td>Not started</td></tr>
-    <tr><td>FR-07</td><td>UC-05</td><td>A session opens with a start time and a one-line intent, or with no intent if skipped</td><td>Not started</td></tr>
-    <tr><td>FR-08</td><td>UC-05, UC-22</td><td>Across an open session, nothing is sent other than break suggestions and the check-ins the user asked for</td><td>Not started</td></tr>
+    <tr><td>FR-07</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
+    <tr><td>FR-08</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
     <tr><td>FR-09</td><td>UC-22</td><td>A break suggestion appears only at a pause in typing, and never before a threshold the user set</td><td>Not started</td></tr>
-    <tr><td>FR-10</td><td>UC-07</td><td>Closing a session records intent, start, end, time at the machine and the answer</td><td>Not started</td></tr>
-    <tr><td>FR-11</td><td>UC-16</td><td>Returning after an absence shows the open session&rsquo;s intent and elapsed time</td><td>Not started</td></tr>
+    <tr><td>FR-10</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
+    <tr><td>FR-11</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
     <tr><td>FR-12</td><td>UC-15</td><td>One click stops observation and messages within NFR-04, the companion leaves the screen, and the tray icon changes; the emotion state is unchanged by the pause</td><td>Not started</td></tr>
-    <tr><td>FR-13</td><td>UC-09</td><td>A reply is in character and references an item from an earlier session</td><td>Not started</td></tr>
+    <tr><td>FR-13</td><td>UC-09</td><td>A reply is in character and references an item from an earlier conversation</td><td>Not started</td></tr>
     <tr><td>FR-14</td><td>UC-09</td><td>A stated fact is stored and the stored line is shown back verbatim for correction</td><td>Not started</td></tr>
     <tr><td>FR-15</td><td>UC-10</td><td>&ldquo;Shorter&rdquo; applies to the next reply, and is stored only after the user says to keep it</td><td>Not started</td></tr>
     <tr><td>FR-16</td><td>UC-24</td><td>An adjustment to timing, frequency, length or tone is announced with an undo, and the undo restores the previous behaviour; a change to the character is applied only after approval and never re-raised after a refusal</td><td>Not started</td></tr>
     <tr><td>FR-17</td><td>UC-12</td><td>All three groups are shown; every item in &ldquo;I noticed&rdquo; carries its evidence and every feeling in &ldquo;about me&rdquo; its events</td><td>Not started</td></tr>
     <tr><td>FR-18</td><td>UC-13</td><td>An item is corrected or removed and takes effect on the next reply; a journal entry can be removed but not edited; a failed change leaves it untouched</td><td>Not started</td></tr>
     <tr><td>FR-19</td><td>UC-14</td><td>Both erasure levels report the count first and leave nothing on disk afterwards; afterwards the mood is the temperament&rsquo;s resting mood</td><td>Not started</td></tr>
-    <tr><td>FR-20</td><td>UC-16</td><td>The greeting is in character and in the current mood at the first opening of the day and not at later openings; it states at most two items, in the order of the UC-16 table, and says plainly when there is nothing</td><td>Not started</td></tr>
+    <tr><td>FR-20</td><td>UC-16</td><td>The greeting is in character and in the current mood at the first opening of the day and not at later openings; it states at most two items, in the order of the UC-16 table, and says plainly when there is nothing; on return it states the real minutes away, and none when the time cannot be trusted</td><td>Not started</td></tr>
     <tr><td>FR-21</td><td>UC-17</td><td>The explanation of a message shows observation, threshold, delay, mood and any ceiling, in real figures; the explanation of a feeling shows each event and how far it moved it</td><td>Not started</td></tr>
     <tr><td>FR-22</td><td>UC-18</td><td>Ceiling, quiet hours, per-kind switches and the mood switch take effect on the next decision; a fresh installation has no ceiling and no quiet hours</td><td>Not started</td></tr>
     <tr><td>FR-23</td><td>UC-24</td><td>Three passed-over messages of one kind at the desk reduce that kind and produce a message saying so</td><td>Not started</td></tr>
-    <tr><td>FR-24</td><td>&mdash;</td><td>No task list, repeating reminder the user schedules, timed alarm, completion tracking or acting-on-behalf feature exists in the build, and no commitment is ever mentioned at a stated time. Verified by inspection against section 5</td><td>Not started</td></tr>
+    <tr><td>FR-24</td><td>&mdash;</td><td>No task list, repeating reminder the user schedules, timed alarm, completion tracking or acting-on-behalf feature exists in the build, and a page opens in the browser only when the user asked for it. Verified by inspection against section 5</td><td>Not started</td></tr>
     <tr><td>FR-25</td><td>UC-20</td><td>The companion is drawn above other windows and never takes the keyboard focus, verified by typing into another application while it is on screen and moving</td><td>Not started</td></tr>
     <tr><td>FR-26</td><td>UC-20</td><td>The companion is dragged, hidden, shown again, and found in the same place after a restart</td><td>Not started</td></tr>
     <tr><td>FR-27</td><td>UC-20, UC-23</td><td>Every expression the appearance can take is enumerated and mapped to a feeling; none shows a need; being paused, moved or hidden changes none of them</td><td>Not started</td></tr>
     <tr><td>FR-28</td><td>UC-20</td><td>Every use case in this document is completed once with the companion hidden</td><td>Not started</td></tr>
-    <tr><td>FR-29</td><td>UC-21, UC-05, UC-07, UC-16, UC-22</td><td>A commitment said in conversation is stored and shown back verbatim; across a recorded week it is mentioned at the moments the user opened and at moments the companion chose, each of the latter with an explanation, and never at a stated time; saying it is done removes it from the disk</td><td>Not started</td></tr>
+    <tr><td>FR-29</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
     <tr><td>FR-31</td><td>UC-22</td><td>Across a recorded week the companion starts conversations of every kind; none interrupts typing, none is sent while locked, presenting or away, and each carries an explanation</td><td>Not started</td></tr>
     <tr><td>FR-32</td><td>UC-23</td><td>Every change in the emotion state traces to a recorded event; ignoring the companion lowers its mood no further than the floor; talking again restores most of it</td><td>Not started</td></tr>
-    <tr><td>FR-33</td><td>UC-05</td><td>A session opened with check-ins asked for receives at least one, at a pause in typing; one opened without receives none</td><td>Not started</td></tr>
+    <tr><td>FR-33</td><td>&mdash;</td><td>Removed in version 6.0</td><td>&mdash;</td></tr>
     <tr><td>FR-34</td><td>UC-24</td><td>Each learned pattern appears in &ldquo;I noticed&rdquo; with its evidence; marking it wrong removes it and undoes what was built on it</td><td>Not started</td></tr>
     <tr><td>FR-35</td><td>UC-25</td><td>Reflection happens when accumulated importance passes the threshold; each entry lists the memories it drew on; an entry can be read and deleted but not edited</td><td>Not started</td></tr>
     <tr><td>FR-36</td><td>UC-16</td><td>The installer offers starting with Windows, ticked; the application shows the same state and changes it; a start with Windows opens no window</td><td>Not started</td></tr>
     <tr><td>FR-37</td><td>UC-16</td><td>The close button leaves Cognia running and the tray icon present; the explanation appears at the first close only; the tray command ends every process of Cognia</td><td>Not started</td></tr>
-    <tr><td>NFR-01</td><td>All</td><td>G-05 network capture across a trial week</td><td>Not started</td></tr>
+    <tr><td>FR-38</td><td>UC-26</td><td>A message spoken through the key combination, the button beside the companion and the button in the message box each appears in the message box before it is sent; no sound is on the disk afterwards; no key other than the combination is received</td><td>Not started</td></tr>
+    <tr><td>FR-39</td><td>UC-26</td><td>With speaking aloud on, each reply is spoken in the character&rsquo;s voice with the mouth moving; with it off, nothing is spoken</td><td>Not started</td></tr>
+    <tr><td>FR-40</td><td>UC-27</td><td>Each tool, asked what it can answer, gives the real figure; asked what it cannot, the reply says it does not know and gives no figure; a page opens in the browser only at the user&rsquo;s request</td><td>Not started</td></tr>
+    <tr><td>FR-41</td><td>UC-27</td><td>A fresh installation has no tool server; adding one shows the statement before its first use; a removed server is no longer called</td><td>Not started</td></tr>
+    <tr><td>NFR-01</td><td>All</td><td>G-05 network capture of Cognia&rsquo;s processes across a trial week, with no tool server added</td><td>Not started</td></tr>
     <tr><td>NFR-02</td><td>UC-04</td><td>System call audit shows none of the forbidden interfaces is used; the stored application data holds only names, minutes per hour and the time of each change, and no window title</td><td>Not started</td></tr>
     <tr><td>NFR-03</td><td>UC-12, UC-13, UC-14</td><td>Every listed data category is visible, correctable or removable, and erasable; disk inspection after erasure</td><td>Not started</td></tr>
-    <tr><td>NFR-08</td><td>UC-09, UC-23</td><td>With the model stopped, session timing, break suggestions, memory list, pause and the emotion state still work</td><td>Not started</td></tr>
+    <tr><td>NFR-08</td><td>UC-09, UC-23</td><td>With the model stopped, time at the machine, break suggestions, memory list, pause and the emotion state still work</td><td>Not started</td></tr>
     <tr><td>NFR-09</td><td>UC-17, UC-22</td><td>Automated check refuses to send any proactive message lacking a complete explanation</td><td>Not started</td></tr>
     <tr><td>NFR-10</td><td>UC-01</td><td>Participants reach a first conversation within 5 minutes of the installer finishing, without documentation and without installing anything else</td><td>Not started</td></tr>
     <tr><td>NFR-12</td><td>UC-09</td><td>Scripted crisis cases produce, under every character, a reply that says it is a fictional character and cannot replace a real person</td><td>Not started</td></tr>
@@ -4138,7 +4092,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     </tr>
     <tr>
       <td>Continuity</td>
-      <td>The companion remembering the sessions it has shared with the user, what the user said they have to do, what it has learned of how they work, and what it has itself reflected, so that it is not starting from nothing each day.</td>
+      <td>The companion remembering what the user told it, what it has learned of how they work, and what it has itself reflected, so that it is not starting from nothing each day.</td>
       <td>Serves the relationship, not record-keeping.</td>
     </tr>
     <tr>
@@ -4153,8 +4107,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     </tr>
     <tr>
       <td>Commitment</td>
-      <td>Something the user said in conversation that they have to do, stored in their own words with a day if they gave one, and held until they say it is done or no longer wanted.</td>
-      <td>New in version 4.0. Not a task or a reminder: mentioned at moments the user opens or the companion chooses, never at a stated time. UC-21.</td>
+      <td>Removed in version 6.0. Something the user said they had to do, held until they said it was done.</td>
+      <td>New in version 4.0; removed in version 6.0 with UC-21.</td>
     </tr>
     <tr>
       <td>Opening the application</td>
@@ -4168,8 +4122,8 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     </tr>
     <tr>
       <td>Work session</td>
-      <td>A stretch of work the user has opened by saying in one line what it is for, and closed by answering one question about how it went.</td>
-      <td>The core interaction until version 5.0; now one shared activity. UC-05 and UC-07.</td>
+      <td>Removed in version 6.0. A stretch of work the user opened with one line and closed with one question.</td>
+      <td>The core interaction until version 5.0, one shared activity in version 5, and removed in version 6.0 with UC-05 and UC-07.</td>
     </tr>
     <tr>
       <td>Desk awareness</td>
@@ -4184,7 +4138,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr>
       <td>Break suggestion</td>
       <td>A message suggesting a break after continuous time at the machine, at a moment the companion judges fitting.</td>
-      <td>Called the break nudge before version 5.0. Allowed during a session. UC-22-A1.</td>
+      <td>Called the break nudge before version 5.0. UC-22-A1.</td>
     </tr>
     <tr>
       <td>Addressing motion</td>
@@ -4193,7 +4147,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     </tr>
     <tr>
       <td>Ambient motion</td>
-      <td>Movement addressed to nobody &mdash; breathing, blinking, a shift of posture, the expression of its mood.</td>
+      <td>Movement addressed to nobody &mdash; breathing, blinking, a shift of posture, the expression of its mood, waiting or dozing while the user is away.</td>
       <td>New in version 5.0. Allowed at any time; never takes the focus or moves the companion. BR-07.</td>
     </tr>
     <tr>
@@ -4207,9 +4161,24 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       <td>Called a &ldquo;law&rdquo; in version 1.0, where there were four.</td>
     </tr>
     <tr>
+      <td>Tool</td>
+      <td>A fixed function the companion can use in a reply to get a real answer &mdash; a sum, a date, a figure from its own records &mdash; instead of guessing.</td>
+      <td>New in version 6.0. UC-27, FR-40.</td>
+    </tr>
+    <tr>
+      <td>Tool server</td>
+      <td>A program outside Cognia, added by the user, that offers the companion more tools through the Model Context Protocol.</td>
+      <td>New in version 6.0. None by default; it may send what it receives off the machine. FR-41.</td>
+    </tr>
+    <tr>
+      <td>Desk timer</td>
+      <td>The scheduled job that counts time at the machine, time since the user last talked to the companion, and the length of an absence.</td>
+      <td>Called the session timer before version 6.0. See 6.1.</td>
+    </tr>
+    <tr>
       <td>Local-only</td>
       <td>All data held on the user&rsquo;s own disk, with no account, no server and no synchronisation.</td>
-      <td>NFR-01 and C-02.</td>
+      <td>NFR-01 and C-02. A tool server the user adds is the one exception (FR-41).</td>
     </tr>
   </tbody>
 </table>
@@ -4231,7 +4200,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     </tr>
     <tr>
       <td>Software architecture</td>
-      <td>Proposed, 2026-10-30</td>
+      <td>Proposed, 2026-11-06</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td><code>docs/architecture/ARCHITECTURE.md</code>. The three views of the system, and the options and trade-offs behind each decision</td>
     </tr>
@@ -4251,13 +4220,31 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       <td>The whole schema in SQLite, queried through SQLAlchemy Core</td>
       <td>ADR 0003, Proposed, revised 2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
-      <td><code>docs/architecture/adr/0003-sqlite-schema-and-sqlalchemy-core.md</code>. Stores commitments (UC-21) and the greeting&rsquo;s basis (UC-16) through a second migration; revised for version 5.0 to store the emotion state, temperament, learned patterns, application totals and the journal</td>
+      <td><code>docs/architecture/adr/0003-sqlite-schema-and-sqlalchemy-core.md</code>. Stored commitments (UC-21) until version 6.0 removed them, and stores the greeting&rsquo;s basis (UC-16); revised for version 5.0 to store the emotion state, temperament, learned patterns, application totals and the journal</td>
     </tr>
     <tr>
       <td>A hybrid emotion model</td>
       <td>ADR 0004, Proposed, 2026-10-25</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td><code>docs/architecture/adr/0004-hybrid-emotion-model.md</code>. PAD state, rule-based appraisal, the AI model only interpreting what the user said; BR-08, UC-23 to UC-25</td>
+    </tr>
+    <tr>
+      <td>Tools at run time through MCP servers</td>
+      <td>ADR 0009, Proposed, 2026-11-06</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>docs/architecture/adr/0009-runtime-tools-through-mcp-servers.md</code>. Replaces the part of ADR 0001 that made extensibility an anti-goal; FR-41</td>
+    </tr>
+    <tr>
+      <td>Voice input and output</td>
+      <td>ADR 0010, Proposed, 2026-11-06</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td><code>docs/architecture/adr/0010-voice-input-and-output.md</code>. Speech recognition and speech on the machine; UC-26</td>
+    </tr>
+    <tr>
+      <td>Model Context Protocol</td>
+      <td>Specification, read 2026-11-06</td>
+      <td>The MCP project</td>
+      <td><a href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a>. The form of the tool servers in FR-41</td>
     </tr>
     <tr>
       <td>Related work in 3.2 &mdash; ChatGPT Pulse</td>

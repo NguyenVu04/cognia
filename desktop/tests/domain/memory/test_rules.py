@@ -4,9 +4,9 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-from src.domain.conversation.models import Interpretation, SaidCommitment
+from src.domain.conversation.models import Interpretation
 from src.domain.memory import rules
-from src.domain.memory.models import TOLD, Calibration, Commitment, MemoryItem
+from src.domain.memory.models import TOLD, Calibration, MemoryItem
 
 NOW = datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc)
 CAL = Calibration(baseline=0.45, near_duplicate=0.95)
@@ -36,8 +36,8 @@ def item(
     )
 
 
-def found(facts=(), commitments=()) -> Interpretation:
-    return Interpretation(5, tuple(facts), tuple(commitments))
+def found(facts=()) -> Interpretation:
+    return Interpretation(5, tuple(facts))
 
 
 # ── cosine ───────────────────────────────────────────────────────────────
@@ -180,13 +180,13 @@ def test_known_newest_without_query() -> None:
 def test_select_drops_blank_and_long() -> None:
     chosen = rules.select(found(["  ", "x" * 201, "Has a cat"]), [], {}, CAL)
 
-    assert chosen.facts == ("Has a cat",)
+    assert chosen == ("Has a cat",)
 
 
 def test_select_tidies_spacing() -> None:
     chosen = rules.select(found(["  Has   a cat "]), [], {}, CAL)
 
-    assert chosen.facts == ("Has a cat",)
+    assert chosen == ("Has a cat",)
 
 
 def test_select_exact_duplicate() -> None:
@@ -194,7 +194,7 @@ def test_select_exact_duplicate() -> None:
         found(["is writing a thesis."]), [item("Is writing a thesis")], {}, CAL
     )
 
-    assert chosen.facts == ()
+    assert chosen == ()
 
 
 def test_select_near_duplicate() -> None:
@@ -205,19 +205,19 @@ def test_select_near_duplicate() -> None:
         found(["Works on a thesis", "Lives in Hanoi"]), existing, vectors, CAL
     )
 
-    assert chosen.facts == ("Lives in Hanoi",)
+    assert chosen == ("Lives in Hanoi",)
 
 
 def test_select_duplicate_in_message() -> None:
     chosen = rules.select(found(["Has a cat", "has a cat"]), [], {}, CAL)
 
-    assert chosen.facts == ("Has a cat",)
+    assert chosen == ("Has a cat",)
 
 
 def test_select_caps_per_message() -> None:
     chosen = rules.select(found([f"Fact {n}" for n in range(5)]), [], {}, CAL)
 
-    assert chosen.facts == ("Fact 0", "Fact 1", "Fact 2")
+    assert chosen == ("Fact 0", "Fact 1", "Fact 2")
 
 
 def test_select_no_vectors() -> None:
@@ -225,7 +225,7 @@ def test_select_no_vectors() -> None:
 
     chosen = rules.select(found(["Works on a thesis"]), existing, {}, CAL)
 
-    assert chosen.facts == ("Works on a thesis",)
+    assert chosen == ("Works on a thesis",)
 
 
 def test_select_keeps_contradiction() -> None:
@@ -235,15 +235,15 @@ def test_select_keeps_contradiction() -> None:
         found(["Lives in Hanoi"]), existing, {"Lives in Hanoi": at(0.88)}, CAL
     )
 
-    assert chosen.facts == ("Lives in Hanoi",)
+    assert chosen == ("Lives in Hanoi",)
 
 
-def test_select_commitments() -> None:
-    said = SaidCommitment("  Send   chapter 3 ", date(2026, 11, 6))
+def test_select_keeps_new_facts_only() -> None:
+    chosen = rules.select(
+        found(["Is a student", "is a student.", ""]), [], {}, CAL
+    )
 
-    chosen = rules.select(found(commitments=[said]), [], {}, CAL)
-
-    assert chosen.commitments == (SaidCommitment("Send chapter 3", date(2026, 11, 6)),)
+    assert chosen == ("Is a student",)
 
 
 # ── lines for the prompt and the user ────────────────────────────────────
@@ -261,27 +261,14 @@ def test_recalled_line_item() -> None:
     )
 
 
-def test_recalled_line_commitment() -> None:
-    entry = Commitment(
-        id="c", text="Send chapter 3", due_on=date(2026, 11, 6),
-        source_message_id=None, importance=8, last_retrieved_at=None,
-        recorded_at=datetime(2026, 11, 5, 9, 0, tzinfo=timezone.utc), embedding=None,
+def test_recalled_line_states_the_day() -> None:
+    entry = replace(
+        item("Is a student"),
+        recorded_at=datetime(2026, 11, 5, 9, 0, tzinfo=timezone.utc),
     )
 
     assert rules.recalled_line(entry, timezone.utc) == (
-        "Send chapter 3 (told 5 November 2026, due Friday 6 November)"
-    )
-
-
-def test_recalled_line_no_day() -> None:
-    entry = Commitment(
-        id="c", text="Send chapter 3", due_on=None, source_message_id=None,
-        importance=8, last_retrieved_at=None,
-        recorded_at=datetime(2026, 11, 5, 9, 0, tzinfo=timezone.utc), embedding=None,
-    )
-
-    assert rules.recalled_line(entry, timezone.utc) == (
-        "Send chapter 3 (told 5 November 2026)"
+        "Is a student (told 5 November 2026)"
     )
 
 

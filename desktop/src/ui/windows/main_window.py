@@ -21,7 +21,6 @@ from src.ui.views.desk import DeskView
 from src.ui.views.first_run import FirstRunView
 from src.ui.views.memory import MemoryView
 from src.ui.views.proactivity import ProactivityView
-from src.ui.views.sessions import SessionsView
 from src.ui.widgets.paused_overlay import PausedOverlay
 from src.ui.widgets.shadow import ShadowWindow
 from src.ui.widgets.sidebar import Sidebar
@@ -101,18 +100,17 @@ class MainWindow(ShadowWindow):
         self.chat.messageSent.connect(self.messageSent)
         self.chat.conversationChosen.connect(self.conversationChosen)
         self.chat.newConversationRequested.connect(self.newConversationRequested)
-        self.sessions = SessionsView()
-        self.sessions.nudgeRequested.connect(self.nudgeRequested)
         self.character = CharacterView()
         self.memory = MemoryView()
+        self.proactivity = ProactivityView()
+        self.proactivity.nudgeRequested.connect(self.nudgeRequested)
 
         self._by_id: dict[str, QWidget] = {
             "chat": self.chat,
-            "sessions": self.sessions,
             "memory": self.memory,
             "character": self.character,
             "desk": DeskView(),
-            "proactivity": ProactivityView(),
+            "proactivity": self.proactivity,
         }
         for screen in self._by_id.values():
             self.screens.addWidget(screen)

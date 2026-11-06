@@ -16,7 +16,7 @@ from datetime import date, datetime
 from PySide6.QtCore import QLocale, Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
-from src.domain.memory.models import NOTICED, Commitment, Entry, MemoryItem
+from src.domain.memory.models import NOTICED, MemoryItem
 from src.ui import theme
 from src.ui.widgets.buttons import accent_button, quiet_button, small_button
 from src.ui.widgets.scroll import ScrollPane
@@ -180,17 +180,17 @@ class MemoryView(QWidget):
     # ── what the application tells it to show ─────────────────────────────
 
     def setEntries(  # noqa: N802 - matches Qt naming
-        self, items: Sequence[MemoryItem], commitments: Sequence[Commitment]
+        self, items: Sequence[MemoryItem]
     ) -> None:
-        """Show every item: what the user said and their commitments under *you
-        told me*, the companion's conclusions under *I noticed*."""
+        """Show every item: what the user said under *you told me*, the
+        companion's conclusions under *I noticed*."""
         self.error.setVisible(False)
         self.columns.setVisible(True)
         told = [i for i in items if i.kind != NOTICED]
         noticed = [i for i in items if i.kind == NOTICED]
-        self._fill(self._told, [*told, *commitments], "Delete")
+        self._fill(self._told, told, "Delete")
         self._fill(self._noticed, noticed, "Wrong")
-        self._count = len(items) + len(commitments)
+        self._count = len(items)
         self._update_strip()
         self.pane.refresh()
 
@@ -235,7 +235,7 @@ class MemoryView(QWidget):
         return group, cards
 
     def _fill(
-        self, cards: QVBoxLayout, entries: Sequence[Entry], remove_label: str
+        self, cards: QVBoxLayout, entries: Sequence[MemoryItem], remove_label: str
     ) -> None:
         while cards.count():
             widget = cards.takeAt(0).widget()
@@ -246,7 +246,7 @@ class MemoryView(QWidget):
                 entry.text,
                 _date_text(entry),
                 remove_label=remove_label,
-                evidence=(entry.reason or "") if isinstance(entry, MemoryItem) else "",
+                evidence=entry.reason or "",
             )
             card.removed.connect(lambda e=entry: self.removeRequested.emit(e))
             card.corrected.connect(
@@ -295,8 +295,5 @@ class MemoryView(QWidget):
         )
 
 
-def _date_text(entry: Entry) -> str:
-    told = short_day(_local_day(entry.recorded_at))
-    if isinstance(entry, Commitment) and entry.due_on is not None:
-        return f"{told} · due {short_day(entry.due_on)}"
-    return told
+def _date_text(entry: MemoryItem) -> str:
+    return short_day(_local_day(entry.recorded_at))

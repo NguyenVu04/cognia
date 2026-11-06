@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from src.app.chat_worker import Prepared
 from src.domain.erasure.models import Level
-from src.domain.memory.models import Entry, Vector
+from src.domain.memory.models import MemoryItem, Vector
 
 # ── from the GUI ───────────────────────────────────────────────────────────
 
@@ -47,13 +47,13 @@ class RestoreVersion:
 
 @dataclass(frozen=True)
 class CorrectEntry:
-    entry: Entry
+    entry: MemoryItem
     text: str
 
 
 @dataclass(frozen=True)
 class RemoveEntry:
-    entry: Entry
+    entry: MemoryItem
 
 
 @dataclass(frozen=True)
@@ -93,7 +93,7 @@ class ReplyLost:
 
 @dataclass(frozen=True)
 class VectorsMade:
-    pairs: tuple[tuple[Entry, Vector], ...]
+    pairs: tuple[tuple[MemoryItem, Vector], ...]
 
 
 @dataclass(frozen=True)
