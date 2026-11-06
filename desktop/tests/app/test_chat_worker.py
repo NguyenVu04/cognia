@@ -19,7 +19,6 @@ THESIS = MemoryItem(
 ANSWER = {
     "event_class": "good_news", "confidence": 0.9, "importance": 8, "crisis": False,
     "facts": ["Has a supervisor"],
-    "commitments": [{"text": "Send chapter 4", "due_on": "2026-11-20"}],
     "style_request": None,
 }
 
@@ -95,7 +94,7 @@ def test_prepare_full_path(qtbot) -> None:
     assert prepared.turn_id == 7
     assert [s.entry.id for s in prepared.recalled] == ["i1"]
     assert prepared.found.facts == ("Has a supervisor",)
-    assert set(prepared.vectors) == {"Has a supervisor", "Send chapter 4"}
+    assert set(prepared.vectors) == {"Has a supervisor"}
     assert embedder.calls[0] == [MESSAGE.text]
     assert "- Is writing a thesis" in interpreter.turns[0]
 

@@ -22,13 +22,12 @@ _TABLES = orm.Base.metadata.tables
 GROUP_TABLES: dict[Group, tuple[str, ...]] = {
     Group.CONVERSATIONS: (
         "message_memory_refs",
-        "message_commitment_refs",
         "message_journal_refs",
         "messages",
         "conversations",
     ),
-    Group.MEMORY: ("memory_item_evidence", "memory_items", "commitments"),
-    Group.SESSIONS: ("session_intents", "sessions", "app_usage"),
+    Group.MEMORY: ("memory_item_evidence", "memory_items"),
+    Group.DESK: ("app_usage",),
     Group.LEARNING: ("pattern_evidence", "self_adjustments", "patterns"),
     Group.JOURNAL: ("journal_entry_sources", "journal_entries"),
     Group.SPEECH: ("decision_factors", "speech_decisions"),
@@ -40,8 +39,8 @@ GROUP_TABLES: dict[Group, tuple[str, ...]] = {
 # The rows a person would call items.
 _COUNTED: dict[Group, tuple[str, ...]] = {
     Group.CONVERSATIONS: ("messages",),
-    Group.MEMORY: ("memory_items", "commitments"),
-    Group.SESSIONS: ("sessions",),
+    Group.MEMORY: ("memory_items",),
+    Group.DESK: ("app_usage",),
     Group.LEARNING: ("patterns",),
     Group.JOURNAL: ("journal_entries",),
     Group.SPEECH: ("speech_decisions",),

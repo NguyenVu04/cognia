@@ -6,12 +6,12 @@ speech, so it is governed here too.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from src.ui import theme
 from src.ui.views import sample_data
-from src.ui.widgets.buttons import LayoutButton
+from src.ui.widgets.buttons import LayoutButton, dashed_button
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import Panel, bottom_rule
 from src.ui.widgets.toggle import PillToggle
@@ -60,6 +60,8 @@ class LevelCard(LayoutButton):
 
 
 class ProactivityView(QWidget):
+    nudgeRequested = Signal()
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
@@ -151,6 +153,12 @@ class ProactivityView(QWidget):
         text.addWidget(body(kind.name, px=14))
         text.addWidget(body(kind.detail, px=12, alpha=0.45))
         row.addLayout(text, 1)
+        if kind.id == "break":
+            preview = dashed_button(
+                "Preview", px=12.5, radius=7, padding=(7, 12), icon_name="coffee"
+            )
+            preview.clicked.connect(self.nudgeRequested)
+            row.addWidget(preview, 0, Qt.AlignmentFlag.AlignVCenter)
         row.addWidget(
             PillToggle("small", checked=True), 0, Qt.AlignmentFlag.AlignVCenter
         )

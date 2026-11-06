@@ -29,14 +29,6 @@ class Message:
 
 
 @dataclass(frozen=True)
-class PastSession:
-    intent: str
-    answer: str
-    when: str
-    length: str
-
-
-@dataclass(frozen=True)
 class Level:
     id: str
     name: str
@@ -60,7 +52,6 @@ class PauseOption:
 
 NAV: list[NavItem] = [
     NavItem("chat", "Companion", "chat-circle"),
-    NavItem("sessions", "Sessions", "timer"),
     NavItem("memory", "Memory", "brain"),
     NavItem("character", "Character", "user-focus"),
     NavItem("desk", "Desk awareness", "eye"),
@@ -76,19 +67,6 @@ MESSAGES: list[Message] = [
                  "finish the positioning chapter today.” Correct it if that "
                  "is not it.",
             "Stored — you told me · 15 Aug"),
-]
-
-SESSION_INTENT = "Positioning chapter, second pass"
-SESSION_OPENED = "Open since 09:15"
-SESSION_ELAPSED = "2h 47m"
-
-PAST_SESSIONS: list[PastSession] = [
-    PastSession("Positioning chapter, first pass",
-                "“Got the shape of it, not the words.”", "14 Aug", "3h 10m"),
-    PastSession("Reading — competitor teardown",
-                "No answer given", "13 Aug", "1h 25m"),
-    PastSession("Use case spec, section 5",
-                "“Cut four things. Good day.”", "12 Aug", "2h 02m"),
 ]
 
 READS: list[str] = [
@@ -112,9 +90,10 @@ LEVELS: list[Level] = [
 ]
 
 KINDS: list[MessageKind] = [
-    MessageKind("break", "Break nudge", "The only thing sent during a session"),
+    MessageKind("break", "Break nudge",
+                "When you have been at the machine a long time"),
     MessageKind("return", "Coming back to the desk",
-                "What you were in the middle of"),
+                "After you have been away a while"),
     MessageKind("greeting", "Greeting when you open Cognia",
                 "Does not count against the allowance"),
     MessageKind("propose", "Asking to change how it behaves",

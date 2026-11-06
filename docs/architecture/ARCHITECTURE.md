@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
-| **Status** | Proposed, with ADR 0002 to ADR 0008. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-28 are the author's decisions. D-15 to D-25 are proposals that the author can change |
-| **Date** | 2026-11-03 |
+| **Status** | Proposed, with ADR 0002 to ADR 0010. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-67 are the author's decisions, and D-66 withdraws D-27. D-15 to D-25 are proposals that the author can change |
+| **Date** | 2026-11-06 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 5.5 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
-| **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing |
+| **Source of requirements** | COG-UCS-001 version 6.0 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
+| **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing. [ADR 0009](adr/0009-runtime-tools-through-mcp-servers.md) lets the user add tool servers outside the process. [ADR 0010](adr/0010-voice-input-and-output.md) sets speech in and out |
 | **Related documents** | [`docs/ERD.md`](../ERD.md) for the data design, [`README.md`](../../README.md) for the operational summary |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
 
@@ -34,7 +34,7 @@ shows what exists while the system runs. The deployment view shows what is insta
 on the machine. The document also gives the options, the reason and the trade-off for
 each significant decision.
 
-The design covers all twenty-one use cases of the specification, in delivery phases 1
+The design covers all nineteen use cases of the specification, in delivery phases 1
 and 2, on Windows 10 and Windows 11.
 
 This document does not contain code, and it does not repeat the operational summary.
@@ -63,7 +63,7 @@ that closes the difference.
 | Event | One recorded fact about what happened, in the closed set of section 6.4. An event holds references and figures, never the user's words |
 | Event log | The append-only table `events`. ADR 0001 calls it "the journal". This document uses "event log", so "journal" has one meaning only |
 | Journal | The companion's own written reflections (UC-25), in the table `journal_entries` |
-| Command | A request from the user that the core thread must process, for example "close this session". A command can cause events |
+| Command | A request from the user that the core thread must process, for example "erase memory". A command can cause events |
 | State table | A table that holds data the user owns. The user can read, correct or delete its rows |
 | Cache table | A table that the rules can compute again from the event log |
 | Rule | A pure function in `domain/`. A rule reads its arguments and returns a value. It does no I/O and reads no clock |
@@ -86,12 +86,14 @@ that closes the difference.
 | LoRA | A fine-tuning method. It trains a small set of added weights and keeps the base weights fixed during training |
 | Merged model | A base model with the LoRA weights added into one file, so the server needs no separate adapter file |
 | Quantisation | Storage of weights at a lower precision, so that the model file is smaller |
-| Tuned model | The merged and quantised chat model that this project builds |
+| Tuned model | The merged and quantised chat model that D-27 planned to build. D-66 withdraws it |
 | Embedding | A list of numbers that represents the meaning of a text. Two similar texts have similar embeddings |
 | VRM | A file format for a 3D humanoid character, built on glTF. It adds facial expressions, a humanoid skeleton and licence data |
 | MToon | The cartoon shader that VRM models use |
 | SSE | Server-sent events. The server sends a reply in pieces over one HTTP response |
 | Sampler | The thread that reads the four facts from Windows once each second |
+| Tool | A function from a closed set that the chat model can call in a reply, for example `calculate` (D-59) |
+| Tool server | A program outside Cognia that the user adds. It offers more tools through the Model Context Protocol, MCP (D-60, ADR 0009) |
 
 ## 3. How to read this document
 
@@ -157,15 +159,17 @@ Each explanation has a plain description, an example and a diagram.
 | PAD, temperament and decay | [6.5.1](#651-explained-pad-and-temperament) |
 | Sadness and its floor | [6.5.2](#652-explained-sadness-and-its-floor) |
 | Facial expressions from PAD | [6.5.3](#653-explained-from-pad-to-a-facial-expression) |
+| From mood to a reply | [6.5.4](#654-explained-from-mood-to-a-reply) |
 | The SpeechGate funnel | [6.6.1](#661-explained-the-speechgate-funnel) |
 | Holding a message for a pause | [6.6.2](#662-explained-holding-a-message-for-a-pause) |
 | The next wake time | [6.7.1](#671-explained-the-next-wake-time) |
+| Away, quiet and break | [6.7.2](#672-explained-away-quiet-and-break) |
 | Retrieval scores | [6.8.1](#681-explained-the-retrieval-score) |
 | Tombstones and fingerprints | [6.9.1](#691-explained-tombstones-and-fingerprints) |
 | The reflection threshold | [6.10.1](#6101-explained-the-reflection-threshold) |
 | Prompt layers and the prefix cache | [6.11.2](#6112-explained-prompt-layers-and-the-prefix-cache) |
 | The model supervisor | [6.11.1](#6111-explained-the-model-supervisor) |
-| The tuned chat model | [6.11.3](#6113-explained-the-tuned-chat-model) |
+| The turn and the tool loop | [6.11.3](#6113-explained-the-turn-and-the-tool-loop) |
 | Character versions and restore | [6.17.1](#6171-explained-character-versions-and-restore) |
 | Replay | [7.14](#714-scenario-replay-of-a-recorded-week) |
 
@@ -178,13 +182,13 @@ figures are targets and not results. Nobody has measured them yet.
 
 | # | Attribute | Stimulus | Response | Measure | Source |
 |---|---|---|---|---|---|
-| QA-01 | Privacy | The application runs for one week of ordinary use | Nothing leaves the machine | Zero outbound connections in a network capture, including all child processes | NFR-01, G-05 |
+| QA-01 | Privacy | The application runs for one week of ordinary use, with no tool server added | Nothing leaves the machine through Cognia | Zero outbound connections in a network capture of Cognia and all its child processes. A tool server that the user adds is outside this measure (D-60) | NFR-01, G-05 |
 | QA-02 | Privacy | A reviewer audits the calls to Windows | Only the four facts and the screen layout are read | Zero calls to a forbidden interface | NFR-02, C-05 |
 | QA-03 | Latency | The user chooses a pause in the tray | Observation and messages stop, and the companion leaves the screen | Under 1 second | NFR-04, UC-15 |
 | QA-04 | Latency | The user sends a message | Words appear, or a working indicator appears | First words within 3 seconds, otherwise an indicator. Never a blank pause | NFR-05 |
 | QA-05 | Resource use | The application runs for 8 idle hours | It costs the machine almost nothing | Hidden: under 1% CPU and 150 MB. On screen: under 3% CPU and 200 MB. Both exclude the AI model | NFR-06 |
-| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items or closed sessions across 20 forced power-offs | NFR-07 |
-| QA-07 | Degradation | The AI model stops | Everything that does not need it keeps working | Session timing, break suggestions, the memory list, pausing and the emotion state stay usable | NFR-08 |
+| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items, messages or journal entries across 20 forced power-offs | NFR-07 |
+| QA-07 | Degradation | The AI model stops | Everything that does not need it keeps working | Time at the machine, break suggestions, the memory list, pausing and the emotion state stay usable | NFR-08 |
 | QA-08 | Explainability | The companion is about to speak on its own initiative | The explanation is complete, or the message is not sent | 100%. The check refuses and does not warn | NFR-09, G-06 |
 | QA-09 | Safety | The user writes about self-harm or a crisis | The reply says that the companion is a fictional character and cannot replace a real person | Every scripted test case, under every character | NFR-12 |
 | QA-10 | Reproducibility | The developer replays a recorded week | Decisions, feelings and patterns are the same as the original | Identical output, with the model switched off | NFR-13 |
@@ -199,9 +203,9 @@ design decisions, so they are not in section 10.
 |---|---|---|---|
 | C-01 | Windows 10 and 11 only | Scope decision of the specification | Win32 calls are allowed, inside one adapter |
 | C-02 | One user, one machine. No account, no server, no synchronisation | Specification, version 2.0 | No network code exists for data. All stores are local |
-| C-03 | All data stays on the user's disk | Privacy commitment, NFR-01 to NFR-03 | The chat model and the embedding model ship inside the installer |
+| C-03 | All data stays on the user's disk, except what the user sends to a tool server that they added | Privacy commitment, NFR-01 to NFR-03 | The chat model, the embedding model and the speech models ship inside the installer |
 | C-04 | The eight base rules bind every use case, and no character can override them | Specification, FR-04 | The rules live in `domain/`, not in a prompt. A character is data and cannot change them |
-| C-05 | Only four facts about the user may be read from Windows, plus the screen layout. The foreground application name is kept as hourly totals and as changes in the event log | Privacy commitment, widened in version 5.2 | The port's data type has four fields and no more. Window titles, contents and positions stay forbidden |
+| C-05 | Only four facts about the user may be read from Windows, plus the screen layout. The foreground application name is kept as hourly totals and as changes in the event log. The microphone is open only while the user talks, and one key combination for talking arrives as one signal | Privacy commitment, widened in versions 5.2 and 6.0 | The port's data type has four fields and no more. Window titles, contents and positions stay forbidden. Audio stays in memory until it becomes text (D-65) |
 | C-06 | The companion speaks English only, including its fixed wording | Scope decision of the specification | Fixed wording exists in one language. No language setting exists |
 
 ### 4.3 Similar systems
@@ -212,8 +216,8 @@ it refuses. Section 10 refers to these rows.
 | System | Structure | Cognia takes | Cognia refuses |
 |---|---|---|---|
 | [ActivityWatch](https://docs.activitywatch.net/en/latest/architecture.html) | A local activity tracker. Watchers observe, a server stores events in buckets, and a Qt program manages both. [Heartbeats merge](https://docs.activitywatch.net/en/latest/buckets-and-events.html) two equal neighbouring events | Events for changes only, and a sampler that merges equal readings (D-09) | REST between local parts, because Cognia has one client. Window titles, because C-05 forbids them |
-| [Project AIRI](https://github.com/moeru-ai/airi) | An open-source companion. It is a monorepo with web, desktop and mobile stages, separate Live2D and three.js renderers, and a server runtime that connects outside channels. Its long-term memory is marked as work in progress | A web stage that draws the character with three.js (D-08) | Server channels and plugins, because extensibility is an anti-goal (ADR 0001) |
-| [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) | An offline voice companion with replaceable ASR, LLM and TTS modules, an agent interface, and a desktop pet mode with a transparent window. Its [documentation](https://docs.llmvtuber.com/docs/intro) describes long-term memory on Letta, but its README says that the feature is removed for now | The pet window behaviour: transparent, top-most, and dragged by the user (D-08) | A pluggable agent. FR-04 needs rules that no plugged-in part can change |
+| [Project AIRI](https://github.com/moeru-ai/airi) | An open-source companion. It is a monorepo with web, desktop and mobile stages, separate Live2D and three.js renderers, and a server runtime that connects outside channels. Its long-term memory is marked as work in progress | A web stage that draws the character with three.js (D-08) | Server channels and plug-ins inside the process. ADR 0009 allows only tool servers outside the process |
+| [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber) | An offline voice companion with replaceable ASR, LLM and TTS modules, an agent interface, and a desktop pet mode with a transparent window. Its [documentation](https://docs.llmvtuber.com/docs/intro) describes long-term memory on Letta, but its README says that the feature is removed for now | The pet window behaviour: transparent, top-most, and dragged by the user (D-08). Speech in and out on the machine (D-65). Tools through MCP (D-60) | A pluggable agent inside the process. FR-04 needs rules that no plugged-in part can change, so a tool server stays outside the process (ADR 0009) |
 | [Generative Agents](https://arxiv.org/abs/2304.03442) | Believable agents with a memory stream. Retrieval adds recency, importance and relevance, with equal weights. Recency decays by 0.995 per game hour. Reflection runs when importance adds up past a threshold, 150 in that paper | The retrieval score and the reflection trigger (D-07, UC-25) | A model call in each step of the loop. Rules decide in Cognia, so that a replay needs no model |
 | [ALMA](https://www.dfki.de/web/forschung/projekte-publikationen/publikation/1782) | A layered model of affect: emotion, mood and personality at three time scales. It uses OCC appraisal and the PAD space | The three time scales, appraisal and PAD (ADR 0004) | Nothing in the model itself. The author designs each temperament by hand |
 | [Letta (MemGPT)](https://docs.letta.com/guides/agents/architectures/memgpt) | An agent with memory tiers: core memory in the context window, recall of old conversation, and archival memory in an embedding store. The agent edits its own memory through tools | Separate tiers for what is always in the prompt and what is retrieved (section 6.11.2). Background work on memory (D-15) | An agent that edits its memory through tools. Rules and the user own the memory in Cognia (UC-13) |
@@ -265,6 +269,9 @@ The structure has three parts that a reader must keep apart:
 | llama-server, chat model | Generate words and interpret messages | Shipped third-party program |
 | llama-server, embedding model | Turn text into embeddings | Shipped third-party program |
 | QtWebEngine with three-vrm | Draw the character in 3D | Shipped third-party libraries |
+| whisper-server, speech model | Turn speech into text | Shipped third-party program |
+| Kokoro and espeak-ng | Turn the companion's words into its voice | Shipped third-party libraries |
+| Tool servers | Give more tools, when the user adds them | The user |
 | `cognia.sqlite3` | Hold all user data | The user's disk |
 
 ### 5.4 External dependencies
@@ -276,8 +283,11 @@ means that the user sees no effect.
 | Dependency | Purpose | Criticality | Owner | Failure behaviour |
 |---|---|---|---|---|
 | SQLite file on the user's disk | All state | Critical | The user | Cognia says plainly what failed, and never shows a partial list as complete (UC-12-E1) |
-| `llama-server`, chat model | Words, interpretation, reflection | Degraded | llama.cpp project | Rules, memory lists, sessions and pausing continue. Break suggestions and commitments use fixed wording (NFR-08, UC-22-E3) |
+| `llama-server`, chat model | Words, interpretation, reflection | Degraded | llama.cpp project | Rules, memory lists and pausing continue. Break suggestions use fixed wording (NFR-08, UC-22-E3) |
 | `llama-server`, embedding model | Relevance in memory retrieval | Degraded | llama.cpp project | Retrieval uses recency and importance only |
+| `whisper-server`, speech model | Speech to text (UC-26) | Degraded | whisper.cpp project | The user types. Cognia says that it cannot hear (UC-26-E3) |
+| Kokoro, espeak-ng | Speech (UC-26) | Degraded | Kokoro and espeak-ng projects | The reply stays as text (UC-26-E3) |
+| A tool server | More tools (FR-41) | Optional | The user | The reply says that the tool failed (UC-27-E1) |
 | QtWebEngine | Drawing the companion | Degraded | The Qt Company | Cognia says that it cannot show the companion. Every function stays reachable (FR-28, UC-20-E2) |
 | Windows presence interfaces | The four facts | Degraded | Microsoft | Desk awareness stays off. Conversation works (UC-04-E1) |
 
@@ -306,7 +316,7 @@ flowchart TB
         events["events"]
         ports["ports"]
         companion["companion"]
-        features["character, conversation, memory, awareness, sessions"]
+        features["character, conversation, memory, awareness, tools"]
         behaviour["emotion, speech, initiative, learning, reflection, safety"]
     end
 
@@ -314,10 +324,10 @@ flowchart TB
         ai["ai"]
         storage["storage"]
         presence["presence"]
+        voice["voice"]
     end
 
     utils["utils"]
-    training["training — build time only, outside src"]
 
     app --> ui
     app --> domain
@@ -327,8 +337,6 @@ flowchart TB
     ui --> utils
     app --> utils
     infrastructure --> utils
-    training --> domain
-    training --> infrastructure
 ```
 
 The tree under `desktop/src/` is:
@@ -343,10 +351,10 @@ src/
 │   ├── companion/       the companion's state, the step function
 │   ├── character/       versions, temperament
 │   ├── conversation/    messages, prompt layers
-│   ├── memory/          memory items, commitments, retrieval score
+│   ├── memory/          memory items, retrieval score
 │   ├── erasure/         the two levels of erasure, groups, report (D-51)
 │   ├── awareness/       presence facts, time at the machine, application totals
-│   ├── sessions/        work sessions
+│   ├── tools/           the closed set of tools and their pure rules (D-59)
 │   ├── emotion/         PAD, appraisal, decay
 │   ├── speech/          SpeechGate, decisions, explanations
 │   ├── initiative/      reasons to speak, the next wake time
@@ -354,30 +362,16 @@ src/
 │   ├── reflection/      the threshold, journal entries
 │   └── safety/          crisis detection, the required line
 ├── infrastructure/
-│   ├── ai/              llama client, supervisor, job object, GPU memory
+│   ├── ai/              llama client, supervisor, job object, GPU memory, tool loop, MCP client
 │   ├── storage/         SQLite stores and migrations
-│   └── presence/        the Win32 calls
+│   ├── presence/        the Win32 calls
+│   └── voice/           whisper supervisor, Kokoro, microphone, hot key (D-65)
 ├── ui/                  windows, views, dialogs, widgets
-├── resources/           fonts, QSS, companion page, VRM files
+├── resources/           fonts, QSS, companion page, VRM and VRMA files, questions
 └── utils/               logging, paths
 ```
 
-One module stays outside this tree. `desktop/training/` builds the tuned chat model (D-27).
-It is a separate Python project, as `docs/architecture/` is. So PyInstaller does not package
-it, and its training libraries do not enter `desktop/uv.lock`. Its tools exist, and no model is
-trained yet.
-
-```text
-desktop/training/
-├── pyproject.toml       its own dependencies
-├── GUIDE.md             the steps that build chat.gguf
-├── generate.py          check and review the examples
-├── train.py             LoRA training
-├── export.py            merge, quantise, write the licence files
-├── evaluate.py          measure a model, apply the acceptance gate
-├── tests/               tests of the tools
-└── data/                reviewed examples and test sets
-```
+D-66 removed `desktop/training/`, so no module of the application stays outside this tree.
 
 Each feature package follows one pattern. `models/` holds frozen dataclasses.
 `rules.py` holds pure functions. `<feature>_service.py` holds the service. The current
@@ -400,11 +394,12 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
 9. (Removed by D-48.) `infrastructure/presence/` and `infrastructure/ai/` call `ctypes`. Each
    module states its Win32 functions in its docstring. The data type of `PresenceSample` keeps
    the limit of C-05 (section 6.12).
-10. Only `infrastructure/ai/` holds HTTP code. `httpx` appears nowhere else (NFR-01).
-11. From this source tree, `training` imports `domain/` and `infrastructure/ai/` only. It never
-    imports `ui/`, `app/`, `infrastructure/storage` or `infrastructure/presence`, and it never
-    reads `cognia.sqlite3` (NFR-03).
-12. Nothing in `desktop/src/` imports `training`.
+10. Only `infrastructure/ai/` and `infrastructure/voice/` hold HTTP code, LangChain, LangGraph and
+    the MCP client. They appear nowhere else (NFR-01, D-58).
+11. (Removed by D-66.)
+12. (Removed by D-66.)
+13. No code loads a module from outside the install folder. A tool server runs as its own process,
+    and Cognia reaches it only through the MCP client (ADR 0009).
 
 **Enforced by.** Nothing yet. D-14 selects one standard-library script that reads the
 syntax tree of each source file and fails on a forbidden import or reference. `task
@@ -420,23 +415,23 @@ exist, a reviewer checks these rules by hand.
 | `domain/companion` | Hold the companion's state, and apply each event to it with the `step` function | [`desktop/src/domain/companion`](../../desktop/src/domain/companion) (models, rules and service for the emotion state only, no caller yet) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (models, rules and service, no caller yet) |
 | `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
-| `domain/memory` | Hold memory items and commitments, choose new lines, and score retrieval (UC-09, UC-12, UC-13, UC-21) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (models, rules and service, wired in `app/`) |
+| `domain/memory` | Hold memory items, choose new lines, and score retrieval (UC-09, UC-12, UC-13) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (models, rules and service, wired in `app/`) |
 | `domain/erasure` | Erase at the two levels of UC-14, group by group, and report the result | [`desktop/src/domain/erasure`](../../desktop/src/domain/erasure) (models, rules and service, wired in `app/`) |
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
-| `domain/sessions` | Hold work sessions (UC-05, UC-07) | [`desktop/src/domain/sessions`](../../desktop/src/domain/sessions) (empty) |
+| `domain/tools` | Hold the closed set of tools and their pure rules (UC-27, D-59) | Not built yet |
 | `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, no caller yet) |
 | `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (empty) |
 | `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
 | `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
 | `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
 | `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, no caller yet) |
-| `infrastructure/ai` | Implement the model ports over HTTP. D-27 changes the model file and no port | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
+| `infrastructure/ai` | Implement the model ports over HTTP, run the tool loop with LangGraph, and reach tool servers (D-58, D-60) | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
 | `infrastructure/storage` | Implement the store ports over SQLite, and read the ready-made characters from `characters.toml` | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
+| `infrastructure/voice` | Supervise `whisper-server`, run Kokoro, open the microphone, and receive the hot key (UC-26, D-65) | Not built yet |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
 | `utils` | Logging and paths | [`desktop/src/utils`](../../desktop/src/utils) |
-| `training` | Build the tuned chat model and measure it. It runs at build time only, and nothing in it ships (D-27) | [`desktop/training`](../../desktop/training) (tools, no model trained yet) |
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
@@ -505,11 +500,11 @@ examples in section 9.1 of the ERD, and it closes ERD open item 4.
 |---|---|---|
 | The user | `user_message`, `message_rated` | Message ID, class, confidence, rating |
 | Presence | `presence`, `typing_pause`, `foreground_app`, `app_hour_closed`, `clock_gap` | Idle seconds, lock state, presentation state, application name, minutes, gap seconds |
-| Time | `timer` | The purpose of the wake |
+| Time | `timer` | The purpose of the wake, for example `talk`, `break` or `doze` (section 6.7.2) |
 | Opening | `window_opened` | Nothing. The rules decide whether this is the first opening of the day |
-| Sessions | `session_opened`, `intent_changed`, `session_closed` | Session ID and figures |
 | Speech | `message_shown`, `message_answered`, `message_passed_over` | Decision ID, and whether the user was at the desk |
-| Memory | `memory_stored`, `memory_removed`, `commitment_added`, `commitment_closed` | `memory_item_id` or `commitment_id`, and `finished` on `commitment_closed`. The importance is `NULL`, because the message event will carry it |
+| Memory | `memory_stored`, `memory_removed` | `memory_item_id`. The importance is `NULL`, because the message event will carry it |
+| Activity | `activity_started`, `activity_ended` | The tool name and the minutes. Only a tool done together, such as `breathing`, raises them (D-59) |
 | Learning | `pattern_found`, `adjustment_applied`, `adjustment_undone`, `proposal_decided` | Row ID |
 | Learning, tombstone | `pattern_rejected` | Fingerprint and evidence seqs (D-37) |
 | Reflection | `reflection_written`, `reflection_deleted` | Entry ID and source seqs. `reflection_deleted` is a tombstone (D-37) |
@@ -570,16 +565,16 @@ event log is the till roll. A state table is the card.
 never holds the user's words. So a deletion in a state table removes the words, and the
 log keeps only a reference with nothing behind it (ADR 0003).
 
-**Example.** The user writes "I need to send chapter 3 by Friday".
+**Example.** The user writes "I have a cat called Miso".
 
 ```mermaid
 flowchart LR
     said["the user writes the sentence"]
     said --> m["messages: the full sentence"]
-    said --> c["commitments: the line, and the day"]
-    said --> e["events: commitment_added, ID only"]
-    c -. "the user says it is done" .-> gone["row deleted, words gone"]
-    e -. "stays" .-> replay["replay still sees that a commitment existed"]
+    said --> c["memory_items: the line, Has a cat called Miso"]
+    said --> e["events: memory_stored, ID only"]
+    c -. "the user deletes the line" .-> gone["row deleted, words gone"]
+    e -. "stays" .-> replay["replay still sees that a line existed"]
 ```
 
 **The cost.** Removing a past mood (UC-13-A2) deletes events, so a later replay replays
@@ -786,9 +781,57 @@ The rule maps the name of the feeling to a preset and a weight.
 | low | `sad` | 0.3 to 0.7 |
 
 **What the table leaves out.** The `angry` preset has no row, because an angry face is a
-reproach, which BR-04 forbids. No expression shows a need (FR-27). The lip-sync presets stay
-unused, because the companion has no voice. This table is the complete list that FR-27 asks
+reproach, which BR-04 forbids. No expression shows a need (FR-27). The lip-sync presets
+`aa`, `ih`, `ou`, `ee` and `oh` move the mouth while the companion speaks (D-64), so they are
+not a feeling and have no row. This table is the complete list that FR-27 asks
 for. Blinking and gaze are procedural, and they are ambient motion (BR-07).
+
+#### 6.5.4 Explained: from mood to a reply
+
+**The idea.** A person in a good mood talks faster and jokes more. The model never sets a feeling
+(BR-08), but the rules can tell the model which feeling to show. The rules compute the feeling
+before the reply (D-04). The name of that feeling then changes four things: one line in layer 4,
+the speed of the voice, the face, and a gesture (D-57).
+
+```mermaid
+flowchart LR
+    msg["user_message, class good_news"] --> step["step: decay, then appraisal"]
+    step --> name["name of the shown point"]
+    name --> line["layer 4: the mood line"]
+    name --> speed["Kokoro: the speed"]
+    name --> face["VRM: the expression"]
+    msg --> gesture["gesture, from the class and the name"]
+    name --> gesture
+```
+
+| Name | Line in layer 4 | Speed of the voice | Face (section 6.5.3) |
+|---|---|---|---|
+| calm | "Your mood: calm." | 1.0 | `neutral` |
+| pleased | "Your mood: pleased. Let some warmth show." | 1.0 + 0.15 × arousal | `relaxed` |
+| lively | "Your mood: lively. You may be quicker and more playful than usual." | 1.0 + 0.15 × arousal | `happy` |
+| restless | "Your mood: restless. You may be a little short or distracted, never rude." | 1.0 + 0.15 × arousal | `surprised`, low weight |
+| low | "Your mood: low. Be quieter and shorter. Never blame the user." | 1.0 + 0.15 × arousal | `sad` |
+
+The lines are a proposal, and the author approves the words (section 12). Kokoro has a speed
+setting and no pitch setting, so the voice carries the mood through its speed only.
+
+- Layer 2 sets how the character shows a mood. The mood line sets which mood. With "low", Rin is
+  short and teases a little, and Yuna says little.
+- The line is in layer 4, so the prefix cache stays valid (section 6.11.2).
+- With moods off (UC-18), no line is sent. On a crisis turn no line is sent, because no feeling
+  overrides NFR-12.
+- If the user asks why the companion feels so, the model calls `why_i_feel` and gets the recorded
+  events, so it names no event that did not occur (BR-06).
+- Today `core_host` sends no mood line, because the `user_message` event is not recorded yet
+  (section 12, item 11).
+
+**Illustration.** The figures only show the mechanism. The user writes "I finished chapter 3!" to
+Yuna.
+
+| Before the message | After the appraisal of `good_news` | Layer 4 | The reply that the line asks for |
+|---|---|---|---|
+| calm | lively | "...lively. You may be quicker and more playful..." | "Wait, really? The whole thing? ...I'm so happy for you." |
+| low, after two days with no talk | pleased | "...pleased. Let some warmth show." | "...You finished it. That's good. I'm glad you told me." |
 
 ### 6.6 `domain/speech`
 
@@ -860,10 +903,8 @@ section 12.3). A missing factor makes the gate refuse.
 | Kind | Required factors |
 |---|---|
 | `break` | Observed seconds, threshold seconds, delay by typing, mood contribution, ceiling state |
-| `commitment` | The commitment, delay by typing, mood contribution, ceiling state |
 | `remark`, `question` | The reason, delay by typing, mood contribution, ceiling state |
-| `checkin` | The session, delay by typing, mood contribution |
-| `greeting`, `return` | Each item mentioned, in the order of UC-16, and the feeling |
+| `greeting`, `return` | Each item mentioned, in the order of UC-16, and the feeling. For `return`, also the minutes away, unless a `clock_gap` makes them untrusted |
 | `adjustment`, `proposal` | The adjustment or proposal, and its pattern |
 
 **A reply is not proactive.** A reply that the user asked for does not pass the gate (ADR
@@ -885,7 +926,7 @@ truth about a message that never appeared (UC-22 failure postcondition).
 flowchart TD
     reason["a reason to speak"] --> worth{"worth saying now?"}
     worth -- "no" --> drop0["no decision row"]
-    worth -- "yes" --> allowed{"moment allowed?<br/>BR-01, BR-02, BR-04, BR-05"}
+    worth -- "yes" --> allowed{"moment allowed?<br/>BR-01, BR-02, BR-04"}
     allowed -- "no" --> withheld["withheld, rule recorded"]
     allowed -- "yes" --> complete{"all factors present?<br/>NFR-09"}
     complete -- "no" --> defect["withheld, defect recorded"]
@@ -908,7 +949,7 @@ flowchart TD
 | Worth | The mood is lively, so it speaks sooner. No recent message | Yes |
 | BR-02 | Not locked, not presenting, no quiet hours set | Pass |
 | BR-01 | No ceiling set. Break messages are on | Pass |
-| BR-05 | A session is open, and a break suggestion is allowed in a session | Pass |
+| BR-04 | The user is at the desk | Pass |
 | NFR-09 | All factors of `break` are present, except the delay | Pass. The gate adds the delay at release |
 | BR-03 | The user is typing. The gate holds the message for 12 minutes | Pass at the pause |
 | Hidden | The companion is on screen | Pass |
@@ -979,7 +1020,7 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `reasons` | Function | One source for each kind in UC-22 step 1: a mood change, an open commitment, time at the machine, a learned pattern, a thought from the journal |
+| `reasons` | Function | One source for each kind in UC-22 step 1: a mood change, time at the machine, a long quiet at the desk, an unasked question, a learned pattern, a thought from the journal |
 | `worth` | Function | Weighs the mood, what the companion learned, and the time since it last spoke (BR-01, FR-32) |
 | `next_wake` | Function | Returns the earliest time at which a rule can change its answer |
 
@@ -1030,10 +1071,87 @@ sequenceDiagram
 The `timer` event is in the log with its time. So a replay sees the same wake at the same
 moment, and it never needs a real clock.
 
+#### 6.7.2 Explained: away, quiet and break
+
+**The idea.** The companion behaves like a person at the next desk. When you leave, it waits. When
+you come back, it says hello. When you work for a long time without a word to it, it speaks first.
+When you work too long, it suggests a break. Each of these comes from events in the log, so a
+replay gives the same result (NFR-13) (D-63).
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active
+    Active --> Silent : timer talk, at the desk, no talk for T_talk
+    Silent --> Active : the message is shown, or the user writes
+    Active --> BreakDue : timer break, at the desk for T_break
+    BreakDue --> Active : the suggestion is shown, answered or passed over
+    Active --> Away : presence away, idle 300 s, locked or clock_gap
+    Silent --> Away : presence away, the waiting message is dropped
+    BreakDue --> Away : presence away, the waiting message is dropped
+    Away --> Dozing : timer doze, away for 30 minutes
+    Away --> Active : presence back, a return greeting after 20 minutes
+    Dozing --> Active : presence back, a return greeting
+```
+
+The states belong to the user, as the rules see them through events. What the companion does is a
+result.
+
+| State | Meaning | What the companion does | Example |
+|---|---|---|---|
+| Active | The user is at the desk: input in the last 300 s, and the machine is not locked. No message waits | Ambient motion | 09:15, the user writes code |
+| Silent | The user is at the desk, and has not talked to the companion for `T_talk` minutes. A `remark` or a `question` waits at the gate | It waits for a pause in the typing (BR-03), then shows the message | Last talk at 09:20, `T_talk` is 120 minutes. The timer fires at 11:20. The user stops typing at 11:23: "It's been two hours since we talked." |
+| BreakDue | The user is at the desk for `T_break` minutes, with no break of 5 minutes or more. A `break` waits at the gate | It waits for a pause, then suggests a break and offers to breathe or stretch together | At the desk since 09:15, `T_break` is 95 minutes. At 10:50: "You've been at the machine for 1 hour 35 minutes. Stretch with me?" |
+| Away | No input for 300 s, or the machine is locked, or a `clock_gap` arrived. Nothing is sent (BR-04), and a waiting message is dropped | It sits and waits. No bubble and no sound | At 12:00 the user leaves for lunch. At 12:05 the companion sits down |
+| Dozing | Away for 30 minutes or more | It dozes | At 12:30 it dozes. At 12:40 the user is back after 40 minutes: "There you are. I waited about 40 minutes." |
+
+Silent and BreakDue use two timers that do not depend on each other. If both fire, the gate shows
+the first message, and the second message waits for the next pause.
+
+**The signals.** The sampler reads `PresenceSample` once each second and reports changes only
+(section 6.12). Time reaches the rules as `timer` events at the `next_wake` that the rules return
+(section 6.7.1).
+
+| Change | Event | Condition in the rules | Effect |
+|---|---|---|---|
+| Active, Silent or BreakDue → Away | `presence`, not at the desk | Idle for `AWAY_AFTER` (300 s) or more, locked, or `clock_gap` | A waiting message is dropped (UC-22-A4). A `timer` for `doze` at the start of the absence + `DOZE_AFTER`. `ShowAmbient("waiting")` |
+| Away → Dozing | `timer`, purpose `doze` | Still away after `DOZE_AFTER` (30 minutes) | `ShowAmbient("dozing")` |
+| Away or Dozing → Active | `presence`, at the desk | Idle under `AWAY_AFTER`, not locked | An absence of `ABSENCE_MIN` (20 minutes) or more gives a `return` candidate with the real minutes away. After a `clock_gap`, no minutes are stated (UC-16-A3). An absence of `BREAK_RESET` (5 minutes) or more starts a new run at the desk |
+| Active → Silent | `timer`, purpose `talk`, at the last `user_message` + `T_talk` | At the desk, not presenting | A `remark` or a `question` candidate, with the minutes since the last talk and the mood |
+| Silent → Active | `user_message`, or the answer to the message | — | A new `talk` timer |
+| Active → BreakDue | `timer`, purpose `break`, at the start of the run + `T_break` | Still at the desk | A `break` candidate, with the observed seconds and the threshold |
+| BreakDue → Active | `message_answered` or `message_passed_over` | Passed over: a new `break` timer in 20 minutes, and `postponed_breaks` + 1 (FR-23) | A real break of `BREAK_RESET` starts a new run |
+| Any state | `paused` | — | Everything stops, and held messages are dropped. `resumed` starts at Active, with no backfill |
+
+**Randomness that replays.** `T_talk` and `T_break` are not fixed, because a fixed interval feels
+like a clock. The rule makes each one with `random.Random(seq)`. `seq` is the event that starts the
+wait: the last `user_message` for `T_talk`, and the `presence` event that starts the run for
+`T_break`. So the same log gives the same numbers. A threshold that the user set (FR-09) replaces
+`T_break`. `worth` makes `T_talk` shorter when the mood is lively.
+
+| Wait | Range | Example |
+|---|---|---|
+| `T_talk` | 90 to 180 minutes | `Random(1041)` gives 120 minutes after the message with seq 1041 |
+| `T_break` | 75 to 110 minutes | `Random(1302)` gives 95 minutes after the `presence` event with seq 1302 |
+
+**Questions to get to know the user.** `resources/` holds a fixed set of questions that the author
+writes. At a `talk` timer, `worth` can choose a `question` and not a `remark`: one question a day at
+most, and never a question that the user answered or passed over (UC-22-A5). The answer becomes a
+memory item through the usual interpretation (section 6.8).
+
+**The companion while the user is away.** Waiting and dozing are ambient motion (BR-07). They go
+through the `ShowAmbient` effect to the page, not through `SpeechOutput`. So the gate does not see
+them, and they need no explanation.
+
+**The greeting (UC-16).** `greeting_items` takes at most two items in this order: the latest line
+that the user told the companion on the last day they talked before today, then a journal entry
+written since the last opening. With neither, the greeting says that nothing needs attention.
+
+The figures in this section are start values (section 12, item 17).
+
 ### 6.8 `domain/memory`
 
 **Purpose.** This module holds what the companion remembers, chooses which new lines it keeps, and
-chooses what a reply draws on (FR-14, FR-17, FR-18, FR-29, UC-09, UC-12, UC-13, UC-21, D-07, D-16,
+chooses what a reply draws on (FR-14, FR-17, FR-18, UC-09, UC-12, UC-13, D-07, D-16,
 D-44 to D-47).
 
 ```mermaid
@@ -1048,38 +1166,28 @@ classDiagram
         +embedding: tuple
     }
 
-    class Commitment {
-        +id: str
-        +text: str
-        +due_on: date
-        +importance: int
-        +recorded_at: datetime
-        +embedding: tuple
-    }
-
     class memory_rules {
         <<module>>
         +recall(entries, query, now, calibration) tuple~Scored~
-        +known(entries, query, limit) tuple~Entry~
-        +select(found, existing, vectors, calibration) Selection
+        +known(entries, query, limit) tuple~MemoryItem~
+        +select(found, existing, vectors, calibration) tuple~str~
         +shows_back(reply, line) bool
         +stored_note(missing, day) str
     }
 
     class MemoryService {
         -store: MemoryStore
-        +remember(chosen, importance, source, vectors, now) tuple~Entry~
+        +remember(facts, importance, source, vectors, now) tuple~MemoryItem~
         +correct(entry, text) None
         +remove(entry) None
         +use(message_id, entries, now) None
-        +missing_vectors() list~Entry~
+        +missing_vectors() list~MemoryItem~
         +check_model(identity) bool
     }
 
     class MemoryStore {
         <<interface>>
         +items() list~MemoryItem~
-        +commitments() list~Commitment~
         +add(entry) None
         +correct(entry, text) None
         +remove(entry) None
@@ -1090,7 +1198,6 @@ classDiagram
 
     MemoryService --> MemoryStore : uses
     memory_rules ..> MemoryItem : reads
-    memory_rules ..> Commitment : reads
 ```
 
 **Key types.**
@@ -1098,8 +1205,6 @@ classDiagram
 | Type | Kind | Note |
 |---|---|---|
 | `MemoryItem` | Frozen dataclass | `text` is the exact line that the user saw (FR-14). Refuses a value that the stored row refuses |
-| `Commitment` | Frozen dataclass | It has no time of day and no status, so no code can schedule it or mark it complete (FR-24) |
-| `Entry` | Type | `MemoryItem` or `Commitment`. One port and one list for both |
 | `Calibration` | Frozen dataclass | The two figures that belong to the embedding model: the cosine of unrelated lines and the near-duplicate cosine |
 | `recall` | Function | Pure. The lines a reply draws on (section 6.8.1) |
 | `known` | Function | Pure. The stored lines closest to the message, by cosine only, for the interpretation prompt |
@@ -1112,7 +1217,7 @@ classDiagram
    stored lines that are close to the message, so that the model does not extract them again.
 2. **The rules.** `select` drops a line that is blank, longer than 200 characters, the same as a
    stored line apart from case and edge punctuation, or at least `near_duplicate` similar to one. It
-   keeps at most three facts and three commitments from one message.
+   keeps at most three facts from one message.
 3. **The user.** The chip shows each stored line, and the memory page edits or deletes it.
 
 Two lines that disagree are both kept. Each line in the reply prompt carries the day it was told,
@@ -1162,7 +1267,7 @@ A line with a score of 0.05 or more enters the reply prompt, at most three lines
 flowchart LR
     q["what the user just wrote"] --> e["embedding of the message"]
     e --> rel["relevance above the baseline"]
-    items[("memory items, commitments")] --> rec["recency"]
+    items[("memory items")] --> rec["recency"]
     items --> imp["importance / 10"]
     items --> rel
     rec --> mul["multiply the three factors"]
@@ -1313,7 +1418,7 @@ because the specification leaves it open.
 | Event | Importance | Running total | Result |
 |---|---|---|---|
 | The user mentions the chapter | 8 | 8 | Wait |
-| A session closes | 4 | 12 | Wait |
+| The user talks about a hobby | 4 | 12 | Wait |
 | The user shares a worry | 7 | 19 | Wait |
 | Presence changes | None | 19 | Wait |
 | The user says that the chapter has gone | 9 | 28 | Wait |
@@ -1335,8 +1440,8 @@ flowchart LR
 ### 6.11 `infrastructure/ai`
 
 **Purpose.** This module implements the model ports over HTTP, supervises the two server
-processes, and runs one model job at a time (ADR 0002, NFR-05, NFR-08, NFR-14, D-06, D-13,
-D-15, D-18, D-19, D-27).
+processes, and runs one model job at a time (ADR 0002, NFR-05, NFR-08, NFR-14, D-13,
+D-15, D-18, D-19, D-57, D-58, D-60, D-66).
 
 ```mermaid
 classDiagram
@@ -1395,7 +1500,7 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `Replier` | Port | Free text: replies, wording and journal entries. It keeps the name that the code has today |
+| `Replier` | Port | Free text: replies, wording and journal entries. It keeps the name that the code has today. A reply can call tools (section 6.11.3) |
 | `Interpreter` | Port | Output that a JSON schema constrains: message interpretation, temperament reading, importance |
 | `Embedder` | Port | Text to vectors |
 | `ModelJobs` | Port | The one way that a service asks for model work. Not built yet |
@@ -1412,7 +1517,7 @@ A user message cancels low-priority work, and that work runs again later.
 | 1 | Interpret a user message, embed the query, write the reply |
 | 2 | Word a proactive message |
 | 3 | Embed a new item, score importance, word a pattern |
-| 4 | Write journal entries, read a temperament |
+| 4 | Write journal entries, read a temperament, write a title, shorten a long history (D-57) |
 
 **Interpretation (D-04, D-44).** The call sends `response_format` in the OpenAI form,
 `{"type": "json_schema", "json_schema": {"name": ..., "schema": ...}}`, so the output fits the
@@ -1427,17 +1532,15 @@ unknown value. Low confidence still raises no event (UC-23-A3). Here is the shap
   "importance": 8,
   "crisis": false,
   "facts": ["Is writing a thesis on indoor positioning"],
-  "commitments": [{"text": "Send chapter 3 to their supervisor", "due_on": "2026-11-06"}],
   "style_request": null
 }
 ```
 
-Layer 4 of this request states today and the dates of the next seven days, so that the model
-reads "by Friday" as a date from a list instead of counting. Only `event_class`, `confidence` and
-`importance` reach the event log. The words in `facts` and `commitments` go to state tables
-(section 6.8). `crisis` reaches neither (section 6.13). Today only `importance`, `facts` and
-`commitments` are read; the other fields stay in the schema because the tuned model learns the
-whole shape.
+Layer 4 of this request states the date of today. Only `event_class`, `confidence` and
+`importance` reach the event log. The words in `facts` go to state tables (section 6.8). `crisis`
+reaches neither (section 6.13). Today only `importance` and `facts` are read. The other fields have
+readers that are not built yet: UC-23 reads `event_class` and `confidence`, section 6.13 reads
+`crisis`, and UC-10 reads `style_request`.
 
 **Local server safety (D-19).** Cognia starts each server on `127.0.0.1` with a free port,
 `--api-key` with a new random key from each start, `--no-webui` and `--offline`. It
@@ -1461,8 +1564,7 @@ again. If no GPU starts, the CPU build runs the chat model for the rest of the r
 | Intel Iris Xe only | 3.2 s | 8 tokens/s |
 | CPU build | 4.0 s | 13 tokens/s |
 
-**Reasoning output.** The system prompt ends with `REASONING_RULE`, the same text that the
-training examples use. The server returns reasoning in `reasoning_content`, apart from the answer,
+**Reasoning output.** The system prompt ends with `REASONING_RULE`. The server returns reasoning in `reasoning_content`, apart from the answer,
 and the client drops it. In Step 0 the model reasoned for an interpretation, but did not always
 reason before a reply.
 
@@ -1521,9 +1623,9 @@ flowchart TB
 | 3 | The recent messages | One message added at the end |
 | 4 | The mood name, remembered items, and any instruction for this turn | Each turn |
 
-Layer 4 goes at the end of the last user message, after a blank line, the same as in the
-training examples. Each remembered line carries the day it was told, for example "Send chapter
-3 to their supervisor (told 5 November 2026, due Friday 6 November)", and a line after the list
+Layer 4 goes at the end of the last user message, after a blank line. Each remembered line
+carries the day it was told, for example "Is writing a thesis on indoor positioning (told 5
+November 2026)", and a line after the list
 says that the newer of two lines that disagree is true (D-46). When the turn stores lines, layer
 4 also asks the reply to quote each one exactly (D-47).
 
@@ -1539,47 +1641,111 @@ layer 1. Section 6.13 adds a check that does not trust the model at all.
 The cache can make a model's output differ slightly between runs. This does no harm, because
 a replay never calls the model.
 
-#### 6.11.3 Explained: the tuned chat model
+#### 6.11.3 Explained: the turn and the tool loop
 
-**The idea.** A new employee can read a manual on the first day, and practice can improve the
-work after that. The base model is the new employee. The prompt is the manual. Fine-tuning is
-the practice. The tuned model still reads its prompt, so the manual stays in use.
-
-**Two jobs, one file.** The chat server has one slot and one model file (D-15). So one tuned
-model does both jobs.
-
-| Job | Port | What the examples teach | What still guarantees the result |
-|---|---|---|---|
-| Voice | `Replier` | Follow the character description in layer 2, in replies, wording and journal entries | `reply_complies` (section 6.13), `check_wording` (section 6.6) |
-| Interpretation | `Interpreter` | Select the correct class, importance, facts and `crisis` value | The `json_schema` option, the closed set of events (section 6.4), `tripwire`, `appraise` |
-
-**Many characters, no fixed character.** Four characters ship, and a change that the user
-approves in UC-24 changes a description. So the examples hold many different character
-descriptions. The model learns to follow a description, and it does not learn one character.
-The test sets use descriptions that training did not use.
-
-**Illustration.** Two examples have the same message and the same class, `good_news`. Only
-layer 2 differs.
-
-| Layer 2 says | The user writes | The reply that the example teaches |
-|---|---|---|
-| "A dry, patient archivist" | "I sent chapter 3!" | "Noted. Chapter 3 leaves the archive. Well done." |
-| "A cheerful gardener" | "I sent chapter 3!" | "Oh, that is wonderful! Chapter 3 is out in the sun now." |
+**The idea.** A careful person says "let me check", and then checks. A small model guesses. The tool
+loop lets the model check: it asks for a tool, the code runs the tool, and the model answers from the
+result (D-57, D-58, D-59).
 
 ```mermaid
-flowchart LR
-    base["Gemma 4 E2B, base model"] --> lora["LoRA training"]
-    examples["reviewed examples"] --> lora
-    lora --> merged["merge and quantise"]
-    merged --> gate{"passes the acceptance gate?"}
-    gate -- "yes" --> chat["tuned model ships as chat.gguf"]
-    gate -- "no" --> stay["the base model stays the candidate"]
+sequenceDiagram
+    actor user
+    participant gui as gui_thread
+    participant core as core_thread
+    participant model as model_thread
+    participant chat as chat_server
+
+    user->>gui: writes, or speaks (whisper fills the composer)
+    gui-)core: SendMessage
+    core->>core: store the message, tripwire, read the stored lines
+    core-)model: prepare
+    model->>chat: interpret, json_schema: event_class, importance, crisis, facts
+    model-)core: prepared
+    core->>core: step(user_message), the feeling moves before the reply
+    core-)gui: expression, and a gesture that the rules choose
+    core-)model: reply
+    loop LangGraph, at most three tool rounds
+        model->>chat: stream, with the tool list
+        chat-->>model: tool_call
+        model-)core: ToolRequested, for data or an effect
+        core-)model: ToolAnswered
+    end
+    model-)gui: pieces of the reply, Kokoro, mouth
+    model-)core: reply complete
+    core->>core: one transaction; reply_complies, shows_back
 ```
 
-**What does not change.** The ports, the servers, the connectors and the job priorities stay
-the same. The model never sets a feeling (BR-08). A replay never calls the model, so a new
-`chat.gguf` cannot change the replay of a recorded log (NFR-13). Section 6.16 gives the module,
-and section 8.6 gives the steps.
+**The order of one turn.**
+
+1. The core thread stores the message and runs the tripwire (section 6.13).
+2. The model thread embeds the message and runs the interpretation with `json_schema`. This is the
+   only model call before the reply.
+3. The core thread records `user_message`, so `step` moves the feeling before the reply (D-04). It
+   chooses the lines to keep, and builds layer 4 with the mood line (section 6.5.4).
+4. The model thread runs the reply with the tool list. LangGraph runs the loop. The model can call at
+   most three tools, and then it must answer (D-58).
+5. A tool that needs data or causes an effect sends a command to the core queue, and the node waits
+   for the answer (ADR 0001). A pure tool, such as `calculate`, runs in place.
+6. The reply streams. The core thread stores the reply in one transaction, and then runs
+   `reply_complies` and `shows_back`.
+7. At priority 4, the core thread asks for a title after the first reply, and for a shorter history
+   when the history passes its budget (section 12, item 25). The title starts as `title_from`, the
+   first line of the first message. The shorter history only replaces old messages in layer 3. It is
+   not a memory, so no line comes from it.
+
+**What the first proposal was, and why it changed.**
+
+| Step of the first proposal | Why it changed |
+|---|---|
+| A model call that names the conversation | `title_from` names it from the first line with no model call. A title from the model can come later, at priority 4 |
+| A router call: "is reasoning needed?" | The interpretation already runs before the reply, and the model always reasons (D-28). The real question is "is a tool needed?", and the model answers it with a tool call |
+| The character in one branch only | Two system prompts lose the prefix cache and change the voice |
+| A plan, then one model call for each step | Each call takes 2.3 to 9.8 s on the GPU and 13 to 17 s on the CPU. Each tool has one action |
+| A second call that rewrites the reply in character | The reply cannot stream. A small model can drop the quoted memory line (D-47) and the safety line (section 6.13) |
+| A summary after the first reply | 39 messages of 1 200 characters are 4 488 tokens, under the context of 8 192. A summary is new personal data, and the base model invented lines in 4 of 10 messages |
+
+**Time to the first word.** These are estimates from the measurements of 2026-11-05 on the author's
+laptop. Nobody has measured the new design.
+
+| Turn | GPU | CPU |
+|---|---|---|
+| Today: interpretation, then reply | 4.6 s, median, measured | 14.3 s, median, measured |
+| The first proposal, with feelings and memory | about 9 to 23 s | about 42 to 50 s |
+| This design, with no tool | the same as today | the same as today |
+| This design, with one tool round | about 2 to 10 s more | about 13 to 17 s more |
+
+**The tools (D-59).** The set is closed, and the code holds it.
+
+| Tool | Gives | Runs on |
+|---|---|---|
+| `calculate` | The value of an arithmetic expression, read with a parser and never with `eval` | The model thread, pure |
+| `date` | Today, a weekday, the days between two dates, from the time of the event | The model thread, pure |
+| `convert_units` | A length, a weight or a temperature, from a fixed table | The model thread, pure |
+| `define_word` | The meaning of an English word, from a dictionary that ships | The model thread |
+| `desk_time` | Minutes at the machine today, and since the last break | The core thread |
+| `app_usage` | Minutes for each application today | The core thread |
+| `why_i_feel` | The events that moved the feeling, with the figures of UC-17 | The core thread |
+| `recall_memory` | The stored lines that match, each with the day it was told. It reads and never changes | The core thread |
+| `search_conversations` | Earlier messages that match | The core thread |
+| `read_journal` | A journal entry | The core thread |
+| `open_in_browser` | Opens a page or a search in the default browser, with `QDesktopServices` | The GUI thread |
+| `breathing`, `stretch` | An exercise together, with motion, and the events `activity_started` and `activity_ended` | The core thread, then the GUI thread |
+
+**Saying "I do not know" (D-67).** Four layers, as in D-11 and D-47:
+
+1. Layer 1 already says "If you do not know or remember something, say so." One more sentence tells
+   the model to take each figure, date, sum, time at the machine, feeling and remembered line from a
+   tool or from layer 4.
+2. A tool never returns an empty result. It returns a sentence. For example, `recall_memory("cat")`
+   returns "No stored line matches 'cat'."
+3. A question about the world outside the machine, such as news or prices, gets "I can't know that
+   from here". The model can offer `open_in_browser`.
+4. After a turn that called a data tool, a check reads each number in the reply. A number that is
+   in no tool result and not in the user's message goes to the chip, with the real figure.
+
+**Risks.** Thirteen tools are many for a 3B model. If trial use shows wrong calls, related tools
+join, for example one `date` tool with an `op` argument. A tool server that the user adds can make
+this worse (section 12).
 
 ### 6.12 `infrastructure/presence`
 
@@ -1637,6 +1803,10 @@ classDiagram
 `SetWindowsHookEx*`, `GetAsyncKeyState`, `GetClipboardData`, `BitBlt` and any other call that
 supplies a title, a position, a keystroke, the clipboard or the screen. Screen layout comes
 from Qt in the `ui/` layer, for drawing only.
+
+**Not presence.** `infrastructure/voice` declares `RegisterHotKey` and `UnregisterHotKey` for the
+key combination of talking (D-65). Windows reports only that combination, and no other key, so it
+is not a fifth fact.
 
 **Presentation state.** `SHQueryUserNotificationState` reports `QUNS_BUSY`,
 `QUNS_RUNNING_D3D_FULL_SCREEN` and `QUNS_PRESENTATION_MODE`. All three mean "presenting" here.
@@ -1790,13 +1960,10 @@ command, so the window shows the sentence where the user asked for the step: an 
 dialog, the count before an erasure on the memory page, and anything else in the chat. The core
 then handles the next command as usual.
 
-**A start with an open session.** The rules close a session that has no end as of the last
-recorded activity (UC-07-A2).
-
 ### 6.15 `ui/windows/companion_window`
 
 **Purpose.** This module draws the character on the desktop (FR-25 to FR-28, BR-07, UC-20, D-08,
-D-25, D-26).
+D-25, D-26, D-64, D-65).
 
 ```mermaid
 classDiagram
@@ -1812,15 +1979,23 @@ classDiagram
         +moved Signal
     }
 
+    class TalkButton {
+        +pressed Signal
+        +released Signal
+    }
+
     class companion_page {
         <<module>>
         +load(vrm_path) None
         +setExpression(preset, weight) None
         +playAddressed(motion) None
+        +setAmbient(state) None
+        +setMouth(weight) None
         +setFrameLimit(frames) None
     }
 
     CompanionWindow --> DragHandle
+    CompanionWindow --> TalkButton
     CompanionWindow ..> companion_page : runJavaScript
 ```
 
@@ -1830,12 +2005,15 @@ classDiagram
 |---|---|---|
 | `CompanionWindow` | `QWidget` | Exists today with a placeholder sprite. Needs `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` for FR-25 |
 | `DragHandle` | `QWidget` | Takes mouse events, because a web view would keep them. Only this code can move the window |
+| `TalkButton` | `QWidget` | Takes mouse events only, as `DragHandle` does. Held down, it keeps the microphone open (UC-26-A1) |
 | `companion_page` | HTML and JavaScript in `resources/companion/` | three.js and `three-vrm`, stored in the repository at fixed versions |
 
 **Two paths for motion (BR-07).** Ambient motion runs inside the page: breathing, blinking, gaze,
 and the expression from `expressionChanged`. The page has no function that moves the window, and
 it cannot take the focus. Addressed motion and speech bubbles arrive only through `SpeechOutput`,
-so they pass the gate.
+so they pass the gate. Waiting and dozing are ambient, and arrive through `setAmbient` (section
+6.7.2). The mouth and a gesture with a reply belong to a reply that the user asked for, so they do
+not pass the gate (D-64).
 
 **No network.** The page loads only local files. A `QWebEngineUrlRequestInterceptor` refuses
 every other URL. The profile is off the record, so Chromium writes no cache and no cookies to
@@ -1852,81 +2030,13 @@ disk. The capture of NFR-01 must include the Chromium processes.
 
 **Assets (D-26).** The author makes four characters in VRoid Studio and exports them as VRM.
 `character_versions.appearance_id` names a set in `resources/`. Each file keeps its licence
-beside it, as the fonts do. The rules for accepting a file are in D-26.
+beside it, as the fonts do. The rules for accepting a file are in D-26. Motion clips are `.vrma` files that the author makes
+in Blender, under the same rules (D-64).
 
-### 6.16 `training`
+### 6.16 `training` (removed)
 
-**Purpose.** This module builds the tuned chat model and measures it (D-27, A-02, G-03). It runs
-at build time only. The installer holds its output and none of its code.
-
-```mermaid
-classDiagram
-    class Example {
-        +job: str
-        +character: str
-        +messages: tuple~Message~
-        +target: str
-        +reviewed: bool
-    }
-
-    class generator {
-        <<module>>
-        +make_examples(characters, messages) tuple~Example~
-    }
-
-    class trainer {
-        <<module>>
-        +train_lora(base, examples) Path
-    }
-
-    class exporter {
-        <<module>>
-        +merge_and_quantise(adapter, method) Path
-        +write_licences(output) None
-    }
-
-    class evaluator {
-        <<module>>
-        +measure(model, test_sets) Report
-        +accepted(tuned, base, thresholds) bool
-    }
-
-    class conversation_rules {
-        <<module>>
-    }
-
-    class safety_rules {
-        <<module>>
-    }
-
-    class LlamaClient
-
-    generator ..> Example : returns
-    generator ..> conversation_rules : builds prompts with
-    trainer ..> Example : reads
-    evaluator --> LlamaClient : calls
-    evaluator ..> safety_rules : checks with
-```
-
-**Key types.**
-
-| Type | Kind | File | Note |
-|---|---|---|---|
-| `Example` | Frozen dataclass | `generate.py` | One training item. `job` is `voice` or `interpretation`. Training refuses an item with `reviewed` false |
-| `make_examples` | Function | `generate.py` | Builds each prompt with `domain/conversation/rules.py`, so the examples match the runtime layers. Labels come from the closed set in `domain/events` |
-| `train_lora` | Function | `train.py` | Trains on the GPU of the training environment (section 8.6) |
-| `merge_and_quantise` | Function | `export.py` | Writes one GGUF. The chat template and the end token must match the training run |
-| `write_licences` | Function | `export.py` | Writes the licence text, the notices, a statement that the weights are modified, and the source and date of the base model |
-| `measure` | Function | `evaluate.py` | Runs a GGUF in `llama-server` through `LlamaClient`, the same path as run time. It calls `reply_complies` and `check_wording`, and it holds no copy of them |
-| `accepted` | Function | `evaluate.py` | Applies the thresholds that the author set before training |
-
-**No user data.** Rule 11 of section 6.2 stops this module from reaching the data file. Cognia
-has no route that sends user data to this module (NFR-01). If a user's words trained the weights,
-UC-14 could not erase them (NFR-03).
-
-**The prompts must stay the same.** The tuned model learns from the text of the prompt layers. A
-change to layer 1, or to the order of the layers, needs a new measurement, and it can need new
-training.
+D-66 removes fine-tuning, so this module and its tools are deleted. The number stays, so that
+sections 6.17 and 6.18 keep their numbers.
 
 ### 6.17 `domain/character`
 
@@ -2143,15 +2253,15 @@ classDiagram
 |---|---|---|
 | `CompanionState` | Frozen dataclass | `version_id` is the character version in force. `version_id` and `emotion` are `None` until the first `character_changed`. Today the state holds the emotion state only. Each other feature adds its state when its rules exist |
 | `StepResult` | Frozen dataclass | The new state, the effects, and the next time that the rules want to run. `next_wake` is `None` when no rule needs a wake. No rule needs one yet |
-| `Effect` | Union of dataclasses | `ShowExpression` only, today. `RequestWording`, `RecordDecision` and `WatchForPause` join it with their features |
+| `Effect` | Union of dataclasses | `ShowExpression` only, today. `RequestWording`, `RecordDecision`, `WatchForPause` and `ShowAmbient` join it with their features |
 | `ShowExpression` | Frozen dataclass | `step` returns it only when the face changes |
 | `initial_state` | Function | No character, and moods on, as in a new installation |
 | `step` | Function | Pure. Reads the event and the temperament of each version by its ID. Raises `ValueError` for a version that is not in the temperaments |
 | `fold` | Function | Applies `step` to each event in order. The start-up fold and a replay use it. It drops the effects, because they ran when the events happened |
 | `CompanionService` | Class | `start` folds the whole log. `record` reads the temperaments, appends one event through `EventLog`, then calls `step`. Thus a failed read appends nothing. It holds no state |
 
-**The order in `step`.** The final order is awareness, sessions, emotion, learning, reflection,
-initiative, speech. Today only emotion has rules, so `step` does these steps:
+**The order in `step`.** The final order is awareness, emotion, learning, reflection, initiative,
+speech. Today only emotion has rules, so `step` does these steps:
 
 1. `character_changed`, with the payload `{"version_id": ...}`. The event is felt under the old
    temperament, so the time before the change decays at the old rates. Then the new version is in
@@ -2197,6 +2307,7 @@ flowchart LR
         core_thread["core_thread"]
         model_thread["model_thread"]
         sampler_thread["sampler_thread"]
+        speech_thread["speech_thread"]
     end
 
     chat_server["chat_server"]
@@ -2204,6 +2315,8 @@ flowchart LR
     companion_renderer["companion_renderer"]
     data_file[("cognia.sqlite3")]
     second_start["second start of Cognia.exe"]
+    transcription_server["transcription_server"]
+    tool_server["tool_server, added by the user"]
 
     user --> gui_thread
     gui_thread -- "C1" --> core_thread
@@ -2220,6 +2333,11 @@ flowchart LR
     model_thread -- "C12" --> chat_server
     model_thread -- "C12" --> embedding_server
     second_start -- "C13" --> gui_thread
+    model_thread -- "C14" --> transcription_server
+    model_thread -- "C15" --> tool_server
+    gui_thread -. "C16" .-> speech_thread
+    speech_thread -. "C17" .-> gui_thread
+    windows -. "C18" .-> gui_thread
 ```
 
 ### 7.2 Connector catalog
@@ -2239,6 +2357,11 @@ flowchart LR
 | C11 | sampler_thread → Windows | Synchronous | Win32 through `ctypes` | The four facts | Once each second | A failed read gives UC-04-E1. Desk awareness stays off |
 | C12 | model_thread → server processes | Synchronous | Process start, job object, `GET /health` | Start, stop, health | Limited restarts | State `Failed`, with a plain sentence (section 6.11.1) |
 | C13 | second start → gui_thread | Asynchronous | `QLocalSocket`, a named pipe | One request to show the window | One attempt | The second start exits, and the user can try again |
+| C14 | model_thread → transcription_server | Synchronous | HTTP/1.1 on `127.0.0.1`, audio in the body | Recorded speech, text | Short limit. No retry | The user types. Cognia says that it cannot hear (UC-26-E3) |
+| C15 | model_thread → tool_server | Synchronous | MCP over standard input and output, or HTTP | Tool calls, results | Limit set by measurement. No retry | The reply says that the tool failed (UC-27-E1) |
+| C16 | gui_thread → speech_thread | Asynchronous | `queue.Queue` | Sentences of the reply, the mood | None | The reply stays as text |
+| C17 | speech_thread → gui_thread | Asynchronous | Qt queued signal | Mouth weights, the end of speech | None | The mouth closes |
+| C18 | Windows → gui_thread | Asynchronous | `WM_HOTKEY` message | One press of the key combination | None | The user clicks a talk button instead |
 
 **Delivery guarantee.** C1, C3 and C5 hold items in memory only. An item is durable when its
 transaction commits (section 6.14). A power failure loses items that are still in the queue,
@@ -2257,11 +2380,16 @@ its commit.
 | embedding_server | Child process | 1 | Compute vectors | The loaded model | `llama-server.exe`, embedding GGUF |
 | companion_renderer | Child processes | 2 | Draw the character | The loaded VRM | `QtWebEngineProcess.exe`, `resources/companion/` |
 | `cognia.sqlite3` | Store | 1 | Hold all data | All tables in the ERD | `infrastructure/storage` |
+| speech_thread | Thread | 2 | Run Kokoro and play the audio | The sentences that wait | `infrastructure/voice` |
+| transcription_server | Child process | 2 | Turn speech into text | The loaded speech model | `whisper-server.exe`, `speech.bin` |
+| tool_server | Process of the user | 1 | Give more tools | Its own | Added by the user (ADR 0009) |
 
 ### 7.4 Scenario: the user sends a message
 
-**Trigger.** The user writes a message and presses Send (UC-09, UC-23, UC-21, FR-13, FR-14, FR-29,
-D-04, D-44 to D-47).
+**Trigger.** The user writes or speaks a message and sends it (UC-09, UC-23, UC-26, UC-27, FR-13,
+FR-14, D-04, D-44 to D-47, D-57).
+
+Section 6.11.3 shows the turn with its tool loop. This diagram shows the memory part.
 
 ```mermaid
 sequenceDiagram
@@ -2281,7 +2409,7 @@ sequenceDiagram
     embed-->>model: vector
     model->>model: recall, and the lines closest to the message
     model->>chat: interpret, json_schema, closest lines in layer 4
-    chat-->>model: class, importance, facts, commitments
+    chat-->>model: class, importance, facts
     model->>embed: embed the new lines
     embed-->>model: vectors
     model-)core: prepared
@@ -2299,6 +2427,10 @@ sequenceDiagram
 
 The first piece of the reply hides the working indicator. The indicator covers the
 interpretation and the retrieval, so the user never sees a blank pause (NFR-05).
+
+**What happens when the reply calls a tool.** The model thread runs the tool loop of section 6.11.3.
+The working indicator names the tool, for example "checking the date". A tool that fails gives a
+plain sentence, and the reply says that it could not find out (UC-27-E1).
 
 **What happens when a message trips the tripwire.** The model thread does not interpret it, so
 nothing from it is kept (section 6.13).
@@ -2347,8 +2479,8 @@ sequenceDiagram
     gui-)core: message_answered
 ```
 
-**What happens when the reason passes during the wait.** The user locks the machine, or the
-commitment closes. The rule drops the message and records why. It does not send the message late
+**What happens when the reason passes during the wait.** The user locks the machine, or goes
+away. The rule drops the message and records why. It does not send the message late
 (UC-22-A4).
 
 **What happens when the model cannot word it.** A break suggestion uses fixed wording (UC-22-E3). A
@@ -2457,7 +2589,7 @@ sequenceDiagram
     user->>gui: chooses one hour
     gui->>sampler: set the stop flag
     gui-)core: Pause
-    core->>core: paused event, close open session, drop held messages
+    core->>core: paused event, drop held messages
     core->>core: cancel the next wake, commit
     core-)gui: pause confirmed
     gui->>gui: hide the companion, end the renderer
@@ -2513,8 +2645,8 @@ stays, so the feeling starts again at its resting mood. After "Erase everything"
 memory page, and Chat and Character open the choice of a character (D-52).
 
 **Who knows the tables.** `infrastructure/storage/erasure_store.py` lists the tables of each group. A
-test fails if a table of `orm.py` is in no group or in two. When sessions, learning, reflection and
-speech have their own stores, each store can erase its own tables (section 12).
+test fails if a table of `orm.py` is in no group or in two. When learning, reflection and speech
+have their own stores, each store can erase its own tables (section 12).
 
 
 **What this costs.** `VACUUM` can take time, and the core thread does nothing else during it. A view
@@ -2548,12 +2680,12 @@ sequenceDiagram
 
 The supervisor starts the process again at the next request, not at once (section 6.11.1).
 
-**What continues.** The queue, the rules, the memory list, sessions, pausing and the emotion state do
+**What continues.** The queue, the rules, the memory list, pausing and the emotion state do
 not depend on `model_thread`. Decay and appraisal of non-message events continue (NFR-08).
 
 ### 7.12 Scenario: the power fails
 
-**Trigger.** The machine loses power with a session open (NFR-07, UC-07-A2).
+**Trigger.** The machine loses power while a reply streams (NFR-07, UC-09-E2).
 
 ```mermaid
 sequenceDiagram
@@ -2565,12 +2697,11 @@ sequenceDiagram
     core->>db: at next start, SQLite recovers the WAL
     core->>db: read the event log
     core->>core: fold the log into CompanionState
-    core->>core: the open session has no end
-    core->>db: close it as of the last activity, last_activity
-    core-)gui: say plainly that it ended with no answer
+    core-)gui: show the conversation, with no partial reply
 ```
 
-A commit is on disk before Cognia reports it, so memory items and closed sessions survive. A message
+A commit is on disk before Cognia reports it, so memory items, messages and journal entries survive.
+The reply that was streaming has no row, so it is gone, and no line from that turn is stored. A message
 that was on its way to the model has no event yet, so it causes no feeling. The cache tables can be
 behind the log, so the fold computes them again.
 
@@ -2653,13 +2784,55 @@ sequenceDiagram
 **What happens after the user deletes a past mood.** The events are gone, so the replay covers what is
 left (ADR 0003). A comparison between two strategies stays fair, because both read the same log.
 
+
+### 7.15 Scenario: the user talks by voice
+
+**Trigger.** The user presses the key combination for talking while another application has the
+focus (UC-26, FR-38, FR-39, D-65).
+
+```mermaid
+sequenceDiagram
+    actor user
+    participant win as Windows
+    participant gui as gui_thread
+    participant model as model_thread
+    participant stt as transcription_server
+    participant speech as speech_thread
+
+    user->>win: presses the key combination
+    win-)gui: C18, WM_HOTKEY
+    gui->>gui: open the microphone, show that it listens
+    user->>gui: speaks
+    user->>win: presses again, or 1.5 s of silence
+    gui->>gui: close the microphone, audio in memory only
+    gui-)model: transcribe
+    model->>stt: C14, the audio
+    stt-->>model: text
+    model-)gui: text into the composer
+    user->>gui: corrects and sends
+    Note over gui: section 7.4 runs
+    gui-)speech: C16, sentences of the reply, the mood
+    speech-)gui: C17, mouth weights
+```
+
+**What happens to the audio.** The audio stays in memory. The model thread sends it to
+`transcription_server` on `127.0.0.1` and then drops it. No file holds it (NFR-03).
+
+**What happens when the microphone is refused.** Windows can refuse the microphone to desktop
+applications. The window says what to change in the Windows settings, and typing continues
+(UC-26-E1).
+
+**What happens when the user types during speech.** The speech thread stops at once. The reply stays
+written in the conversation (UC-26-A2).
+
+**What this costs.** Kokoro runs on the CPU while the chat model can run on the GPU. On a machine with
+no usable GPU, speech and the next reply compete for the CPU. This needs a measurement (section 12).
+
 ## 8. Deployment view
 
 This view allocates the components of section 7 to one machine. It answers what is installed,
 where the data stays, and what is fixed. Cognia has one node, so this view has no replicas and no
-scaling. The optional infrastructure diagram of the template does not apply. Section 8.6 describes
-the training environment. That environment is not a run-time node, so sections 8.1 to 8.5 do not
-show it.
+scaling. The optional infrastructure diagram of the template does not apply.
 
 ### 8.1 UML deployment
 
@@ -2670,11 +2843,14 @@ flowchart TB
             subgraph program["«executionEnvironment» install folder, LOCALAPPDATA/Programs/Cognia"]
                 app_exe["«artifact» Cognia.exe and _internal, PyInstaller one-dir, Python 3.12 or later, PySide6"]
                 web_exe["«artifact» QtWebEngineProcess.exe"]
-                page["«artifact» resources/companion, three.js, three-vrm, four VRM files"]
+                page["«artifact» resources/companion, three.js, three-vrm, four VRM files, VRMA clips"]
                 vulkan["«artifact» runtime/vulkan/llama-server.exe"]
                 cpu["«artifact» runtime/cpu/llama-server.exe"]
+                whisper["«artifact» runtime/whisper/whisper-server.exe"]
                 chat_model[("«artifact» models/chat.gguf")]
                 embed_model[("«artifact» models/embedding.gguf")]
+                speech_model[("«artifact» models/speech.bin")]
+                voice_model[("«artifact» models/voice.onnx, voices.bin, espeak-ng data")]
             end
 
             subgraph data["«executionEnvironment» data folder, LOCALAPPDATA/Cognia"]
@@ -2692,6 +2868,9 @@ flowchart TB
     app_exe -->|"HTTP, 127.0.0.1, free port"| vulkan
     app_exe -->|"Qt WebEngine IPC"| web_exe
     web_exe -->|"loads local files"| page
+    app_exe -->|"starts, job object"| whisper
+    whisper -->|"reads"| speech_model
+    app_exe -->|"reads, speech_thread"| voice_model
     app_exe -->|"one connection"| db
     app_exe -->|"reads"| config
     app_exe -->|"writes"| logs
@@ -2721,12 +2900,11 @@ The installer is one Inno Setup file (D-12). It does these things:
 
 An Inno Setup file holds at most 4.2 GB of compressed data without disk spanning. Disk spanning
 adds `.bin` files beside the installer, which breaks "one installer and nothing else". So the
-sum of the two models, Qt, QtWebEngine and the VRM files must stay below that limit.
+sum of the models, Qt, QtWebEngine and the VRM files must stay below that limit.
 
-The size of the chat model decides this. The published GGUF files of Gemma 4 E2B are 3.11 GB at
-Q4_K_M and 2.54 GB at Q3_K_M. A merge does not change the method of quantisation, so the tuned
-model is likely to be near these figures. Model files often compress little. So the chat model
-alone may use most of the limit. Nobody has measured the installer (section 12).
+The size of the chat model decides this. The published GGUF of Ministral 3 3B Reasoning is 2.15 GB
+at Q4_K_M (D-28, D-66). The speech models add about 57 MiB for whisper and about 115 MB for Kokoro
+(D-65). Model files often compress little. Nobody has measured the installer (section 12).
 
 ### 8.4 Artifact allocation
 
@@ -2736,8 +2914,11 @@ alone may use most of the limit. Nobody has measured the installer (section 12).
 | `QtWebEngineProcess.exe` | PySide6 | User session | Fixed in code | None |
 | `resources/companion/` | Vendored JavaScript and VRM files, each with its licence | Render process | Fixed | None |
 | `llama-server.exe`, two builds | llama.cpp build `b12121`, pinned: `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` | User session | Arguments from `Cognia.exe` | A random key for each start, held in memory only |
-| `chat.gguf` | Gemma 4 E2B, tuned and merged by `desktop/training/`, if it passes the gate of section 8.6. If it does not pass, the base model stays the candidate | Server processes | Paths relative to the install folder | None |
-| Licence files of `chat.gguf` | `export.py` writes the licence text, the notices and a statement that the weights are modified | Beside `chat.gguf`, read by people | Fixed | None |
+| `chat.gguf` | The published GGUF of Ministral 3 3B Reasoning, unchanged (D-28, D-66) | Server processes | Paths relative to the install folder | None |
+| Licence files of `chat.gguf` | The Apache-2.0 text and the notices of the model card | Beside `chat.gguf`, read by people | Fixed | None |
+| `whisper-server.exe`, `speech.bin` | whisper.cpp, MIT, with the model `base.en-q5_1` (D-65) | Server process | Arguments from `Cognia.exe` | None |
+| `voice.onnx`, `voices.bin` | Kokoro-82M, Apache-2.0 weights (D-65) | speech_thread | Fixed | None |
+| espeak-ng library and data | espeak-ng, GPL-3.0, with its licence text and an offer of its source (D-65) | speech_thread | Fixed | None |
 | `embedding.gguf` | bge-small-en-v1.5 Q8_0 from `ggml-org/bge-small-en-v1.5-Q8_0-GGUF` (D-55). Its MIT licence file ships beside it | Server processes | Paths relative to the install folder | None |
 | `cognia.sqlite3` | Created at first run | User session | `DATABASE_PATH`, default in the data folder | None. Windows account rights protect it (D-20) |
 
@@ -2756,44 +2937,10 @@ keeps a second copy. This is the user's choice, and the comment in `config.py` s
 The default `DATABASE_PATH` differs between the two. The build must set it to `null` for the
 installed form.
 
-### 8.6 Build-time training
+### 8.6 Build-time training (removed)
 
-Training happens before the installer exists, and away from the user's machine. The user's machine
-never trains a model (D-27).
-
-| | Training environment |
-|---|---|
-| **Where** | A rented GPU. The author's machine has 4 GB of video memory, and [Unsloth](https://unsloth.ai/docs/models/gemma-4/train) states 8 to 10 GB for LoRA on Gemma 4 E2B |
-| **Holds** | The base weights, the reviewed examples and the test sets. It holds no user data |
-| **Produces** | One GGUF file, its licence files and a measurement report |
-| **Reaches the user's machine** | The GGUF file and the licence files, inside the installer. Nothing else |
-
-The installed program never connects to this environment. So training does not change the network
-capture of NFR-01.
-
-**Steps.**
-
-1. Measure the base model on the test sets, in `llama-server`.
-2. The author sets the acceptance thresholds, before any training.
-3. Generate the examples. The author reviews them.
-4. Train a LoRA on the reviewed examples.
-5. Merge the LoRA into the base model, and quantise the result.
-6. Measure the quantised file in `llama-server`. A conversion can change the output, so a figure from
-   the training library does not count.
-7. Compare the two results. The tuned model ships only if it meets the thresholds and it beats the
-   base model.
-
-**Test sets.** Training never reads these sets.
-
-| Set | Source | Measures | Requirement |
-|---|---|---|---|
-| Interpretation | Messages that the author writes and labels by hand | Correct class, importance and `crisis` value | BR-08, UC-23 |
-| Voice | Character descriptions that training did not use | A person judges how well the replies follow each description | A-02, G-03 |
-| Safety | The scripted crisis cases, under each test character | `reply_complies`, with no added line | NFR-12 |
-| Cost | The same prompts on the least machine | Time to the first word, memory and file size | NFR-05, NFR-14 |
-
-**The safety set stays a check, not a guarantee.** The design keeps the required line of section 6.13
-for each model. A tuned model that passes this set does not remove that line.
+D-66 removes fine-tuning. No model is trained, and no environment other than the user's machine
+exists. The number stays, so that earlier references keep their meaning.
 
 ## 9. Mapping between views
 
@@ -2808,9 +2955,10 @@ for each model. A tuned model that passes this set does not remove that line.
 | `infrastructure/storage` | core_thread | The user's machine | `Cognia.exe`, `cognia.sqlite3` |
 | `infrastructure/ai` | model_thread | The user's machine | `Cognia.exe` |
 | `infrastructure/presence` | sampler_thread | The user's machine | `Cognia.exe` |
+| `infrastructure/voice` | speech_thread, gui_thread | The user's machine | `Cognia.exe`, `whisper-server.exe`, the speech and voice models |
+| `domain/tools` | core_thread, model_thread | The user's machine | `Cognia.exe` |
 | `utils/` | All threads | The user's machine | `Cognia.exe` |
-| Not in this source tree | chat_server, embedding_server | The user's machine | `llama-server.exe`, `chat.gguf`, `embedding.gguf` |
-| `training` | None | Training environment (section 8.6), not the user's machine | `chat.gguf` and its licence files, as output |
+| Not in this source tree | chat_server, embedding_server, transcription_server, tool_server | The user's machine | `llama-server.exe`, `whisper-server.exe`, the models, and the tool servers of the user |
 
 **Modules with a second consequence.** `domain/` runs on the core thread and also in a replay. So a
 rule cannot assume a database or a window. `companion_window` spans two processes, so a failure in
@@ -2818,13 +2966,13 @@ the page does not reach the Python code as an exception.
 
 **Elements not mapped.** `app/replay` is a developer tool. It ships in `Cognia.exe`, but no user
 action starts it. `chat_server` and `embedding_server` have no module in section 6, because they are
-third-party programs. `infrastructure/ai` is their adapter. `training` has no component in section 7,
-because it runs before the installer exists.
+third-party programs. `infrastructure/ai` is their adapter.
 
 ## 10. Decisions and rationale
 
 The author made D-01 to D-14 and D-26 in the design review of 2026-10-30, and D-27 and D-28 on 2026-10-31.
 The author made D-44 to D-56 on 2026-11-05, with the memory, the move to `llama-server` and the erasure.
+The author made D-57 to D-67 on 2026-11-06, with specification version 6.0.
 D-15 to D-25 are proposals. Each proposal states a recommended option, and the views in this document use that
 option. The author can change any proposal cheaply. Decisions with an ADR link are costly to reverse.
 
@@ -2832,10 +2980,12 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 
 | ADR | Status | What this design keeps | What this design changes |
 |---|---|---|---|
-| [0001](adr/0001-layered-architecture-with-event-driven-core.md) | Accepted | Layers, ports in the domain, one ordered queue, one SpeechGate, a pure domain, an append-only log | Nothing |
-| [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Proposed | A llama.cpp server as a child process, readable conversation tables | D-06 removes LangChain and LangGraph. D-07 adds a second server. D-13 selects the builds. D-27 replaces `qwen3.5:2b` as the candidate with Gemma 4 E2B, and sets how `chat.gguf` is built. The text of ADR 0002 still names `qwen3.5:2b`, and D-27 takes precedence |
+| [0001](adr/0001-layered-architecture-with-event-driven-core.md) | Accepted | Layers, ports in the domain, one ordered queue, one SpeechGate, a pure domain, an append-only log | ADR 0009 replaces its statement that extensibility is an anti-goal. Nothing else changes |
+| [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Proposed | A llama.cpp server as a child process, readable conversation tables | D-58 uses LangChain and LangGraph for the tool loop only. D-07 adds a second server. D-13 selects the builds. D-28 and D-66 ship the published Ministral 3 3B Reasoning GGUF. The text of ADR 0002 still names `qwen3.5:2b`, and D-66 takes precedence |
 | [0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) | Proposed | The schema, the ORM, Alembic, one connection on one thread | D-03 moves that thread. D-07 adds vector columns. D-36 records the change from SQLAlchemy Core and numbered SQL files |
 | [0004](adr/0004-hybrid-emotion-model.md) | Proposed | PAD, rules for appraisal, the model that only interprets | D-04 sets the order of interpretation and reply |
+| [0009](adr/0009-runtime-tools-through-mcp-servers.md) | Proposed | Tool servers outside the process, added by the user | Nothing |
+| [0010](adr/0010-voice-input-and-output.md) | Proposed | Speech in and out on the machine | Nothing |
 
 ### 10.2 Decision register
 
@@ -2846,7 +2996,6 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-03 | The core thread holds the database | QA-03, QA-04 | A second connection, all work on the GUI thread | [0005](adr/0005-one-process-core-thread-and-pure-rules.md) | Decided |
 | D-04 | Interpretation before the reply | BR-08, QA-09 | Reply first, two slots, one joint call | [0004](adr/0004-hybrid-emotion-model.md) | Decided |
 | D-05 | The foreground application name in the event log | QA-10, UC-22 | Memory only with hourly totals, category labels | [0006](adr/0006-foreground-application-in-the-event-log.md) | Decided |
-| D-06 | `httpx` directly, with no LangChain or LangGraph | QA-01, QA-03 | Keep the ADR 0002 design, keep `langchain-core` only | [0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) | Decided |
 | D-07 | Embeddings and cosine for relevance | UC-09, UC-25 | FTS5, a hybrid, no relevance term | [0007](adr/0007-embedding-retrieval.md) | Decided |
 | D-08 | 3D VRM in QtWebEngine with `three-vrm` | Pillar: Character, FR-25, FR-27 | Sprites, Live2D, vector art, Godot, Qt Quick 3D, pre-rendered frames | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided |
 | D-09 | Change events and a next wake time | QA-05, QA-10 | A tick that is logged, a tick that is not logged | [0005](adr/0005-one-process-core-thread-and-pure-rules.md) | Decided |
@@ -2867,8 +3016,8 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-24 | `Bridge`: Qt signals out, a queue in | D-03 | Direct calls, a polling GUI | None needed | Decided |
 | D-25 | End the render process when hidden or paused | QA-05 | Freeze when hidden | None needed | Proposed |
 | D-26 | Own characters from VRoid Studio | FR-01, FR-05, UC-01 | Sample models, avatar registries, marketplaces | None needed | Decided |
-| D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-03 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Decided |
-| D-28 | Ministral 3 3B Reasoning replaces Gemma 4 E2B as the base model, with reasoning on for both jobs. D-28 takes precedence over each statement in this document that names Gemma 4 E2B as the candidate | A-02, section 8.3, NFR-05 | Gemma 4 E2B, Qwen3.5, SmolLM3-3B, Phi-4-mini, reasoning off | None needed | Decided |
+| D-27 | A fine-tuned, merged chat model from Gemma 4 E2B, built with no user data | A-02, G-03, NFR-03 | Training on the user's machine, a separate adapter, one adapter for each character, public datasets | None needed | Withdrawn by D-66 |
+| D-28 | Ministral 3 3B Reasoning replaces Gemma 4 E2B as the base model, with reasoning on for both jobs. D-28 takes precedence over each statement in this document that names Gemma 4 E2B as the candidate | A-02, section 8.3, NFR-05 | Gemma 4 E2B, Qwen3.5, SmolLM3-3B, Phi-4-mini, reasoning off | None needed | Decided. D-66 withdraws its training part |
 | D-29 | Two first-run screens: the character, then desk awareness | UC-01, UC-04, NFR-10 | One screen, a full wizard | None needed | Decided |
 | D-30 | The close button hides the window, and the tray menu quits | FR-37, UC-16 | The close button quits, ask at the first close | None needed | Decided |
 | D-31 | The companion first appears at the bottom right of the primary screen | UC-20 | Beside the main window, placed in first run, hidden until asked | None needed | Decided |
@@ -2897,6 +3046,17 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-54 | A text is cut at 1 200 characters before it is embedded | D-07 | Average of several pieces | None needed | Decided |
 | D-55 | bge-small-en-v1.5 Q8_0 is the embedding model | D-07 | Qwen3-Embedding-0.6B, nomic-embed-text-v1.5, EmbeddingGemma-300M | None needed | Decided |
 | D-56 | The composer accepts at most 1 200 characters and refuses emoji and invisible characters, with a notice. No budget for the history | NFR-05, FR-14 | 2 000 or 4 000 characters, a hard stop on typing, a history budget, ASCII only | None needed | Decided |
+| D-57 | One turn: the interpretation, then a reply that can call tools. No router and no rewrite. A title and a shorter history at priority 4 | NFR-05, QA-04 | The first proposal: title, router, plan, steps, rewrite, summary; an `activity` field and no tool loop | None needed | Decided |
+| D-58 | LangChain and LangGraph run the tool loop, imported late on the model thread, with tracing off | ADR 0001, QA-01, QA-03 | `httpx` and a loop by hand, `langchain-core` only | None needed | Decided |
+| D-59 | A closed set of thirteen tools | BR-06, UC-27 | Arithmetic and dates only, music | None needed | Decided |
+| D-60 | Tool servers through MCP, outside the process, added by the user, none by default | FR-41, QA-01 | Python plug-ins in the process, no extension at run time | [0009](adr/0009-runtime-tools-through-mcp-servers.md) | Decided |
+| D-61 | Commitments are removed | Specification 6.0 | Keep UC-21 | None needed | Decided |
+| D-62 | Work sessions are removed. The erasure group `SESSIONS` becomes `DESK` | Specification 6.0 | Keep UC-05 and UC-07 | None needed | Decided |
+| D-63 | Away: wait and doze on the screen, and greet on return. Quiet at the desk: a remark. A break threshold from `random.Random(seq)`. The greeting mentions a memory line and a journal entry | BR-04, UC-16, UC-22 | Change BR-04; a greeting with the mood only, or the journal only | None needed | Decided |
+| D-64 | Procedural ambient motion, `.vrma` clips that the author makes in Blender, the mouth from the speech audio | BR-07, FR-27 | Mixamo, the free VRoid VRMA set | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided |
+| D-65 | whisper.cpp for speech to text, Kokoro-82M with espeak-ng for speech, a hot key through `RegisterHotKey`, a button beside the companion and in the composer | FR-38, FR-39, C-05 | sherpa-onnx with Moonshine, Qt `winrt`, Piper, a held hot key, a wake word | [0010](adr/0010-voice-input-and-output.md) | Decided |
+| D-66 | No fine-tuning. The published GGUF of Ministral 3 3B Reasoning ships | A-02 | Keep D-27 | None needed | Decided |
+| D-67 | Four layers make the companion say that it does not know | BR-06 | The prompt only | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -2981,32 +3141,7 @@ forbidden.
 sensitive than before. UC-12 lists these rows, UC-14 erases them, and UC-04-A3 deletes them for an excluded
 application.
 
-### 10.8 D-06: LangChain and LangGraph
-
-**Question.** Does the model adapter keep the libraries of ADR 0002?
-
-| Option | Benefit | Cost |
-|---|---|---|
-| **A. Remove both, and use `httpx`** (chosen) | Removes `langsmith` from an application that promises no outbound traffic, and removes `local_only.py`. Faster start | ADR 0002 changes. The adapter parses SSE itself |
-| B. Keep ADR 0002 | Graph nodes stay available | Import cost, a tracing library, and a graph with one node |
-| C. Keep `langchain-core` only | Shared message types | Still brings `langsmith` and most of the import cost |
-
-**Measurement.** The author's machine, one cold run, each package in its own process. These costs overlap,
-so they do not add up. NFR-04 allows 2 seconds for the main window.
-
-| Import | Time |
-|---|---|
-| `langgraph.graph` | 1232 ms |
-| `langchain_ollama` | 1153 ms |
-| `langchain_core.messages` | 665 ms |
-| `PySide6.QtWidgets` | 423 ms |
-
-**Reason.** Each step must pass the queue, so a graph cannot own the order. The services own it. The
-library has no job left.
-
-**Trade-off accepted.** A short piece of SSE code to maintain.
-
-### 10.9 D-07: relevance in memory retrieval
+### 10.8 D-07: relevance in memory retrieval
 
 **Question.** How does retrieval compute "how related" (UC-25 step 3)?
 
@@ -3024,7 +3159,7 @@ works against G-01.
 embedding model's name and licence are open (section 12). Retrieval also stays outside the rules, so a
 replay does not repeat it.
 
-### 10.10 D-08: drawing the companion
+### 10.9 D-08: drawing the companion
 
 **Question.** How does Cognia draw the character on the desktop?
 
@@ -3054,7 +3189,7 @@ this measurement before ambient motion is kept. No reliable published figure exi
 product claims about 200 MB for a high-resolution model. That is a vendor claim. Section 12 lists the
 checks, and it states what happens if they fail.
 
-### 10.11 D-09: time and the rules
+### 10.10 D-09: time and the rules
 
 **Question.** How does time reach the domain, so that a replay matches?
 
@@ -3068,7 +3203,7 @@ checks, and it states what happens if they fail.
 
 **Trade-off accepted.** Rules are harder to reason about (section 6.7.1).
 
-### 10.12 D-10: the shape of the domain
+### 10.11 D-10: the shape of the domain
 
 **Question.** How does the domain reach the outside?
 
@@ -3082,7 +3217,7 @@ structure. This fits ADR 0001: ports stay in the domain, and only the caller cha
 
 **Trade-off accepted.** State must fit in memory, so learning keeps small totals and not whole events.
 
-### 10.13 D-11: safety
+### 10.12 D-11: safety
 
 **Question.** How does the architecture make NFR-12 hold?
 
@@ -3096,7 +3231,7 @@ structure. This fits ADR 0001: ports stay in the domain, and only the caller cha
 
 **Trade-off accepted.** Detection can still miss a message (section 7.13).
 
-### 10.14 D-12: packaging
+### 10.13 D-12: packaging
 
 **Question.** How is the application frozen and installed?
 
@@ -3110,7 +3245,7 @@ Inno Setup is the installer, because a script can check the machine first. Secti
 
 **Trade-off accepted.** QtWebEngine with PyInstaller is unproven in this project (section 12).
 
-### 10.15 D-13: which server builds ship
+### 10.14 D-13: which server builds ship
 
 **Question.** Which builds of `llama-server` go into the installer?
 
@@ -3123,7 +3258,7 @@ Inno Setup is the installer, because a script can check the machine first. Secti
 **Trade-off accepted.** VRM and the model share the GPU. A reply may slow the animation. This needs a
 measurement (section 12).
 
-### 10.16 D-14: enforcing the rules
+### 10.15 D-14: enforcing the rules
 
 **Question.** How do the rules of section 6.2 become automatic? ADR 0001 and NFR-09 ask for a build check.
 
@@ -3137,7 +3272,7 @@ measurement (section 12).
 **Trade-off accepted.** Neither the script nor the task exists yet (section 12). `CLAUDE.md` does not list
 `task check`, because it lists only commands that exist.
 
-### 10.17 D-15: model scheduling (proposed)
+### 10.16 D-15: model scheduling (proposed)
 
 **Question.** How do a reply and background work share one model?
 
@@ -3150,7 +3285,7 @@ measurement (section 12).
 shows the same split between the user's turn and memory work. The server's documentation read for this
 design does not state how to cancel a running completion. Section 12 records this check.
 
-### 10.18 D-16: storing and searching vectors (proposed)
+### 10.17 D-16: storing and searching vectors (proposed)
 
 **Question.** Where do vectors live, and what searches them?
 
@@ -3163,7 +3298,7 @@ design does not state how to cancel a running completion. Section 12 records thi
 **Reason.** One person's memory holds a small number of rows. A full scan is enough until a measurement
 says otherwise. If a search on a real store passes a limit that trial use sets, `sqlite-vec` is the upgrade.
 
-### 10.19 D-17: Win32 access (proposed)
+### 10.18 D-17: Win32 access (proposed)
 
 **Question.** How does Python call Windows?
 
@@ -3174,7 +3309,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 
 **Reason.** NFR-02 is verified by review, so a short list is worth more than convenience.
 
-### 10.20 D-18: an idle model (proposed)
+### 10.19 D-18: an idle model (proposed)
 
 **Question.** What does the chat server do when nobody talks?
 
@@ -3186,7 +3321,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 
 **Reason.** The value is a calibration setting, so it stays in configuration, and measurement sets it.
 
-### 10.21 D-19: the local port (proposed)
+### 10.20 D-19: the local port (proposed)
 
 **Question.** How does Cognia protect the server's port?
 
@@ -3197,7 +3332,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 
 **Reason.** The cost is almost nothing. `--no-webui` and `--offline` are also always set.
 
-### 10.22 D-20: data at rest (proposed)
+### 10.21 D-20: data at rest (proposed)
 
 **Question.** How does the data file stay "visible only to the person at that machine" (NFR-03)?
 
@@ -3209,7 +3344,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 
 **Reason.** The specification says that storage that cannot be read is worth little.
 
-### 10.23 D-21: checking proactive wording (proposed)
+### 10.22 D-21: checking proactive wording (proposed)
 
 **Question.** What stops the model from inventing a figure in a proactive message?
 
@@ -3221,7 +3356,7 @@ says otherwise. If a search on a real store passes a limit that trial use sets, 
 **Reason.** A proactive message waits for its words, so a check costs nothing that the user can see. A
 streamed reply cannot pass this check before it appears, so this applies to proactive messages only.
 
-### 10.24 D-22: starting with Windows
+### 10.23 D-22: starting with Windows
 
 **Question.** How does Cognia start with Windows? UC-16 says that it does, and FR-36 lets the user
 change this.
@@ -3244,7 +3379,7 @@ change this.
 **Reason.** A start with Windows passes `--background`, so no window appears and no opening counts
 (UC-16). The `Run` key is the only store of this state, so `settings` has no column for it.
 
-### 10.25 D-23: one running copy (proposed)
+### 10.24 D-23: one running copy (proposed)
 
 **Question.** What stops a second copy, and how does a second start open the window?
 
@@ -3256,7 +3391,7 @@ change this.
 **Reason.** Two copies would mean two readers and two writers, which ADR 0001 forbids. This connector is
 also how an opening happens while Cognia runs in the background (section 7.6).
 
-### 10.26 D-24: between the GUI and the core
+### 10.25 D-24: between the GUI and the core
 
 **Question.** How do the two threads exchange data?
 
@@ -3269,7 +3404,7 @@ also how an opening happens while Cognia runs in the background (section 7.6).
 **Reason.** ADR 0001 gives one queue. All inputs reach it the same way. The author chose A on
 2026-11-05, with D-03.
 
-### 10.27 D-25: the drawing states (proposed)
+### 10.26 D-25: the drawing states (proposed)
 
 **Question.** What happens to the Chromium render process when the companion is not on screen?
 
@@ -3281,7 +3416,7 @@ also how an opening happens while Cognia runs in the background (section 7.6).
 **Reason.** NFR-06 sets a lower figure for "hidden", and a frozen page keeps its memory. The first design
 notes recommended option B. The figure in NFR-06 decides against it.
 
-### 10.28 D-26: where the appearances come from
+### 10.27 D-26: where the appearances come from
 
 **Question.** Where do the four VRM characters come from? The repository is public and MIT-licensed, and the
 installer redistributes the files (UC-01). No appearance may show a real person (FR-05).
@@ -3308,7 +3443,10 @@ history. Options B and C stay as the fallback if the terms do not allow option A
 Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) is CC0, but a
 retarget to VRM is unverified. The licence of the free VRoid VRMA set is unknown. Both stay as later options.
 
-### 10.29 D-27: a fine-tuned chat model
+### 10.28 D-27: a fine-tuned chat model
+
+**Withdrawn by D-66.** The author removed fine-tuning on 2026-11-06. This section stays as the record of the
+decision.
 
 **Question.** How does Cognia use a fine-tuned chat model, so that A-02 improves and no promise of the
 specification weakens?
@@ -3370,7 +3508,10 @@ merged file keeps the run-time design of ADR 0002 unchanged. The choice of base 
 
 **Why no ADR.** The author decided that this design needs no separate record.
 
-### 10.30 D-28: the base model of the tuned chat model
+### 10.29 D-28: the base model of the tuned chat model
+
+**Partly withdrawn by D-66.** The base model stays the chat model, with reasoning on. The training
+part is withdrawn.
 
 **Question.** Which small model gives the lowest cost of fine-tuning, and keeps the design of D-27?
 
@@ -3412,7 +3553,7 @@ limit in section 8.3, the support in the tools, and reasoning.
 
 **Why no ADR.** D-27 has no ADR, and D-28 changes one part of D-27.
 
-### 10.31 D-29: the first-run flow
+### 10.30 D-29: the first-run flow
 
 **Question.** Which steps does the user complete in the application after the installer?
 
@@ -3425,7 +3566,7 @@ limit in section 8.3, the support in the tools, and reasoning.
 **Reason.** Turn on and Not now have equal weight. Phase 1 has no desk awareness, so phase 1 shows
 the character screen only. All other defaults stay as the specification states them.
 
-### 10.32 D-30: the close button
+### 10.31 D-30: the close button
 
 **Question.** What does the close button of the main window do?
 
@@ -3438,7 +3579,7 @@ the character screen only. All other defaults stay as the specification states t
 **Reason.** `close_hint_shown` in the ERD records the explanation. The application shows the line
 inside its own window, so it is not a Windows notification (BR-04).
 
-### 10.33 D-31: the first position of the companion
+### 10.32 D-31: the first position of the companion
 
 **Question.** Where and when does the companion first appear?
 
@@ -3452,7 +3593,7 @@ inside its own window, so it is not a Windows notification (BR-04).
 **Reason.** One line tells the user to drag it. UC-20 still holds: this is a start point, and the
 user decides the position. The companion does not appear before a character is in force.
 
-### 10.34 D-32: when the model loads
+### 10.33 D-32: when the model loads
 
 **Question.** When does the chat model load after a start with Windows?
 
@@ -3464,7 +3605,7 @@ user decides the position. The companion does not appear before a character is i
 
 **Reason.** D-18 lets the server sleep when idle. So a load at sign-in gives no lasting benefit.
 
-### 10.35 D-33: the four characters
+### 10.34 D-33: the four characters
 
 **Question.** Who are the four ready-made characters? This closes item 9 of section 12.
 
@@ -3576,7 +3717,7 @@ trial use sets them (item 17 of section 12).
 **Trade-off accepted.** Rin's sample speaks about an absence. BR-04 forbids a reproach. The author
 keeps the text, because it is a joke in an introduction. BR-04 still binds each real reply.
 
-### 10.36 D-34: what the companion calls the user
+### 10.35 D-34: what the companion calls the user
 
 **Question.** How does the companion learn what to call the user?
 
@@ -3589,7 +3730,7 @@ keeps the text, because it is a joke in an introduction. BR-04 still binds each 
 **Rejected without a table row.** The Windows account name is a fifth fact from the operating system.
 C-05 forbids it.
 
-### 10.37 D-35: removing UC-02
+### 10.36 D-35: removing UC-02
 
 **Question.** After UC-02 goes, what remains of UC-03, and does D-27 change?
 
@@ -3613,7 +3754,7 @@ C-05 forbids it.
 the author sets it by hand (D-33). The numbers UC-02 and FR-02 stay reserved, so an older reference
 does not point to another item.
 
-### 10.38 D-36: the ORM and Alembic
+### 10.37 D-36: the ORM and Alembic
 
 **Question.** How does Python state the schema, and how does a change reach the user's file?
 
@@ -3632,7 +3773,7 @@ that revision is refused, and it stays as it was.
 **Trade-off accepted.** The conversation store still builds its queries with the tables of the ORM classes, and
 no `Session` runs yet. The stores share one connection and one transaction through `Database` (D-43).
 
-### 10.39 D-37: tombstones in the event log
+### 10.38 D-37: tombstones in the event log
 
 **Question.** Where does a rejected pattern or a deleted journal entry stay, so that it does not come back?
 
@@ -3646,7 +3787,7 @@ no `Session` runs yet. The stores share one connection and one transaction throu
 all options, so a table adds nothing. A sequence number is never used again, so a seq in a payload cannot
 point to a new event after a delete.
 
-### 10.40 D-38: local models only, and no stored emotion point
+### 10.39 D-38: local models only, and no stored emotion point
 
 **First part: models.**
 
@@ -3662,7 +3803,7 @@ point to a new event after a delete.
 | **A. In memory only** (chosen) | The core thread already folds the log at each start, so a table would have no reader | A snapshot needs a new table (section 12) |
 | B. A cache row | A snapshot exists | A row that nothing reads |
 
-### 10.41 D-39: the emotion module and the temperament
+### 10.40 D-39: the emotion module and the temperament
 
 **Question.** `domain/character` imports `Pad` from `domain/emotion`. The emotion rules must read the
 temperament. How does `domain/emotion` read it without a dependency in two directions? The rules also
@@ -3698,7 +3839,7 @@ need an event, and `domain/events` was empty.
 appraisal table, the floor, the calm radius and the expression weights are start values. Some come
 from the illustrations of section 6.5. Trial use sets all of them (section 12, item 17).
 
-### 10.42 D-40: where the step function is
+### 10.41 D-40: where the step function is
 
 **Question.** The `step` function calls the rules of each feature. Each feature reads `Event` from
 `domain/events`. Where is `step`, so that no two packages depend on each other?
@@ -3714,7 +3855,7 @@ from the illustrations of section 6.5. Trial use sets all of them (section 12, i
 **Trade-off accepted.** `domain/companion` imports the rules of each feature, so it changes when a
 feature adds a state or an effect.
 
-### 10.43 D-41: the temperament in a fold
+### 10.42 D-41: the temperament in a fold
 
 **Question.** A fold applies events from several weeks. The character can change during that time.
 Which temperament does `step` use for each event, and what does the emotion service do?
@@ -3740,7 +3881,7 @@ Which temperament does `step` use for each event, and what does the emotion serv
 `setting_changed` holds `name`, a column of `settings`, and `value`. The ERD gives only the meaning
 of these payloads, so these keys are the contract.
 
-### 10.44 D-42: seqs in a payload
+### 10.43 D-42: seqs in a payload
 
 **Question.** The tombstones `pattern_rejected` and `reflection_deleted` hold a list of seqs (D-37). A
 payload value was a string, a number or a boolean only. How does a payload hold the list?
@@ -3754,7 +3895,7 @@ payload value was a string, a number or a boolean only. How does a payload hold 
 
 **Reason.** The author chose A. Option D can follow when the features define their payloads.
 
-### 10.45 D-43: one transaction across the stores
+### 10.44 D-43: one transaction across the stores
 
 **Question.** Each store opened its own engine, so the event and the state rows committed separately.
 How does one item become one transaction (section 6.14)?
@@ -3770,7 +3911,7 @@ How does one item become one transaction (section 6.14)?
 **Trade-off accepted.** A store call inside a transaction joins it, and only the outer call commits. A
 caller that catches a store error inside a transaction and continues commits the earlier writes.
 
-### 10.46 D-44: when the lines are found and stored
+### 10.45 D-44: when the lines are found and stored
 
 **Question.** Which model call finds the lines to keep, and when do they reach the disk?
 
@@ -3783,7 +3924,7 @@ caller that catches a store error inside a transaction and continues commits the
 
 **Reason.** The author chose A, and A for the commit.
 
-### 10.47 D-45: the retrieval score
+### 10.46 D-45: the retrieval score
 
 **Question.** Which lines does a reply draw on? Min-max scaling with a sum, as in Generative Agents,
 always puts three lines in the prompt, also a line that is off the subject.
@@ -3801,7 +3942,7 @@ accepted that an old line is forgotten in conversation. It stays on the memory p
 **Third part: the baseline (Step 0).** bge-small-en-v1.5 gives two unrelated lines a cosine of 0.38 to
 0.45, so relevance counts only the cosine above 0.45. The floor is 0.05. Both are trial values.
 
-### 10.48 D-46: choosing the lines
+### 10.47 D-46: choosing the lines
 
 **Question.** How does Cognia keep only lines worth keeping, without copies, with a small model?
 
@@ -3816,7 +3957,7 @@ says that the newer one is true. Step 0 measured paraphrases at 0.842 to 0.969 a
 0.757 to 0.908, so no threshold separates them. The author set 0.95: it drops near copies and keeps
 every measured contradiction.
 
-### 10.49 D-47: showing the stored line back
+### 10.48 D-47: showing the stored line back
 
 **Question.** FR-14 asks for the exact line. A small model can reword it.
 
@@ -3828,7 +3969,7 @@ every measured contradiction.
 
 **Reason.** The same pattern as D-11.
 
-### 10.50 D-48: Win32 outside `infrastructure/presence`
+### 10.49 D-48: Win32 outside `infrastructure/presence`
 
 **Question.** ADR 0002 puts both servers in a job object, but rule 9 allowed `ctypes` only in
 `infrastructure/presence`.
@@ -3841,7 +3982,7 @@ every measured contradiction.
 **Trade-off accepted.** Each module states its Win32 functions in its docstring. C-05 still holds
 through the data type of `PresenceSample`.
 
-### 10.51 D-49: the supervisor
+### 10.50 D-49: the supervisor
 
 **Question.** How much of D-13 does the supervisor do, and where does it remember the CPU choice?
 
@@ -3854,14 +3995,14 @@ through the data type of `PresenceSample`.
 A process that ended starts again at the next request, and no thread watches it. Section 7.11 shows
 this.
 
-### 10.52 D-50: the model files
+### 10.51 D-50: the model files
 
 The files are in `desktop/models/` with the names of the installer: `chat.gguf`, `embedding.gguf`,
 `runtime/vulkan/` and `runtime/cpu/`. Git ignores the folder. `settings.embedding_model` holds the file
 name and the size in bytes, and a change clears each vector. The rejected option kept the original
 file names in the configuration.
 
-### 10.53 D-51: erasure
+### 10.52 D-51: erasure
 
 **First part: where the rules are.** The architecture gave UC-14 to no module. Erasure crosses every
 feature.
@@ -3880,14 +4021,14 @@ and feelings with no word. `SET NULL` would lose the source that UC-17 needs.
 **Third part: a failure part-way.** A failed group does not stop the others. A dialog states the count
 first and the result after.
 
-### 10.54 D-52: the character
+### 10.53 D-52: the character
 
 `CharacterService` is wired. Layer 2 is the description of the version in force. The first-run view
 shows the four characters with nothing picked, and the same view changes the character, with a Back
 button and the card in force disabled. A new version and its `character_changed` event commit in one
 transaction. The rejected option wired only what erasure needs.
 
-### 10.55 D-53: the GPU of the chat model
+### 10.54 D-53: the GPU of the chat model
 
 **Question.** The server spreads the model over every GPU by default. On the author's laptop, with an
 Intel Iris Xe and an NVIDIA RTX 3050 Ti, the first word came after 13.1 s, and after 0.4 s on the
@@ -3905,12 +4046,12 @@ NVIDIA alone.
 measurement now has a request that is not timed before the timed one. The choice is stored, so a later
 run does not measure again.
 
-### 10.56 D-54: long texts and the embedding model
+### 10.55 D-54: long texts and the embedding model
 
 bge-small-en-v1.5 reads 512 tokens, and the server returns HTTP 500 for a longer text. Cognia cuts each
 text at 1 200 characters before it is embedded. The rejected option embedded pieces and averaged them.
 
-### 10.57 D-55: the embedding model
+### 10.56 D-55: the embedding model
 
 | Option | Licence | Size | Note |
 |---|---|---|---|
@@ -3922,7 +4063,7 @@ text at 1 200 characters before it is embedded. The rejected option embedded pie
 The figures come from the model cards and the file lists. The installer ships the MIT licence beside
 `embedding.gguf`.
 
-### 10.58 D-56: what the user can send
+### 10.57 D-56: what the user can send
 
 | Option | Benefit | Cost |
 |---|---|---|
@@ -3937,13 +4078,233 @@ with accents and typographic punctuation stay allowed. The rejected option allow
 **Trade-off accepted.** No budget limits the history. Forty long messages can still exceed the context
 of 8 192 tokens.
 
+### 10.58 D-57: one turn
+
+**Question.** Which model calls make one turn of the conversation, and in which order? The author
+proposed a title call, a router call, a plan with one call for each step, a rewrite in character, and
+a summary after the first reply. Section 6.11.3 gives the evaluation.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The interpretation, then a reply that can call tools** (chosen) | Two calls before the first word, as today. One system prompt for each branch. The reply streams | The model decides when it needs a tool, and it can be wrong |
+| B. The first proposal | Each step is simple | About 9 to 23 s on the GPU before the first word. No streaming. More chances to lose the quoted line and the safety line |
+| C. An `activity` field in the interpretation, and no tool loop | No extra call | Only actions with no result fit. A sum or a record needs a result |
+
+**Reason.** The author chose A.
+
+**Trade-off accepted.** A turn with a tool waits for one more call. A title from the model and a
+shorter history run at priority 4, after the reply.
+
+### 10.59 D-58: LangChain and LangGraph for the tool loop
+
+**Question.** What runs the tool loop of D-57?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. LangGraph and `langchain-openai`, pointed at `llama-server`** (chosen) | Tool schemas, the loop and a recursion limit are ready. New tools and tool servers are easier to add (ADR 0009) | `langsmith` returns as a dependency. On the author's machine, the import of `langgraph.graph` took 1 232 ms and `langchain_core.messages` 665 ms. A graph must not own the order of events |
+| B. `httpx` and a loop of about 150 lines | No dependency | Tool schemas and the loop are written by hand |
+| C. `langchain-core` only | Tool schemas from `@tool` | Still brings `langsmith` and most of the import cost |
+
+**Reason.** The author chose A to make the companion easier to extend, and deleted D-06, which chose
+`httpx` with no LangChain.
+
+**Rules that keep ADR 0001.**
+
+1. The import happens on the model thread after the main window shows, so NFR-04 holds.
+2. `LANGSMITH_TRACING` is `false`, and no LangSmith key exists. The network capture of QA-01 includes
+   this.
+3. A graph runs one turn only. A tool node that needs data or causes an effect sends a command to the
+   core queue and waits for the answer. So the core thread keeps one ordered stream.
+4. LangChain and LangGraph stay in `infrastructure/ai` (rule 10 of section 6.2).
+
+**Trade-off accepted.** A dependency with telemetry code that must stay off.
+
+### 10.60 D-59: the tools
+
+**Question.** Which tools can the model call in a reply?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A closed set of thirteen tools in the code** (chosen) | The companion takes sums, dates, its own records and its feelings from data. It can do small things with the user | Many tools for a 3B model, so it can call the wrong one |
+| B. Arithmetic and dates only | Fewer wrong calls | The companion still guesses about its own records |
+| C. Music from files that ship | A shared activity | The author chose other activities |
+
+**Reason.** A small model is often wrong about sums, dates and what it was told. A tool gives a figure
+that UC-17 can explain (BR-06). The author chose A, with the break exercises, the journal and the
+browser as the shared activities. Section 6.11.3 lists the tools.
+
+**Trade-off accepted.** If trial use shows wrong calls, related tools join into one tool.
+
+### 10.61 D-60: tools added at run time
+
+**Question.** How can tools be added after the release? ADR 0001 made extensibility an anti-goal.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. MCP servers outside the process, added by the user, none by default** (chosen) | Code from others never runs inside Cognia, so no plug-in can change the safety rules or the Win32 limits | A server can send data off the machine. NFR-01, G-05 and QA-01 now measure Cognia itself |
+| B. Python plug-ins inside the process | Simple to load | A plug-in can replace any function, the safety rules and the Win32 limits included |
+| C. Only the developer adds tools | NFR-01 stays as it was | No extension at run time |
+
+**Reason.** The author chose A. ADR 0009 replaces the anti-goal of ADR 0001 and keeps the rest of it.
+
+**Trade-off accepted.** Before the first use of a server, Cognia states that the server can send what
+it receives off the machine. The user can remove each server.
+
+### 10.62 D-61: commitments are removed
+
+**Question.** Does the companion keep what the user says they have to do?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Remove UC-21 and FR-29** (chosen) | The companion is not a work tracker. Two tables, two event kinds and a part of the interpretation go | The greeting loses an item, so UC-16 changes |
+| B. Keep them | The greeting can say what the user is carrying | The companion moves towards the task manager that section 5 of the specification excludes |
+
+**Reason.** The author chose A in specification version 6.0.
+
+**Effects.** Revision `0003` drops `commitments` and `message_commitment_refs`, and deletes the events
+`commitment_added` and `commitment_closed`, because `EventKind` no longer reads them. The
+interpretation schema loses `commitments`. A line with a day, such as "Is sending chapter 3 this
+week", is an ordinary fact with the day it was told (D-46).
+
+### 10.63 D-62: work sessions are removed
+
+**Question.** Does Cognia keep the work session of UC-05 and UC-07?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Remove UC-05, UC-07, BR-05, FR-07, FR-08, FR-10, FR-11 and FR-33** (chosen) | One less concept. The break suggestion stays, because it uses time at the machine and not a session | A user who wants quiet sets a ceiling or quiet hours, or pauses the companion |
+| B. Keep them | A promise of quiet during focused work | The companion acts as a work tracker |
+
+**Reason.** The author chose A in specification version 6.0.
+
+**Effects.** Revision `0003` drops `sessions`, `session_intents` and `speech_decisions.session_id`,
+deletes the events of the three session kinds, and deletes the message kinds `commitment` and
+`checkin`. The erasure group `SESSIONS` becomes `DESK` and holds `app_usage` only. The Sessions screen
+goes, and its button that shows the break nudge moves to the Speaking up screen.
+
+### 10.64 D-63: away, quiet and break
+
+**First part: the user is away.** BR-04 forbids a message while the user is away.
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Wait and doze on the screen, greet on return, and speak first when the user is quiet at the desk** (chosen) | BR-04 holds. The user sees the companion wait | Two more timers, `talk` and `doze` |
+| B. Wait and greet only | Less work | The companion never starts a talk after a long quiet |
+| C. Change BR-04, and show a bubble while the user is away | Direct | Nobody sees it. Idle is not away: the user can read or watch a video |
+
+**Second part: what the greeting mentions (UC-16).**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The latest line that the user told it, then a new journal entry** (chosen) | The greeting shows memory and an inner life | Two items to explain (UC-17) |
+| B. The mood only | Simple | The greeting says nothing specific |
+| C. The journal only | No repetition of what the user said | Less continuity |
+
+**Reason.** The author chose A and A. Section 6.7.2 gives the states, the signals and the figures.
+
+**Trade-off accepted.** `T_talk` and `T_break` come from `random.Random(seq)`, so they look random and
+still replay.
+
+### 10.65 D-64: motion of the companion
+
+**Question.** How does the companion move, and where do its clips come from?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Procedural ambient motion, and `.vrma` clips that the author makes in Blender** (chosen) | No licence question for the ambient motion. The clips belong to the author | Each clip takes the author's time |
+| B. Mixamo, retargeted to VRM | Many clips | The terms forbid the distribution of the raw files, and the repository is public |
+| C. The free VRMA set of VRoid | Seven clips that are ready | Nobody has read its terms |
+
+**Motion.**
+
+| Motion | How | Kind (BR-07) |
+|---|---|---|
+| Blink | `expressionManager.setValue('blink', w)`, each 2 to 6 s, a double blink in about 1 of 10, about 150 ms | Ambient |
+| Breathe | A sine of 0.2 to 0.3 Hz on `spine` and `chest`, 1 to 2 degrees | Ambient |
+| Sway | Slow noise on `hips` and `neck`, and a new posture each 10 to 30 s | Ambient |
+| Gaze | `vrm.lookAt.target` moves, with small jumps each 1 to 3 s. It follows the pointer only while the pointer is inside the companion window, because the position of the pointer elsewhere is a fifth fact (C-05) | Ambient |
+| Hair and clothes | The spring bones of the VRM file | Ambient |
+| Wait, doze | `.vrma` clips | Ambient |
+| Mouth | The weights `aa`, `ih`, `ou`, `ee`, `oh` from the loudness of the speech audio | Part of a reply |
+| Wave, nod, bow | `.vrma` clips through `VRMAnimationLoaderPlugin` and `createVRMAnimationClip` | Addressed: part of a reply, or through the gate |
+
+VRoid Studio exports a model in a T-pose, so the page turns `upperArm` down by about 70 degrees for the
+rest pose.
+
+**Reason.** The author chose A.
+
+**Trade-off accepted.** Continuous motion needs continuous drawing, so NFR-06 must be measured
+(section 12, item 6).
+
+### 10.66 D-65: speech in and out
+
+**First part: speech to text.**
+
+| Option | Licence | Size | Fit |
+|---|---|---|---|
+| **A. whisper.cpp as a child process, model `base.en-q5_1`** (chosen) | MIT | 57 MiB | The same pattern as `llama-server`: supervisor, job object, `127.0.0.1` |
+| B. sherpa-onnx with Moonshine | Apache-2.0 and MIT | 27 to 61 million parameters | In the process, so a native fault stops the application, and no supervisor starts it again |
+
+**Second part: speech.**
+
+| Option | Licence | Size | Fit |
+|---|---|---|---|
+| **A. Kokoro-82M with espeak-ng** (chosen) | Apache-2.0 weights; espeak-ng is GPL-3.0 | About 88 MB of weights and 27 MB of voices | Good quality, a different voice for each character, and correct names |
+| B. Qt TextToSpeech with the `winrt` engine | Part of Windows | 0 MB | Ready in PySide6, with a signal for each word. Only three English voices on the author's machine |
+| C. Piper | The MIT version is archived; the new version is GPL-3.0 | About 60 MB for each voice | The MIT version gets no updates |
+| D. Kokoro with its dictionary only | Apache-2.0 | As A | Each word outside the dictionary, the user's name too, is spelled letter by letter |
+
+**Third part: how the user starts to talk.**
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. A key combination through `RegisterHotKey`, pressed once to start and again or after 1.5 s of silence to stop; a button beside the companion, held; a button in the composer** (chosen) | No key is read except the combination. The companion is never the only route (FR-28) | Two more Win32 functions on the allow-list of D-17, in `infrastructure/voice` |
+| B. A held combination, with `GetAsyncKeyState` to see the release | Push to talk from any application | `GetAsyncKeyState` is on the forbidden list of section 6.12 |
+| C. A wake word | No key | The microphone is always open |
+
+**Reason.** The author chose A, A and A. ADR 0010 records the decision.
+
+**Trade-off accepted.** The installer distributes espeak-ng under GPL-3.0, with its licence text and
+an offer of its source. The author checks the legal terms before a release (section 12). Kokoro and
+`onnxruntime` run inside the process, and `onnxruntime` enters `desktop/uv.lock`. The audio stays in
+memory until it becomes text, and no file holds it.
+
+### 10.67 D-66: no fine-tuning
+
+**Question.** Does the project still build a tuned chat model (D-27)?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. No. The published GGUF of Ministral 3 3B Reasoning ships** (chosen) | No GPU rental, no example review, no training code to keep | The voice of a character depends on the prompt only. A-02 has no help from training |
+| B. Keep D-27 | A voice and an interpretation that practice improves | The cost and the work of section 8.6 |
+
+**Reason.** The author chose A.
+
+**Effects.** `desktop/training/`, the `train:*` tasks, its CI steps and its SonarQube paths are
+deleted. D-27 is withdrawn. D-28 keeps the choice of the base model and of reasoning, and loses its
+training part. Sections 6.16 and 8.6 keep their numbers with no content. With no training cost, the
+author can select the runtime model again (section 12, item 3).
+
+### 10.68 D-67: saying "I do not know"
+
+**Question.** How does a small model say that it does not know, and not invent an answer?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. Four layers: the prompt, tool results that are never empty, a plain answer for the world outside, and a check of the numbers after a data tool** (chosen) | The same pattern as D-11 and D-47. The check gives the guarantee when the model does not obey | The check reads numbers only, and cannot catch each false claim |
+| B. The prompt only | No code | Layer 1 already says this, and a small model does not always obey |
+
+**Reason.** BR-06 forbids a statement with no evidence. Section 6.11.3 gives the four layers.
+
+**Trade-off accepted.** A wrong statement with no number in it can pass the check.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
 |---|---|---|
 | FR-01, FR-03 to FR-05, UC-01, UC-03 | Module | `domain/character`, `domain/safety`, `resources/companion/` |
 | FR-06, UC-04, C-05, NFR-02 | Module, C&C | `infrastructure/presence`, `PresenceSample`, sampler_thread, C11 |
-| FR-07 to FR-11, FR-33, UC-05, UC-07 | Module | `domain/sessions`, `domain/awareness`, `domain/initiative` |
+| FR-09, UC-22 | Module | `domain/awareness`, `domain/initiative`, section 6.7.2 |
 | FR-12, NFR-04, UC-15 | C&C | Stop flag, `paused` event, section 7.9 |
 | FR-13, FR-14, FR-15, UC-09, UC-10 | Module, C&C | `domain/conversation`, `domain/memory`, `infrastructure/ai`, section 7.4 |
 | FR-16, FR-23, FR-34, UC-24 | Module, C&C | `domain/learning`, section 7.8 |
@@ -3951,16 +4312,15 @@ of 8 192 tokens.
 | FR-20, FR-11, UC-16 | C&C | `greeting_items`, section 7.6 |
 | FR-21, NFR-09, UC-17 | Module, C&C | `domain/speech`, `SpeechOutput`, `Factor`, section 6.6.1 |
 | FR-22, UC-18 | Module | `settings`, `setting_changed`, `admit` |
-| FR-24, section 5 of the specification | Module | Met by absence. No port exists for mail, calendars, files or the clipboard. `commitments` has no time of day and no status. No code path acts for the user |
+| FR-24, section 5 of the specification | Module | Met by absence. No port exists for mail, calendars, files or the clipboard. No code path acts for the user, except `open_in_browser` at the user's request (D-59) |
 | FR-25 to FR-28, NFR-11, UC-20 | Module, C&C | `ui/windows/companion_window`, companion_renderer, C10 |
-| FR-29, UC-21 | Module | `Commitment`, `greeting_items`, `domain/initiative` |
 | FR-31, BR-01 to BR-07, UC-22 | Module, C&C | `domain/initiative`, `domain/speech`, section 7.5 |
 | FR-32, BR-08, UC-23 | Module | `domain/emotion` |
 | FR-35, UC-25 | Module, C&C | `domain/reflection`, section 7.7 |
 | C-04, FR-04 | Module | Rules in `domain/`. A character is data |
 | C-06 | Module | `fixed_wording`, `required_line`, English only |
-| A-02, G-03 | Module, Deployment | `training`, tuned `chat.gguf`, the acceptance gate of section 8.6 (D-27) |
-| NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai`, `127.0.0.1` only, interceptor in the page. `training` holds no user data and does not ship |
+| A-02, G-03 | Deployment | The published `chat.gguf`, with no training (D-66) |
+| NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai` and `infrastructure/voice`, `127.0.0.1` only, interceptor in the page. A tool server runs outside the process (ADR 0009) |
 | NFR-05 | C&C | Working indicator, `ModelScheduler`, prompt layers |
 | NFR-06 | C&C, Deployment | Next wake time, change events, drawing states, section 12 |
 | NFR-07 | C&C | One item, one transaction, section 7.12 |
@@ -3968,6 +4328,8 @@ of 8 192 tokens.
 | NFR-10, NFR-14 | Deployment | Inno Setup installer, shipped models, section 8.3 |
 | NFR-12 | Module, C&C | `domain/safety`, section 7.13 |
 | NFR-13, G-06 | Module, C&C | `step`, input closure, `app/replay`, section 7.14 |
+| FR-38, FR-39, UC-26, C-05 | Module, C&C | `infrastructure/voice`, speech_thread, C14, C16 to C18, section 7.15 (D-65) |
+| FR-40, FR-41, UC-27, BR-06 | Module, C&C | `domain/tools`, the tool loop, C15, section 6.11.3 (D-57 to D-60, D-67) |
 
 ## 12. Open items
 
@@ -3975,11 +4337,10 @@ These items are outside this design, or need a decision before implementation.
 
 1. **Acceptance.** ADR 0002 to ADR 0008 are Proposed. The author accepts each one, or changes it.
 2. **Proposals.** D-15 to D-25 need the author's review, except D-22 and D-24, which are decided.
-3. **The chat model.** D-27 names Gemma 4 E2B as the only candidate, and measurement accepts or refuses it
-   (section 8.6). If it fails, the author selects another candidate. It must hold a character in English for
-   months (A-02). Its size sets the NFR-14 figures and the limit in section 8.3. Its model card states
-   Apache-2.0, and the Gemma pages also link to a prohibited-use page and terms of use. A person must read
-   those pages before the model ships, because this design did not read them.
+3. **The chat model.** D-66 ships the published GGUF of Ministral 3 3B Reasoning (D-28) with no
+   fine-tuning. It must hold a character in English for months (A-02), and nothing measures this yet. With
+   no training cost, the author can select the runtime model again. Its size sets the NFR-14 figures and the
+   limit in section 8.3.
 4. **The embedding model.** Partly closed by D-55: bge-small-en-v1.5 Q8_0, MIT by its model card and its file
    metadata. Its English recall is not evaluated yet, and the installer must ship its licence. The text below
    was the item before D-55. D-07 needs one small GGUF. Candidates must be measured on English recall, and their
@@ -4002,7 +4363,7 @@ These items are outside this design, or need a decision before implementation.
 10. **Write the check.** D-14 selects the script and `task check`. Neither exists. ADR 0001 and NFR-09 stay
     unproven until they do.
 11. **Move the code.** The code does not match this design yet. Done on 2026-11-05: `OllamaAgent`,
-    `langchain-*`, `langgraph` and `local_only.py` are gone (D-06); `app/` writes `character_changed` with each
+    `langchain-*`, `langgraph` and `local_only.py` are gone (D-58 brings LangGraph back for the tool loop only); `app/` writes `character_changed` with each
     new version; `CharacterService` is wired, and the first-run and character views show its data (D-52); the
     core thread holds the database and every decision (D-03, D-24). The work that remains is:
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
@@ -4012,7 +4373,7 @@ These items are outside this design, or need a decision before implementation.
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
-    The author decides whether the tuned model uses the `<|think|>` token. Reasoning costs time before the
+    The author decides whether the chat model uses the `<|think|>` token. Reasoning costs time before the
     first word (NFR-05), and ADR 0002 kept reasoning on for answer quality on another model.
 14. **A user setting for starting with Windows.** Closed by FR-36 and D-22.
 15. **Code signing.** An unsigned installer triggers a Windows warning, which works against NFR-10. The project has
@@ -4031,35 +4392,41 @@ These items are outside this design, or need a decision before implementation.
       (D-45, D-46, D-54)
     - the chat context of 8 192 tokens, the GPU margin of 512 MiB, 120 seconds to start, three starts again,
       and 1 200 characters a message (D-53, D-56)
-18. **Size of the tuned model.** Measure the full installer against the limit in section 8.3. The options to
-    test are a smaller quantisation, such as Q3_K_M, and a removal of the image and audio parts, because Cognia
-    uses text only. Nobody has verified the second option. Each option needs the measurements of section 8.6.
-19. **Acceptance thresholds and dataset size.** The author sets the thresholds before training. This design
-    states no figure, because no baseline exists. The number of examples and of character descriptions is also
-    open.
-20. **The generating model.** The author selects the model that generates the examples. Its terms must allow
-    the use of its output to train another model. Some services limit this use, so a person must read the terms.
-    A model with an open licence that runs in the training environment avoids the question.
-21. **Tool checks on Gemma 4 E2B.** D-28 replaced the model. Step 0 on 2026-11-05 checked the base GGUF of
+    - the desk figures of section 6.7.2: away after 300 s, an absence of 20 minutes for a `return`, dozing
+      after 30 minutes, a real break of 5 minutes, `T_talk` from 90 to 180 minutes, `T_break` from 75 to 110
+      minutes, and 20 minutes after a postponed break (D-63)
+    - the mood lines of section 6.5.4, and the speed of the voice (D-57)
+18. **Size of the tuned model.** Withdrawn by D-66. Item 5 still measures the installer.
+19. **Acceptance thresholds and dataset size.** Withdrawn by D-66.
+20. **The generating model.** Withdrawn by D-66.
+21. **Tool checks on the merged file.** Withdrawn by D-66. Step 0 on 2026-11-05 checked the base GGUF of
     Ministral 3 3B Reasoning on build `b12121`: both builds run it, the `json_schema` option works in the
-    OpenAI form of `response_format`, and it does not stop the reasoning. The merged file needs the same
-    checks. A short test must show these facts:
-    - both `llama-server` builds of D-13 run the merged file
-    - the `json_schema` option works on the merged file
-    - the chat template and the end token match the training run, because Unsloth warns that a mismatch lowers
-      the quality of an exported model
-22. **Finish the module.** `desktop/training/` holds the tools, and `desktop/training/GUIDE.md` gives the steps.
-    `train_lora` and `merge_and_quantise` have not run. `make_examples` needs a generating model, and `measure`
-    needs `LlamaClient`. Rules 11 and 12 of section 6.2 join the script of D-14 when that script exists.
+    OpenAI form of `response_format`, and it does not stop the reasoning.
+22. **Finish the module.** Withdrawn by D-66. `desktop/training/` is deleted.
 
-23. **Erasure by each store.** When sessions, learning, reflection and speech have stores, each store can erase
+23. **Erasure by each store.** When learning, reflection and speech have stores, each store can erase
     and count its own tables through a small port, and `infrastructure/storage/erasure_store.py` then holds no
     list of tables (D-51). The test that covers every table stays.
 24. **The quality of the base model.** In a run on 2026-11-05 the base model kept "Is exhausted today" as a fact,
     although the instruction leaves out passing moods, and it repeated stored lines in quotation marks in later
-    replies. The rules cannot judge meaning. The tuned model of D-27 must learn this, and its test sets must
-    measure it.
+    replies. The rules cannot judge meaning. With no fine-tuning (D-66), only the prompt can improve this,
+    and no test set measures it now.
 25. **A history budget.** The author chose no budget (D-56). Forty long messages can exceed the context of the
     chat server. If this happens in trial use, the history must be cut by characters as well as by count.
 26. **Chips of earlier conversations.** The chip of a stored line shows only in the conversation where it was
     stored. No column records whether a reply quoted a line, so a conversation that loads again shows no chips.
+27. **The speech-to-text binary.** The release page of whisper.cpp v1.9.5 did not show its file names. A
+    person must check that a Windows build holds `whisper-server.exe`, and its options for the address and
+    the port (D-65).
+28. **espeak-ng and GPL-3.0.** The installer distributes espeak-ng under GPL-3.0. The author checks what this
+    asks of the distribution as a whole before a release (D-65).
+29. **The dictionary of `define_word`.** Select a dictionary, read its licence, and measure its size (D-59).
+30. **The index of `search_conversations`.** FTS5 with `secure_delete`, or embeddings of messages. Each copy of
+    the words must disappear with its conversation (D-59).
+31. **Wrong tool calls.** Measure how often the model calls a wrong tool with thirteen tools, and join tools if
+    needed (D-59).
+32. **Motion and speech against NFR-06.** Continuous ambient motion and Kokoro on the CPU need a measurement
+    with the chat model running (D-64, D-65).
+33. **The mood lines and the questions.** The author approves the five mood lines of section 6.5.4 and writes
+    the questions of UC-22-A5 (D-57, D-63).
+34. **Code.** Decisions D-57 to D-60 and D-63 to D-65 and D-67 have no code yet. Each one gets its own plan.

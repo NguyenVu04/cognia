@@ -46,8 +46,8 @@ class Bridge(QObject):
     #: The reply text, and why it could not be kept.
     replyNotSaved = Signal(str, str)
     replyFailed = Signal(str)
-    #: The remembered items and the commitments.
-    memoryShown = Signal(object, object)
+    #: The remembered items.
+    memoryShown = Signal(object)
     memoryFailed = Signal(str)
     #: The level, the rows of each group, and the character's name or ``None``.
     erasurePreviewed = Signal(object, object, object)

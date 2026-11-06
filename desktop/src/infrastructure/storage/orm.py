@@ -169,9 +169,6 @@ class Message(Base):
     memory_items: Mapped[list[MemoryItem]] = relationship(
         secondary="message_memory_refs", passive_deletes=True
     )
-    commitments: Mapped[list[Commitment]] = relationship(
-        secondary="message_commitment_refs", passive_deletes=True
-    )
     journal_entries: Mapped[list[JournalEntry]] = relationship(
         secondary="message_journal_refs", passive_deletes=True
     )
@@ -192,21 +189,6 @@ class MessageMemoryRef(Base):
     )
 
 
-class MessageCommitmentRef(Base):
-    __tablename__ = "message_commitment_refs"
-    __table_args__ = (
-        Index("message_commitment_refs_by_commitment", "commitment_id"),
-        _STRICT,
-    )
-
-    message_id: Mapped[str] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True
-    )
-    commitment_id: Mapped[str] = mapped_column(
-        ForeignKey("commitments.id", ondelete="CASCADE"), primary_key=True
-    )
-
-
 class MessageJournalRef(Base):
     __tablename__ = "message_journal_refs"
     __table_args__ = (
@@ -222,7 +204,7 @@ class MessageJournalRef(Base):
     )
 
 
-# ── memory and commitments ────────────────────────────────────────────────
+# ── memory ────────────────────────────────────────────────────────────────
 # ``embedding`` stays the last column and deferred: a row reads its earlier
 # columns without walking the vector's overflow pages, and a list never loads it.
 
@@ -267,80 +249,7 @@ class MemoryItemEvidence(Base):
     )
 
 
-class Commitment(Base):
-    """Something the user has to do. It has no time of day and no status,
-    because Cognia keeps no task list and sets no alarm."""
-
-    __tablename__ = "commitments"
-    __table_args__ = (
-        _importance(),
-        _partial("commitments_by_message", "source_message_id"),
-        _STRICT,
-    )
-
-    id: Mapped[str] = mapped_column(primary_key=True)
-    text: Mapped[str]
-    due_on: Mapped[str | None]
-    source_message_id: Mapped[str | None] = mapped_column(
-        ForeignKey("messages.id", ondelete="SET NULL")
-    )
-    due_passed_mentioned_at: Mapped[str | None]
-    importance: Mapped[int | None]
-    last_retrieved_at: Mapped[str | None]
-    recorded_at: Mapped[str]
-    embedding: Mapped[bytes | None] = mapped_column(deferred=True)
-
-
-# ── work sessions and desk awareness ──────────────────────────────────────
-
-
-class Session(Base):
-    __tablename__ = "sessions"
-    __table_args__ = (
-        _one_of(
-            "closed_how",
-            "user",
-            "no_answer",
-            "last_activity",
-            "pause",
-            "awareness_off",
-        ),
-        CheckConstraint("(ended_at IS NULL) = (closed_how IS NULL)"),
-        _flag("checkins_requested"),
-        # At most one open session.
-        Index(
-            "one_open_session",
-            text("(ended_at IS NULL)"),
-            unique=True,
-            sqlite_where=text("ended_at IS NULL"),
-        ),
-        _STRICT,
-    )
-
-    id: Mapped[str] = mapped_column(primary_key=True)
-    started_at: Mapped[str]
-    ended_at: Mapped[str | None]
-    # Time at the machine, not time worked.
-    at_machine_seconds: Mapped[int | None]
-    closing_answer: Mapped[str | None]
-    closed_how: Mapped[str | None]
-    checkins_requested: Mapped[int] = mapped_column(server_default=text("0"))
-    checkins_stopped_at: Mapped[str | None]
-
-    intents: Mapped[list[SessionIntent]] = _owned(
-        "SessionIntent", order_by="SessionIntent.position"
-    )
-
-
-class SessionIntent(Base):
-    __tablename__ = "session_intents"
-    __table_args__ = (_STRICT,)
-
-    session_id: Mapped[str] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), primary_key=True
-    )
-    position: Mapped[int] = mapped_column(primary_key=True)
-    text: Mapped[str]
+# ── desk awareness ────────────────────────────────────────────────────────
 
 
 class AppUsage(Base):
@@ -541,7 +450,6 @@ class SpeechDecision(Base):
         # A query over several kinds must name them with IN to use this index.
         Index("speech_decisions_by_kind", "kind", "decided_at"),
         _partial("speech_decisions_by_trigger", "trigger_seq"),
-        _partial("speech_decisions_by_session", "session_id"),
         _partial("speech_decisions_by_message", "message_id", unique=True),
         _STRICT,
     )
@@ -550,9 +458,6 @@ class SpeechDecision(Base):
     kind: Mapped[str] = mapped_column(ForeignKey("message_kinds.id"))
     trigger_seq: Mapped[int | None] = mapped_column(
         ForeignKey("events.seq", ondelete="SET NULL")
-    )
-    session_id: Mapped[str | None] = mapped_column(
-        ForeignKey("sessions.id", ondelete="SET NULL")
     )
     decided_at: Mapped[str]
     outcome: Mapped[str]

@@ -264,9 +264,9 @@ class Cognia(QObject):
             case _:
                 self.window.chat.showError(text)
 
-    @Slot(object, object)
-    def _memory_shown(self, items, commitments) -> None:
-        self.window.memory.setEntries(items, commitments)
+    @Slot(object)
+    def _memory_shown(self, items) -> None:
+        self.window.memory.setEntries(items)
 
     @Slot(str)
     def _memory_failed(self, text: str) -> None:

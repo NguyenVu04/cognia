@@ -76,7 +76,7 @@ def is_crisis(tripwire_hit: bool, model_crisis: bool | None) -> bool:
 
 
 def instruction() -> str:
-    """The layer-4 text for a crisis turn. Training examples use the same text."""
+    """The layer-4 text for a crisis turn."""
     return _INSTRUCTION
 
 

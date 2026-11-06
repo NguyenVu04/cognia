@@ -1,9 +1,8 @@
 """The 214px navigation rail.
 
-Wordmark and the local-only line at the top, the six destinations in the
-middle, and — pinned to the bottom — the session status card and the pause
-control that the tray also offers, because the companion is never the only
-route to anything.
+Wordmark and the local-only line at the top, the destinations in the middle,
+and — pinned to the bottom — the pause control that the tray also offers,
+because the companion is never the only route to anything.
 """
 
 from __future__ import annotations
@@ -14,8 +13,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from src.ui import icons, theme
 from src.ui.views import sample_data
 from src.ui.widgets.buttons import LayoutButton, quiet_button
-from src.ui.widgets.surface import Panel, StyledWidget
-from src.ui.widgets.typography import kicker, label
+from src.ui.widgets.surface import StyledWidget
+from src.ui.widgets.typography import label
 
 WIDTH = 214
 
@@ -113,28 +112,12 @@ class Sidebar(StyledWidget):
 
         column.addStretch(1)
 
-        footer = QVBoxLayout()
-        footer.setSpacing(10)
-
-        status = Panel(
-            fill=theme.BG_INSET, ring=theme.BORDER_SUBTLE, radius=8,
-            padding=(11, 12, 11, 12),
-        )
-        status.body().setSpacing(3)
-        status.body().addWidget(kicker("Session open", alpha=0.38, px=10.5))
-        status.body().addWidget(
-            label(sample_data.SESSION_INTENT, font=theme.font(13),
-                  colour=theme.muted(0.85), wrap=True)
-        )
-        footer.addWidget(status)
-
         pause = quiet_button(
             "Pause…", px=13, radius=7, padding=(9, 12),
             fg=theme.muted(0.7), icon_name="pause",
         )
         pause.clicked.connect(self.pauseRequested)
-        footer.addWidget(pause)
-        column.addLayout(footer)
+        column.addWidget(pause)
 
     def setCurrent(self, screen_id: str) -> None:  # noqa: N802 - matches Qt naming
         for button in self._buttons:

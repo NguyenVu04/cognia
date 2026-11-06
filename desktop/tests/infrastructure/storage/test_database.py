@@ -56,8 +56,8 @@ def test_open_creates_schema(tmp_path: Path) -> None:
     engine.dispose()
 
     assert tables - {"alembic_version"} == set(Base.metadata.tables)
-    assert len(Base.metadata.tables) == 25
-    assert revision == "0002"
+    assert len(Base.metadata.tables) == 21
+    assert revision == "0003"
 
 
 def test_open_twice_changes_nothing(tmp_path: Path) -> None:
@@ -70,7 +70,7 @@ def test_open_twice_changes_nothing(tmp_path: Path) -> None:
     engine.dispose()
 
     assert settings == 1
-    assert kinds == 9
+    assert kinds == 7
 
 
 def test_ddl_rolls_back(tmp_path: Path) -> None:

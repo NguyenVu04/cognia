@@ -1,29 +1,18 @@
-"""The values that retrieval and selection pass around."""
+"""The values that retrieval passes around."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.domain.conversation.models import SaidCommitment
-from src.domain.memory.models.commitment import Commitment
 from src.domain.memory.models.memory_item import MemoryItem
 
-Entry = MemoryItem | Commitment
 Vector = tuple[float, ...]
 
 
 @dataclass(frozen=True)
 class Scored:
-    entry: Entry
+    entry: MemoryItem
     score: float
-
-
-@dataclass(frozen=True)
-class Selection:
-    """The new lines worth keeping from one message, after the rules."""
-
-    facts: tuple[str, ...]
-    commitments: tuple[SaidCommitment, ...]
 
 
 @dataclass(frozen=True)

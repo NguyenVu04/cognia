@@ -19,7 +19,7 @@ class Group(StrEnum):
 
     CONVERSATIONS = "conversations"
     MEMORY = "memory"
-    SESSIONS = "sessions"
+    DESK = "desk"
     LEARNING = "learning"
     JOURNAL = "journal"
     SPEECH = "speech"

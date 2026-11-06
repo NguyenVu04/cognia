@@ -24,7 +24,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from src.domain.conversation import rules as conversation_rules
 from src.domain.conversation.models import Interpretation, Message
 from src.domain.memory import rules as memory_rules
-from src.domain.memory.models import Calibration, Entry, Scored, Vector
+from src.domain.memory.models import Calibration, MemoryItem, Scored, Vector
 from src.domain.ports import (
     Embedder,
     EmbedFailed,
@@ -46,7 +46,7 @@ class TurnRequest:
     turn_id: int
     system_prompt: str
     history: tuple[Message, ...]
-    entries: tuple[Entry, ...]
+    entries: tuple[MemoryItem, ...]
     crisis: bool
     today: date
     now: datetime
@@ -121,7 +121,6 @@ class ChatWorker(QObject):
         vectors: dict[str, Vector] = {}
         if found is not None:
             lines = [memory_rules.tidy(f) for f in found.facts]
-            lines += [memory_rules.tidy(c.text) for c in found.commitments]
             lines = [line for line in dict.fromkeys(lines) if line]
             try:
                 vectors = dict(zip(lines, self._embedder.embed(lines)))
@@ -159,7 +158,7 @@ class ChatWorker(QObject):
             self.failed.emit("The model returned an empty reply. Try again?")
 
     @Slot(object)
-    def embed(self, entries: Sequence[Entry]) -> None:
+    def embed(self, entries: Sequence[MemoryItem]) -> None:
         """Compute the vectors that are missing. On failure they keep waiting."""
         if not entries:
             return

@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from src.domain.conversation import rules
-from src.domain.conversation.models import Interpretation, SaidCommitment
+from src.domain.conversation.models import Interpretation
 from src.domain.events.models import MessageClass
 
 THURSDAY = date(2026, 11, 5)
@@ -16,7 +16,6 @@ def answer(**fields) -> dict:
         "importance": 8,
         "crisis": False,
         "facts": ["Is writing a thesis"],
-        "commitments": [{"text": "Send chapter 3", "due_on": "2026-11-06"}],
         "style_request": None,
     }
     data.update(fields)
@@ -82,14 +81,13 @@ def test_long_date() -> None:
     assert rules.long_date(THURSDAY) == "Thursday 5 November 2026"
 
 
-def test_schema_fields_match_training() -> None:
+def test_schema_requires_every_field() -> None:
     assert set(rules.INTERPRETATION_SCHEMA["properties"]) == {
         "event_class",
         "confidence",
         "importance",
         "crisis",
         "facts",
-        "commitments",
         "style_request",
     }
     assert set(rules.INTERPRETATION_SCHEMA["required"]) == set(
@@ -110,12 +108,17 @@ def test_instruction_states_today() -> None:
     assert "2026-11-05" in text
 
 
-def test_instruction_lists_the_next_seven_days() -> None:
+def test_schema_has_no_commitments() -> None:
+    assert "commitments" not in rules.INTERPRETATION_SCHEMA["properties"]
+    assert "commitments" not in rules.INTERPRETATION_SCHEMA["required"]
+
+
+def test_instruction_states_today_only() -> None:
     text = rules.interpretation_instruction(THURSDAY, [])
 
-    assert "- Friday 6 November 2026 = 2026-11-06" in text
-    assert "- Thursday 12 November 2026 = 2026-11-12" in text
-    assert "2026-11-13" not in text
+    assert "Today is Thursday 5 November 2026 (2026-11-05)." in text
+    assert "next seven days" not in text
+    assert "2026-11-06" not in text
 
 
 def test_instruction_lists_known() -> None:
@@ -131,34 +134,19 @@ def test_instruction_no_known() -> None:
 
 def test_read_full() -> None:
     assert rules.read_interpretation(answer()) == Interpretation(
-        8,
-        ("Is writing a thesis",),
-        (SaidCommitment("Send chapter 3", date(2026, 11, 6)),),
+        8, ("Is writing a thesis",)
     )
 
 
-def test_read_bad_due_day() -> None:
-    found = rules.read_interpretation(
-        answer(commitments=[{"text": "Send chapter 3", "due_on": "Friday"}])
-    )
+def test_read_interpretation_reads_importance_and_facts() -> None:
+    found = rules.read_interpretation({"importance": 5, "facts": ["Is a student"]})
 
-    assert found.commitments == (SaidCommitment("Send chapter 3", None),)
+    assert found == Interpretation(5, ("Is a student",))
 
 
-def test_read_null_due_day() -> None:
-    found = rules.read_interpretation(
-        answer(commitments=[{"text": "Send chapter 3", "due_on": None}])
-    )
-
-    assert found.commitments[0].due_on is None
-
-
-def test_read_skips_blank_commitment() -> None:
-    found = rules.read_interpretation(
-        answer(commitments=[{"text": "  ", "due_on": None}])
-    )
-
-    assert found.commitments == ()
+def test_read_interpretation_rejects_text_importance() -> None:
+    with pytest.raises(ValueError):
+        rules.read_interpretation({"importance": "5", "facts": []})
 
 
 def test_read_missing_importance() -> None:
@@ -182,11 +170,6 @@ def test_read_importance_true() -> None:
 def test_read_fact_not_text() -> None:
     with pytest.raises(ValueError):
         rules.read_interpretation(answer(facts=[3]))
-
-
-def test_read_commitment_without_text() -> None:
-    with pytest.raises(ValueError):
-        rules.read_interpretation(answer(commitments=[{"due_on": None}]))
 
 
 def test_show_back_quotes_each_line() -> None:

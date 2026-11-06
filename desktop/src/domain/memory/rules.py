@@ -10,16 +10,9 @@ import math
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime, tzinfo
 
-from src.domain.conversation.models import Interpretation, SaidCommitment
-from src.domain.conversation.rules import DAYS, MONTHS
-from src.domain.memory.models import (
-    Calibration,
-    Commitment,
-    Entry,
-    Scored,
-    Selection,
-    Vector,
-)
+from src.domain.conversation.models import Interpretation
+from src.domain.conversation.rules import MONTHS
+from src.domain.memory.models import Calibration, MemoryItem, Scored, Vector
 
 # Recency falls by this factor for each hour since the line was last used. A
 # line unused for weeks is forgotten in conversation, by design; it stays on the
@@ -34,7 +27,7 @@ RECALL_LIMIT = 3
 KNOWN_LIMIT = 5
 # A stored line is short; a longer one is a paragraph, not a fact.
 LINE_LIMIT = 200
-# New facts, and new commitments, kept from one message.
+# New facts kept from one message.
 PER_MESSAGE = 3
 
 _EDGES = " .!?;:,\"'“”‘’"
@@ -60,7 +53,7 @@ def relevance(similarity: float, baseline: float) -> float:
 
 
 def score(
-    entry: Entry,
+    entry: MemoryItem,
     query: Vector | None,
     now: datetime,
     calibration: Calibration,
@@ -82,7 +75,7 @@ def score(
 
 
 def recall(
-    entries: Sequence[Entry],
+    entries: Sequence[MemoryItem],
     query: Vector | None,
     now: datetime,
     calibration: Calibration,
@@ -99,8 +92,8 @@ def recall(
 
 
 def known(
-    entries: Sequence[Entry], query: Vector | None, limit: int = KNOWN_LIMIT
-) -> tuple[Entry, ...]:
+    entries: Sequence[MemoryItem], query: Vector | None, limit: int = KNOWN_LIMIT
+) -> tuple[MemoryItem, ...]:
     """The stored lines closest to the query. With no query vector, the newest."""
     if query is None:
         newest = sorted(entries, key=lambda e: (-e.recorded_at.timestamp(), e.id))
@@ -114,10 +107,10 @@ def known(
 
 def select(
     found: Interpretation,
-    existing: Sequence[Entry],
+    existing: Sequence[MemoryItem],
     vectors: Mapping[str, Vector],
     calibration: Calibration,
-) -> Selection:
+) -> tuple[str, ...]:
     """The new lines worth keeping.
 
     A line is left out if it is blank, longer than ``LINE_LIMIT``, the same as
@@ -147,22 +140,13 @@ def select(
     for line in map(tidy, found.facts):
         if len(facts) < PER_MESSAGE and fresh(line):
             facts.append(line)
-    commitments: list[SaidCommitment] = []
-    for said in found.commitments:
-        line = tidy(said.text)
-        if len(commitments) < PER_MESSAGE and fresh(line):
-            commitments.append(SaidCommitment(line, said.due_on))
-    return Selection(tuple(facts), tuple(commitments))
+    return tuple(facts)
 
 
-def recalled_line(entry: Entry, zone: tzinfo) -> str:
+def recalled_line(entry: MemoryItem, zone: tzinfo) -> str:
     """The line as the reply prompt shows it, with the local day it was told, so
     the model can let a newer line win."""
     told = f"told {_day_text(entry.recorded_at.astimezone(zone).date())}"
-    if isinstance(entry, Commitment) and entry.due_on is not None:
-        due = entry.due_on
-        when = f"{DAYS[due.weekday()]} {due.day} {MONTHS[due.month - 1]}"
-        return f"{entry.text} ({told}, due {when})"
     return f"{entry.text} ({told})"
 
 

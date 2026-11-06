@@ -97,8 +97,8 @@ def font(
     if spacing_em:
         f.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100 + spacing_em * 100)
     if tabular:
-        # OpenType tabular figures, so the elapsed time and the session
-        # lengths line up in their columns. Qt wants a QFont.Tag, not a str.
+        # OpenType tabular figures, so times and counts line up in their
+        # columns. Qt wants a QFont.Tag, not a str.
         f.setFeature(QFont.Tag("tnum"), 1)
     return f
 

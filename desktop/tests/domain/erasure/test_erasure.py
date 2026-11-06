@@ -8,7 +8,7 @@ from src.domain.ports import ErasureFailed
 MEMORY_GROUPS = (
     Group.CONVERSATIONS,
     Group.MEMORY,
-    Group.SESSIONS,
+    Group.DESK,
     Group.LEARNING,
     Group.JOURNAL,
     Group.SPEECH,
@@ -70,13 +70,13 @@ def test_erase_all_succeed(store) -> None:
 
 
 def test_erase_continues_after_a_failure(store) -> None:
-    store.failing = {Group.SESSIONS}
+    store.failing = {Group.DESK}
 
     report = ErasureService(store).erase(Level.MEMORY)
 
-    assert report.failed == (Group.SESSIONS,)
+    assert report.failed == (Group.DESK,)
     assert Group.EVENTS in report.erased
-    assert Group.SESSIONS not in report.erased
+    assert Group.DESK not in report.erased
     assert store.compacted == 1
     assert not report.complete
 
@@ -91,7 +91,7 @@ def test_compact_failure_is_reported(store) -> None:
 
 
 def test_second_erase_removes_what_is_left(store) -> None:
-    store.failing = {Group.SESSIONS}
+    store.failing = {Group.DESK}
     service = ErasureService(store)
     service.erase(Level.MEMORY)
     store.failing = set()

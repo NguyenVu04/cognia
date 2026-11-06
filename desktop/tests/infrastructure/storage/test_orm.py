@@ -1,12 +1,25 @@
 from pathlib import Path
 
 import pytest
+from alembic import command
 from alembic.autogenerate import compare_metadata
+from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import Connection, Engine, delete, insert, inspect, select, text
+from sqlalchemy import (
+    Connection,
+    Engine,
+    create_engine,
+    delete,
+    event,
+    insert,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import configure_mappers
 
+from src.infrastructure.storage import database
 from src.infrastructure.storage.database import open_database
 from src.infrastructure.storage.orm import (
     Base,
@@ -137,7 +150,7 @@ def test_every_table_is_strict(engine: Engine) -> None:
             )
         ).all()
 
-    assert len(tables) == 25
+    assert len(tables) == 21
     assert all(sql.rstrip().endswith("STRICT") for _, sql in tables)
 
 
@@ -280,5 +293,82 @@ def test_ceiling_query_uses_index(engine: Engine) -> None:
 def test_embedding_is_last_column(engine: Engine) -> None:
     columns = inspect(engine).get_columns
 
-    for table in ("memory_items", "commitments", "journal_entries"):
+    for table in ("memory_items", "journal_entries"):
         assert columns(table)[-1]["name"] == "embedding"
+
+
+# ── revision 0003 ────────────────────────────────────────────────────────
+
+
+def _migrate(path: Path, revision: str, down: bool = False) -> Engine:
+    """A file at ``revision``, with the connection settings of the application."""
+    engine = create_engine(f"sqlite:///{path}")
+    event.listen(engine, "connect", database._configure)
+    event.listen(engine, "begin", database._begin)
+    config = Config()
+    config.set_main_option("script_location", str(database._MIGRATIONS))
+    with engine.begin() as connection:
+        config.attributes["connection"] = connection
+        if down:
+            command.downgrade(config, revision)
+        else:
+            command.upgrade(config, revision)
+    return engine
+
+
+def _names(engine: Engine, sql: str) -> list:
+    with engine.connect() as db:
+        return [row[0] for row in db.execute(text(sql))]
+
+
+def test_0003_removes_old_kinds_and_tables(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    old = _migrate(path, "0002")
+    with old.begin() as db:
+        db.execute(text(
+            "INSERT INTO events (occurred_at, utc_offset_min, kind, payload) VALUES "
+            f"('{NOW}', 0, 'memory_stored', '{{}}'), "
+            f"('{NOW}', 0, 'commitment_added', '{{}}')"
+        ))
+        db.execute(text(
+            "INSERT INTO speech_decisions (id, kind, decided_at, outcome) VALUES "
+            f"('d1', 'remark', '{NOW}', 'sent'), ('d2', 'commitment', '{NOW}', 'sent')"
+        ))
+        db.execute(text(
+            "INSERT INTO decision_factors (decision_id, position, name, value) "
+            "VALUES ('d1', 0, 'observed_seconds', 60.0)"
+        ))
+    old.dispose()
+
+    engine = _migrate(path, "head")
+
+    assert _names(engine, "SELECT kind FROM events") == ["memory_stored"]
+    assert _names(engine, "SELECT id FROM speech_decisions") == ["d1"]
+    assert _names(engine, "SELECT name FROM decision_factors") == ["observed_seconds"]
+    kinds = _names(engine, "SELECT id FROM message_kinds")
+    assert "commitment" not in kinds
+    assert "checkin" not in kinds
+    tables = set(inspect(engine).get_table_names())
+    assert not tables & {"commitments", "message_commitment_refs", "sessions",
+                         "session_intents"}
+    columns = [c["name"] for c in inspect(engine).get_columns("speech_decisions")]
+    assert "session_id" not in columns
+    engine.dispose()
+
+
+def test_0003_downgrade_restores_tables(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    _migrate(path, "head").dispose()
+
+    engine = _migrate(path, "0002", down=True)
+
+    tables = set(inspect(engine).get_table_names())
+    assert {"commitments", "message_commitment_refs", "sessions",
+            "session_intents"} <= tables
+    columns = [c["name"] for c in inspect(engine).get_columns("speech_decisions")]
+    assert "session_id" in columns
+    kinds = _names(engine, "SELECT id FROM message_kinds")
+    assert {"commitment", "checkin"} <= set(kinds)
+    engine.dispose()
+
+    _migrate(path, "head").dispose()

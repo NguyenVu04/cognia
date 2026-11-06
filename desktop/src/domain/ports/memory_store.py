@@ -1,4 +1,4 @@
-"""The port through which remembered lines and commitments are kept."""
+"""The port through which remembered lines are kept."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Protocol
 
-from src.domain.memory.models import Commitment, Entry, MemoryItem, Vector
+from src.domain.memory.models import MemoryItem, Vector
 
 
 class MemoryStoreFailed(Exception):
@@ -18,7 +18,7 @@ class MemoryStoreFailed(Exception):
 
 
 class MemoryStore(Protocol):
-    """Every remembered line and every commitment, with its vector.
+    """Every remembered line, with its vector.
 
     Each method raises :class:`MemoryStoreFailed` if it cannot do its work.
     """
@@ -27,24 +27,21 @@ class MemoryStore(Protocol):
         """Every remembered line, newest first."""
         ...
 
-    def commitments(self) -> list[Commitment]:
-        """Every commitment: the nearest due day first, then those with no day
-        in the order they were told."""
-        ...
+    def add(self, entry: MemoryItem) -> None: ...
 
-    def add(self, entry: Entry) -> None: ...
-
-    def correct(self, entry: Entry, text: str) -> None:
+    def correct(self, entry: MemoryItem, text: str) -> None:
         """Replace the words and drop the vector, which no longer fits them."""
         ...
 
-    def remove(self, entry: Entry) -> None:
+    def remove(self, entry: MemoryItem) -> None:
         """Delete it, with its vector and its links to replies."""
         ...
 
-    def set_embedding(self, entry: Entry, vector: Vector) -> None: ...
+    def set_embedding(self, entry: MemoryItem, vector: Vector) -> None: ...
 
-    def link(self, message_id: str, entries: Sequence[Entry], now: datetime) -> None:
+    def link(
+        self, message_id: str, entries: Sequence[MemoryItem], now: datetime
+    ) -> None:
         """Record that the reply drew on ``entries``, and that they were used
         at ``now``."""
         ...

@@ -1,4 +1,4 @@
-"""One thing the companion remembers about the user, other than a commitment.
+"""One thing the companion remembers about the user.
 
 ``text`` is the exact line the user was shown. A ``told`` item is something the
 user said about themselves; a ``noticed`` item is a conclusion of the companion

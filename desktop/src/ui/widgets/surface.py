@@ -118,20 +118,6 @@ def rule(colour: QColor, thickness: int = 1) -> StyledWidget:
     return line
 
 
-def fading_rule(colour: QColor, thickness: int = 1) -> StyledWidget:
-    """The divider inside the session card, which fades out at 70%."""
-    line = StyledWidget()
-    line.setFixedHeight(thickness)
-    line.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-    solid = theme.css(colour)
-    clear = theme.css(QColor(colour.red(), colour.green(), colour.blue(), 0))
-    line.setRules(
-        "border: 0; background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
-        f" stop:0 {solid}, stop:0.7 {solid}, stop:1 {clear});"
-    )
-    return line
-
-
 def vrule(colour: QColor, thickness: int = 1) -> StyledWidget:
     """A vertical hairline."""
     line = StyledWidget()

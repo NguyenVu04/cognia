@@ -47,15 +47,7 @@ from src.domain.erasure.models import Level
 from src.domain.events.models import EventKind, Payload
 from src.domain.memory import rules as memory_rules
 from src.domain.memory.memory_service import MemoryService
-from src.domain.memory.models import (
-    Calibration,
-    Commitment,
-    Entry,
-    MemoryItem,
-    Scored,
-    Selection,
-    Vector,
-)
+from src.domain.memory.models import Calibration, MemoryItem, Scored, Vector
 from src.domain.ports import (
     CharacterCatalogUnavailable,
     CharacterStoreFailed,
@@ -100,7 +92,6 @@ class _Turn:
 class _Ready:
     """What the reply of a turn will store once it arrives."""
 
-    selection: Selection | None
     importance: int
     vectors: Mapping[str, Vector]
     recalled: tuple[Scored, ...]
@@ -278,16 +269,13 @@ class CoreHost(threading.Thread):
         turn = self._turn
         if turn is None or prepared.turn_id != turn.id:
             return  # a turn that was abandoned
-        selection, lines, importance = None, (), 1
+        lines, importance = (), 1
         if prepared.found is not None:
             importance = prepared.found.importance
-            selection = memory_rules.select(
+            lines = memory_rules.select(
                 prepared.found, self._entries(), prepared.vectors, self._calibration
             )
-            lines = (*selection.facts, *(c.text for c in selection.commitments))
-        self._ready = _Ready(
-            selection, importance, prepared.vectors, prepared.recalled, lines
-        )
+        self._ready = _Ready(importance, prepared.vectors, prepared.recalled, lines)
         zone = _now().tzinfo
         remembered = [
             memory_rules.recalled_line(s.entry, zone) for s in prepared.recalled
@@ -328,18 +316,13 @@ class CoreHost(threading.Thread):
     def _keep(self, turn: _Turn, ready: _Ready, reply: Message, now: datetime, state):
         """Store the chosen lines with their events, and link what the reply drew
         on. Runs inside the caller's transaction."""
-        if ready.selection is not None:
-            stored = self._memory.remember(
-                ready.selection, ready.importance, turn.message_id, ready.vectors, now
+        stored = self._memory.remember(
+            ready.lines, ready.importance, turn.message_id, ready.vectors, now
+        )
+        for entry in stored:
+            state = self._record(
+                state, now, EventKind.MEMORY_STORED, {"memory_item_id": entry.id}
             )
-            for entry in stored:
-                if isinstance(entry, MemoryItem):
-                    kind = EventKind.MEMORY_STORED
-                    payload = {"memory_item_id": entry.id}
-                else:
-                    kind = EventKind.COMMITMENT_ADDED
-                    payload = {"commitment_id": entry.id}
-                state = self._record(state, now, kind, payload)
         self._memory.use(reply.id, [s.entry for s in ready.recalled], now)
         return state
 
@@ -370,7 +353,7 @@ class CoreHost(threading.Thread):
 
     # ── memory ────────────────────────────────────────────────────────────
 
-    def _entries(self) -> list[Entry]:
+    def _entries(self) -> list[MemoryItem]:
         try:
             return self._memory.entries()
         except MemoryStoreFailed:
@@ -382,12 +365,9 @@ class CoreHost(threading.Thread):
         except MemoryStoreFailed as error:
             self._bridge.memoryFailed.emit(str(error))
             return
-        self._bridge.memoryShown.emit(
-            [e for e in entries if isinstance(e, MemoryItem)],
-            [e for e in entries if isinstance(e, Commitment)],
-        )
+        self._bridge.memoryShown.emit(entries)
 
-    def _correct(self, entry: Entry, text: str) -> None:
+    def _correct(self, entry: MemoryItem, text: str) -> None:
         try:
             self._memory.correct(entry, text)
         except ValueError:
@@ -398,13 +378,9 @@ class CoreHost(threading.Thread):
         self._refresh_memory()
         self._embed_missing()
 
-    def _remove(self, entry: Entry) -> None:
+    def _remove(self, entry: MemoryItem) -> None:
         now = _now()
-        if isinstance(entry, MemoryItem):
-            kind, payload = EventKind.MEMORY_REMOVED, {"memory_item_id": entry.id}
-        else:
-            kind = EventKind.COMMITMENT_CLOSED
-            payload = {"commitment_id": entry.id, "finished": False}
+        kind, payload = EventKind.MEMORY_REMOVED, {"memory_item_id": entry.id}
         try:
             with self._db.transaction():
                 self._memory.remove(entry)
