@@ -121,7 +121,8 @@ class CoreHost(threading.Thread):
     ``embedding_identity`` names the embedding model file, or ``None`` if it is
     missing. ``device_loaded`` receives the stored GPU name, or ``None``, on this
     thread at start, before any model request. A command that fails in a way
-    nobody expected is reported through ``Bridge.coreFailed``, and the next
+    nobody expected is reported through ``Bridge.coreFailed`` with the command
+    itself, so the window can say so where the user asked for it, and the next
     command is handled as usual.
     """
 
@@ -156,7 +157,7 @@ class CoreHost(threading.Thread):
             self._open()
             self._show_everything()
         except Exception:  # noqa: BLE001 - the window must learn why it is empty
-            self._bridge.coreFailed.emit(NOT_OPENED)
+            self._bridge.coreFailed.emit(NOT_OPENED, None)
         self._bridge.ready.emit()
         while True:
             item = self._bridge.commands.get()
@@ -165,7 +166,7 @@ class CoreHost(threading.Thread):
             try:
                 self._handle(item)
             except Exception:  # noqa: BLE001 - one broken step must not end the core
-                self._bridge.coreFailed.emit(STEP_FAILED)
+                self._bridge.coreFailed.emit(STEP_FAILED, item)
         if self._db is not None:
             self._db.close()
 

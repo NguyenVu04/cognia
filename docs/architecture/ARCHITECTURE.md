@@ -1785,8 +1785,10 @@ data arrives (`Bridge.ready`).
 the queue in (D-24), and `app/commands.py` the commands as frozen dataclasses. The model thread
 puts its results into the same queue, so the core reads one ordered stream. No rule returns a
 next wake yet, so the loop waits on the queue with no timeout. A command that fails in a way
-nobody expected rolls back its transaction, the window shows one sentence, and the core handles
-the next command as usual.
+nobody expected rolls back its transaction. `Bridge.coreFailed` carries one sentence and that
+command, so the window shows the sentence where the user asked for the step: an erasure in its
+dialog, the count before an erasure on the memory page, and anything else in the chat. The core
+then handles the next command as usual.
 
 **A start with an open session.** The rules close a session that has no end as of the last
 recorded activity (UC-07-A2).

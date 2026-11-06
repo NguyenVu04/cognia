@@ -52,8 +52,9 @@ class Bridge(QObject):
     #: The level, the rows of each group, and the character's name or ``None``.
     erasurePreviewed = Signal(object, object, object)
     erasureReported = Signal(object)
-    #: A step failed in a way nobody expected; nothing of it was kept.
-    coreFailed = Signal(str)
+    #: A step failed in a way nobody expected; nothing of it was kept. The
+    #: sentence, and the command that failed, or ``None`` if the start failed.
+    coreFailed = Signal(str, object)
 
     # ── to the model thread ───────────────────────────────────────────────
     askPrepare = Signal(object)

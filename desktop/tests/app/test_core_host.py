@@ -23,8 +23,9 @@ from src.app.commands import (
     Stop,
     TurnPrepared,
 )
-from src.app.core_host import STEP_FAILED, CoreHost
+from src.app.core_host import NOT_OPENED, STEP_FAILED, CoreHost
 from src.domain.conversation.models import Interpretation
+from src.domain.erasure.erasure_service import ErasureService
 from src.domain.erasure.models import Level
 from src.domain.memory.models import Calibration
 from src.infrastructure.storage.database import Database
@@ -244,8 +245,23 @@ def test_preview_and_erase_memory(core: Core, path: Path) -> None:
 def test_handler_error_continues(core: Core) -> None:
     core.bridge.send(CorrectEntry(None, "not an entry"))
 
-    assert core.recorder.wait("coreFailed") == (STEP_FAILED,)
+    assert core.recorder.wait("coreFailed") == (
+        STEP_FAILED, CorrectEntry(None, "not an entry")
+    )
     barrier(core)
+
+
+def test_preview_error_names_the_command(core: Core, monkeypatch) -> None:
+    def broken(self, level):
+        raise RuntimeError("preview broke")
+
+    monkeypatch.setattr(ErasureService, "preview", broken)
+    core.bridge.send(PreviewErasure(Level.MEMORY))
+
+    assert core.recorder.wait("coreFailed") == (
+        STEP_FAILED, PreviewErasure(Level.MEMORY)
+    )
+    assert core.recorder.all("erasurePreviewed") == []
 
 
 def test_stop_closes_and_ends(core: Core) -> None:
@@ -297,6 +313,6 @@ def test_unopened_database_reports(qapp, tmp_path: Path) -> None:
     host.start()
 
     recorder.wait("ready")
-    assert recorder.all("coreFailed")
+    assert recorder.all("coreFailed") == [(NOT_OPENED, None)]
     bridge.send(Stop())
     host.join(5)

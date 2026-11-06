@@ -28,6 +28,7 @@ from src.app.bridge import Bridge
 from src.app.chat_worker import ChatWorker, Prepared
 from src.app.commands import (
     ChooseCharacter,
+    Command,
     CorrectEntry,
     DeviceChosen,
     Erase,
@@ -248,16 +249,20 @@ class Cognia(QObject):
     def _reply_failed(self, text: str) -> None:
         self.window.chat.showError(text)
 
-    @Slot(str)
-    def _core_failed(self, text: str) -> None:
-        """An erasure that waits says so in its own dialog; its report never
-        comes. Any other failed step is told in the chat."""
+    @Slot(str, object)
+    def _core_failed(self, text: str, command: Command | None) -> None:
+        """Say it where the user asked for the step: an erasure in its dialog,
+        whose report never comes, the count of one on the memory page, and
+        anything else in the chat."""
         self.window.setLoading(False)
         dialog = self._erase_dialog
-        if dialog is not None and dialog.isVisible() and dialog.working:
-            dialog.showStopped()
-            return
-        self.window.chat.showError(text)
+        match command:
+            case Erase() if dialog is not None and dialog.isVisible():
+                dialog.showStopped()
+            case PreviewErasure():
+                self.window.memory.showError(text)
+            case _:
+                self.window.chat.showError(text)
 
     @Slot(object, object)
     def _memory_shown(self, items, commitments) -> None:

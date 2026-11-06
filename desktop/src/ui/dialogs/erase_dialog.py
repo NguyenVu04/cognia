@@ -59,7 +59,6 @@ class EraseDialog(ShadowWindow):
         self.body.setFixedWidth(WIDTH)
         self._level = level
         self._name = character_name or "the character"
-        self._working = False
 
         frame = self.body.body()
         frame.setContentsMargins(28, 24, 28, 22)
@@ -75,11 +74,6 @@ class EraseDialog(ShadowWindow):
         self._show_counts(counts)
 
     # ── states ────────────────────────────────────────────────────────────
-
-    @property
-    def working(self) -> bool:
-        """True while an erasure is under way and its outcome has not been shown."""
-        return self._working
 
     def _show_counts(self, counts: Sequence[GroupCount]) -> None:
         shown = [c for c in counts if c.rows > 0]
@@ -111,14 +105,12 @@ class EraseDialog(ShadowWindow):
 
     def showWorking(self) -> None:  # noqa: N802 - matches Qt naming
         self._clear()
-        self._working = True
         self._title("Erasing…")
         self._text("This can take a moment while the file is rewritten.")
 
     def showReport(self, report: ErasureReport) -> None:  # noqa: N802 - Qt naming
         """What is gone, and what is not. A partial erasure offers to run again."""
         self._clear()
-        self._working = False
         if report.complete:
             self._title("Erased")
             self._text("Nothing of it remains on the disk.")
@@ -143,7 +135,6 @@ class EraseDialog(ShadowWindow):
         """The erasure ended with no report, so nobody knows which groups went.
         Running it again erases whatever is left."""
         self._clear()
-        self._working = False
         self._title("Not everything was erased")
         self._text("Erasing stopped partway, so some of it may still be on the disk.")
         self.buttons.addStretch(1)
