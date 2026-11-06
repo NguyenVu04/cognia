@@ -17,6 +17,8 @@ desktop/models/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
+# The dictionary ships with Cognia: data, not the user's.
+!desktop/src/resources/dictionary/oewn.sqlite3
 
 # OS
 .DS_Store

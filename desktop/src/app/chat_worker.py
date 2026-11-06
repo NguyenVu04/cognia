@@ -15,7 +15,10 @@ This lives in ``app/`` because it touches both Qt and the model ports, and
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import importlib
+import time
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import Future
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
@@ -26,6 +29,8 @@ from src.domain.conversation.models import Interpretation, Message
 from src.domain.memory import rules as memory_rules
 from src.domain.memory.models import Calibration, MemoryItem, Scored, Vector
 from src.domain.ports import (
+    Dictionary,
+    DictionaryUnavailable,
     Embedder,
     EmbedFailed,
     Interpreter,
@@ -33,6 +38,16 @@ from src.domain.ports import (
     Replier,
     ReplyFailed,
 )
+from src.domain.tools import catalog
+from src.domain.tools import rules as tool_rules
+from src.domain.tools.models import ToolCall, ToolResult, ToolStarted
+
+# How long a tool that asks the core waits for its answer, and how often it
+# looks whether the reply was abandoned meanwhile.
+TOOL_SECONDS = 10
+_POLL_SECONDS = 0.2
+
+AskCore = Callable[[ToolCall, datetime], "Future[str]"]
 
 
 @dataclass(frozen=True)
@@ -54,6 +69,57 @@ class TurnRequest:
 
 
 @dataclass(frozen=True)
+class ReplyRequest:
+    """One reply: what the model reads, and what its tools need.
+
+    ``tools`` is ``False`` on a crisis turn, so nothing distracts from it.
+    ``now`` is the time of the turn, which ``date`` counts from. ``entries`` and
+    ``calibration`` are for ``recall_memory``.
+    """
+
+    turn_id: int
+    system_prompt: str
+    history: tuple[Message, ...]
+    turn: str
+    tools: bool
+    now: datetime
+    entries: tuple[MemoryItem, ...] = ()
+    calibration: Calibration | None = None
+
+
+@dataclass(frozen=True)
+class Replied:
+    """The whole reply of a turn, and what each tool it called gave back."""
+
+    turn_id: int
+    text: str
+    results: tuple[ToolResult, ...] = ()
+
+
+@dataclass(frozen=True)
+class SummaryJob:
+    """Summarize ``messages`` of a conversation, after its ``previous`` summary.
+
+    ``covers`` is how many messages, from the first, the new summary covers.
+    ``turn_id`` is the turn that waits for it, or ``None`` in the background.
+    """
+
+    conversation_id: str
+    previous: str | None
+    messages: tuple[Message, ...]
+    covers: int
+    turn_id: int | None
+
+
+@dataclass(frozen=True)
+class SummaryDone:
+    """The summary of ``job``, or "" if the model could not make one."""
+
+    job: SummaryJob
+    text: str
+
+
+@dataclass(frozen=True)
 class Prepared:
     """What the reply draws on, and what the message holds worth keeping.
 
@@ -72,27 +138,39 @@ class ChatWorker(QObject):
 
     #: One piece of the reply, in order.
     chunk = Signal(str)
-    #: The whole reply, once. Not emitted for a cancelled turn.
-    finished = Signal(str)
-    #: A sentence for the user saying why there is no reply.
-    failed = Signal(str)
+    #: A :class:`Replied`, once. Not emitted for a cancelled turn.
+    finished = Signal(object)
+    #: The turn, and a sentence for the user saying why there is no reply.
+    failed = Signal(int, str)
     #: A :class:`Prepared`, always, even when the model could not help.
     prepared = Signal(object)
     #: A list of ``(entry, vector)`` pairs. Not emitted if no vector was made.
     embedded = Signal(object)
+    #: A :class:`SummaryDone`. Always for a job a turn waits for; for a job in
+    #: the background, only with a summary.
+    summarized = Signal(object)
+    #: What the chat says while a tool runs, such as "checking the date".
+    toolStarted = Signal(str)
+    #: An http or https address the user asked to open in their browser.
+    browserRequested = Signal(str)
 
     def __init__(
         self,
         replier: Replier,
         interpreter: Interpreter,
         embedder: Embedder,
+        ask_core: AskCore | None = None,
+        dictionary: Dictionary | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._replier = replier
         self._interpreter = interpreter
         self._embedder = embedder
+        self._ask_core = ask_core
+        self._dictionary = dictionary
         self._cancelled = False
+        self._summary_stop = False
 
     def cancel(self) -> None:
         """Abandon the reply in flight.
@@ -104,10 +182,42 @@ class ChatWorker(QObject):
         """
         self._cancelled = True
 
+    def cancel_summary(self) -> None:
+        """Stop a summary in the background, so the user's next turn does not
+        wait for it. Called from the GUI thread; the worker notices between
+        pieces."""
+        self._summary_stop = True
+
+    @Slot(object)
+    def summarize(self, job: SummaryJob) -> None:
+        """Summarize the older messages of a long conversation."""
+        background = job.turn_id is None
+        if background and self._summary_stop:
+            return
+        if not background:
+            self._summary_stop = False
+        request = conversation_rules.summary_request(job.previous, job.messages)
+        pieces: list[str] = []
+        stream = self._replier.stream_text(conversation_rules.SUMMARY_SYSTEM, request)
+        try:
+            for piece in stream:
+                if background and self._summary_stop:
+                    return
+                pieces.append(piece)
+        except Exception:  # noqa: BLE001 - a failed summary only costs its turn time
+            pieces = []
+        finally:
+            stream.close()
+        text = conversation_rules.tidy_summary("".join(pieces))
+        if background and not text:
+            return
+        self.summarized.emit(SummaryDone(job, text))
+
     @Slot(object)
     def prepare(self, request: TurnRequest) -> None:
         """Recall what the reply draws on, then interpret the message. A model
         that fails only leaves out its part: the reply still comes."""
+        self._summary_stop = False
         message = request.history[-1].text
         query = self._vector(message)
         recalled = memory_rules.recall(
@@ -128,34 +238,55 @@ class ChatWorker(QObject):
                 vectors = {}
         self.prepared.emit(Prepared(request.turn_id, recalled, found, vectors))
 
-    @Slot(str, object, str)
-    def request(
-        self, system_prompt: str, history: Sequence[Message], turn: str
-    ) -> None:
+    @Slot()
+    def warm_up(self) -> None:
+        """Import the tool loop ahead of the first reply. It takes seconds, so
+        it runs on this thread once the window shows."""
+        importlib.import_module("src.infrastructure.ai.tool_loop")
+
+    @Slot(object)
+    def request(self, request: ReplyRequest) -> None:
         self._cancelled = False
+        turn_id = request.turn_id
         pieces: list[str] = []
+        results: list[ToolResult] = []
+
+        def run_tool(call: ToolCall) -> str:
+            text = self._run_tool(call, request) or tool_rules.TOOL_FAILED
+            results.append(ToolResult(call.name, text))
+            return text
+
+        tools = catalog.SPECS if request.tools else ()
         try:
-            for piece in self._replier.stream_reply(system_prompt, history, turn):
+            for piece in self._replier.stream_reply(
+                request.system_prompt, request.history, request.turn, tools, run_tool
+            ):
                 if self._cancelled:
                     return
+                if isinstance(piece, ToolStarted):
+                    spec = catalog.spec(piece.name)
+                    self.toolStarted.emit(spec.working if spec else "")
+                    continue
                 pieces.append(piece)
                 self.chunk.emit(piece)
         except ReplyFailed as error:
             if not self._cancelled:
-                self.failed.emit(str(error))
+                self.failed.emit(turn_id, str(error))
             return
         except Exception as error:  # noqa: BLE001 - the window must not die with it
             if not self._cancelled:
-                self.failed.emit(f"I can’t reply just now — {error}")
+                self.failed.emit(turn_id, f"I can’t reply just now — {error}")
             return
 
         if self._cancelled:
             return
         reply = "".join(pieces).strip()
         if reply:
-            self.finished.emit(reply)
+            self.finished.emit(Replied(turn_id, reply, tuple(results)))
         else:
-            self.failed.emit("The model returned an empty reply. Try again?")
+            self.failed.emit(
+                turn_id, "The model returned an empty reply. Try again?"
+            )
 
     @Slot(object)
     def embed(self, entries: Sequence[MemoryItem]) -> None:
@@ -167,6 +298,82 @@ class ChatWorker(QObject):
         except EmbedFailed:
             return
         self.embedded.emit(list(zip(entries, vectors)))
+
+    def _run_tool(self, call: ToolCall, request: ReplyRequest) -> str:
+        """The sentence a tool gives back. A tool never fails the reply: a
+        failure is a sentence the model can repeat."""
+        arguments = call.arguments
+        try:
+            match call.name:
+                case "calculate":
+                    return tool_rules.calculate(str(arguments.get("expression", "")))
+                case "date":
+                    return tool_rules.date_answer(arguments, request.now)
+                case "convert_units":
+                    return tool_rules.convert(
+                        arguments.get("value"),
+                        str(arguments.get("from", "")),
+                        str(arguments.get("to", "")),
+                    )
+                case "recall_memory":
+                    return self._recall(str(arguments.get("query", "")), request)
+                case "open_in_browser":
+                    return self._open(arguments, request)
+                case "define_word":
+                    return self._define(str(arguments.get("word", "")))
+                case name if name in catalog.CORE_TOOLS:
+                    return self._ask(call, request)
+        except Exception:  # noqa: BLE001 - a tool must not end the reply
+            return tool_rules.TOOL_FAILED
+        return tool_rules.TOOL_FAILED
+
+    def _recall(self, query: str, request: ReplyRequest) -> str:
+        try:
+            vector = self._embedder.embed([query])[0]
+        except EmbedFailed:
+            return memory_rules.UNSEARCHABLE
+        found = memory_rules.related(request.entries, vector, request.calibration)
+        return memory_rules.recall_text(query, found, request.now.tzinfo)
+
+    def _open(self, arguments: Mapping[str, object], request: ReplyRequest) -> str:
+        # Only the user's own words can open their browser, never the model's
+        # reading of a question.
+        if not tool_rules.asked_to_open(request.history[-1].text):
+            return tool_rules.NOT_ASKED
+        url = tool_rules.browser_url(arguments)
+        if url is None:
+            return tool_rules.NOT_OPENABLE
+        self.browserRequested.emit(url)
+        return tool_rules.opened(url, arguments)
+
+    def _define(self, word: str) -> str:
+        if self._dictionary is None:
+            return tool_rules.TOOL_FAILED
+        try:
+            for form in tool_rules.candidates(word):
+                senses = self._dictionary.senses(form)
+                if senses:
+                    return tool_rules.define_text(form, senses)
+        except DictionaryUnavailable as error:
+            return str(error)
+        return tool_rules.define_text(word.strip(), [])
+
+    def _ask(self, call: ToolCall, request: ReplyRequest) -> str:
+        """Ask the core, which holds the data, and wait for its sentence."""
+        if self._ask_core is None:
+            return tool_rules.TOOL_FAILED
+        answer = self._ask_core(call, request.now)
+        deadline = time.monotonic() + TOOL_SECONDS
+        while time.monotonic() < deadline:
+            if self._cancelled:
+                answer.cancel()
+                return tool_rules.TOOL_FAILED
+            try:
+                return answer.result(timeout=_POLL_SECONDS) or tool_rules.TOOL_FAILED
+            except TimeoutError:
+                continue
+        answer.cancel()
+        return tool_rules.TOOL_FAILED
 
     def _vector(self, text: str) -> Vector | None:
         try:

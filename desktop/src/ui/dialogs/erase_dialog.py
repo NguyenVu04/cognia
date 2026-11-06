@@ -30,7 +30,6 @@ GROUP_NAMES = {
     Group.MEMORY: "Things you told me",
     Group.DESK: "Time spent in each application",
     Group.LEARNING: "Patterns I learned",
-    Group.JOURNAL: "Journal entries",
     Group.SPEECH: "Records of when I spoke",
     Group.EVENTS: "Recorded events and feelings",
     Group.CHARACTER: "Character versions",

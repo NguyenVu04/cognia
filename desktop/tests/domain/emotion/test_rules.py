@@ -5,7 +5,7 @@ import pytest
 
 from src.domain.emotion import rules
 from src.domain.emotion.models import EmotionState, Pad, Temperament
-from src.domain.events.models import Event, EventKind, Payload
+from src.domain.events.models import Event, EventKind, MessageClass, Payload
 
 MONDAY = datetime(2026, 11, 2, 8, 0, tzinfo=timezone.utc)
 REST = Pad(0.10, 0.0, 0.0)
@@ -258,3 +258,64 @@ def test_expression_moods_off() -> None:
     face = rules.expression(Pad(0.80, 0.28, 0.14), moods_on=False)
 
     assert (face.preset, face.weight) == ("neutral", 1.0)
+
+
+@pytest.mark.parametrize(
+    ("event_class", "confidence", "expected"),
+    [
+        (MessageClass.PRAISE, 0.5, True),
+        (MessageClass.PRAISE, 0.49, False),
+        (MessageClass.COMPLAINT, 0.5, True),
+        (MessageClass.NOTHING, 0.9, True),
+        (None, 0.9, False),
+    ],
+)
+def test_counts(event_class, confidence: float, expected: bool) -> None:
+    assert rules.counts(event_class, confidence) is expected
+
+
+@pytest.mark.parametrize(
+    ("event_class", "gesture"),
+    [
+        ("praise", "bow"),
+        ("good_news", "cheer"),
+        ("bad_news", "comfort"),
+        ("shared_worry", "nod"),
+        ("complaint", "sheepish"),
+        ("nothing", None),
+        ("joy", None),
+    ],
+)
+def test_gesture_table(event_class: str, gesture: str | None) -> None:
+    assert rules.gesture(event_class, "lively") == gesture
+
+
+def test_gesture_good_news_when_low() -> None:
+    assert rules.gesture("good_news", "low") == "nod"
+
+
+def test_gesture_low_keeps_quiet_gestures() -> None:
+    assert rules.gesture("bad_news", "low") == "comfort"
+
+
+@pytest.mark.parametrize(
+    ("payload", "push"),
+    [
+        ({"activity": "breathing", "seconds": 70}, Pad(0.20, -0.10, 0.05)),
+        ({"activity": "breathing", "seconds": 60}, Pad(0.20, -0.10, 0.05)),
+        ({"activity": "breathing", "seconds": 59}, Pad(0.0, 0.0, 0.0)),
+        ({"activity": "breathing"}, Pad(0.0, 0.0, 0.0)),
+    ],
+)
+def test_appraise_activity(payload: dict, push: Pad) -> None:
+    event = Event(1, datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc), 0,
+                  EventKind.ACTIVITY_ENDED, payload, None)
+
+    assert rules.appraise(event) == push
+
+
+def test_activity_started_moves_nothing() -> None:
+    event = Event(1, datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc), 0,
+                  EventKind.ACTIVITY_STARTED, {"activity": "stretch"}, None)
+
+    assert rules.appraise(event) == Pad(0.0, 0.0, 0.0)

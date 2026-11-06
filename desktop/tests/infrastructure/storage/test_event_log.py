@@ -186,3 +186,19 @@ def test_unreadable_log(log: SqliteEventLog, path: Path) -> None:
         _presence(log)
     with pytest.raises(EventLogFailed):
         log.delete({1})
+
+
+def test_read_since_filters_and_orders(log) -> None:
+    from datetime import timedelta
+
+    from src.domain.events.models import EventKind
+
+    start = datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc)
+    for minutes in (0, 10, 20):
+        log.append(start + timedelta(minutes=minutes), 0, EventKind.PRESENCE, {}, None)
+
+    found = list(log.read_since(start + timedelta(minutes=10)))
+
+    assert [e.occurred_at for e in found] == [
+        start + timedelta(minutes=10), start + timedelta(minutes=20)
+    ]

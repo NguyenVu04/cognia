@@ -21,7 +21,7 @@ from src.domain.conversation.models import COMPANION, Conversation, Message
 from src.ui import theme
 from src.ui.dialogs.conversation_menu import ConversationMenu
 from src.ui.widgets.buttons import accent_button, quiet_button
-from src.ui.widgets.message_bubble import MessageRow, TypingIndicator
+from src.ui.widgets.message_bubble import WRITING, MessageRow, TypingIndicator
 from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.surface import StyledWidget, bottom_rule
 from src.ui.widgets.typography import label, paragraph
@@ -71,6 +71,7 @@ class ChatView(QWidget):
     messageSent = Signal(str)
     conversationChosen = Signal(str)
     newConversationRequested = Signal()
+    deleteConversationRequested = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -105,6 +106,14 @@ class ChatView(QWidget):
         self.menu = ConversationMenu(self)
         self.menu.chosen.connect(self.conversationChosen)
         self.menu.newRequested.connect(self.newConversationRequested)
+        self.menu.deleteRequested.connect(self.deleteConversationRequested)
+
+        self.new_button = quiet_button(
+            "+", px=12.5, radius=7, padding=(8, 13), fg=theme.muted(0.72)
+        )
+        self.new_button.setToolTip("New conversation")
+        self.new_button.clicked.connect(self.newConversationRequested)
+        row.addWidget(self.new_button, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.picker = quiet_button(
             "New conversation", px=12.5, radius=7, padding=(8, 13),
@@ -126,7 +135,8 @@ class ChatView(QWidget):
 
         typing = QHBoxLayout()
         typing.setContentsMargins(0, 0, 0, 0)
-        typing.addWidget(TypingIndicator())
+        self.typing = TypingIndicator()
+        typing.addWidget(self.typing)
         typing.addStretch(1)
         self.typing_row = QWidget()
         self.typing_row.setLayout(typing)
@@ -242,10 +252,19 @@ class ChatView(QWidget):
         """Say that the companion is working. Never a blank pause."""
         self._busy = True
         self.send.setEnabled(False)
+        self._lock(True)
         self._reply_row = None
         self._reply_text = ""
+        self.typing.setText(WRITING)
         self.typing_row.setVisible(True)
         self._settle()
+
+    def showWorking(self, label: str) -> None:  # noqa: N802 - Qt naming
+        """Say which tool the companion is using, while no words have come."""
+        self.typing.setText(f"{label}…")
+        if self._reply_row is None and self._busy:
+            self.typing_row.setVisible(True)
+            self._settle()
 
     def appendChunk(self, text: str) -> None:  # noqa: N802 - Qt naming
         if self._reply_row is None:
@@ -258,16 +277,19 @@ class ChatView(QWidget):
         self._settle()
 
     def endReply(  # noqa: N802 - Qt naming
-        self, text: str | None = None, note: str = ""
+        self, text: str | None = None, note: str = "", check: str = ""
     ) -> None:
         """Finish the reply. ``note`` is the chip under it, if anything was
-        stored."""
+        stored, and ``check`` the chip for numbers no tool gave."""
         if text and self._reply_row is not None:
             self._reply_row.setText(text)
         if note and self._reply_row is not None:
             self._reply_row.setNote(note)
+        if check and self._reply_row is not None:
+            self._reply_row.setCheck(check)
         self._busy = False
         self.send.setEnabled(self._sendable())
+        self._lock(False)
         self._reply_row = None
         self._reply_text = ""
         self.typing_row.setVisible(False)
@@ -303,6 +325,14 @@ class ChatView(QWidget):
         """The longest message the user can send, in characters."""
         self._max_chars = limit
         self._count()
+
+    def _lock(self, locked: bool) -> None:
+        """A reply belongs to the conversation it was asked in, so the user
+        cannot leave that conversation until the reply is done."""
+        if locked:
+            self.menu.hide()
+        self.picker.setEnabled(not locked)
+        self.new_button.setEnabled(not locked)
 
     # ── the column ────────────────────────────────────────────────────────
 

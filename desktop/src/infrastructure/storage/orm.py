@@ -24,6 +24,16 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 _STRICT = {"sqlite_strict": True}
 
+#: The full-text index of the messages. Revision 0005 creates it by hand with
+#: its shadow tables, because the ORM cannot describe a virtual table.
+SEARCH_TABLE = "messages_fts"
+
+
+def outside_orm(name: str) -> bool:
+    """Whether the table ``name`` is part of the search index, which this module
+    does not describe."""
+    return name == SEARCH_TABLE or name.startswith(f"{SEARCH_TABLE}_")
+
 
 def _owned(target: str, **options: Any) -> Any:
     """Children that SQLite removes by ``ON DELETE CASCADE``."""
@@ -140,6 +150,10 @@ class Conversation(Base):
     id: Mapped[str] = mapped_column(primary_key=True)
     title: Mapped[str]
     last_active_at: Mapped[str]
+    # The model's short form of the oldest messages, and how many it covers.
+    # Only the model reads it; it goes with the conversation.
+    summary: Mapped[str | None]
+    summary_covers: Mapped[int] = mapped_column(server_default=text("0"))
 
     messages: Mapped[list[Message]] = _owned("Message")
 
@@ -169,9 +183,6 @@ class Message(Base):
     memory_items: Mapped[list[MemoryItem]] = relationship(
         secondary="message_memory_refs", passive_deletes=True
     )
-    journal_entries: Mapped[list[JournalEntry]] = relationship(
-        secondary="message_journal_refs", passive_deletes=True
-    )
 
 
 class MessageMemoryRef(Base):
@@ -186,21 +197,6 @@ class MessageMemoryRef(Base):
     )
     memory_item_id: Mapped[str] = mapped_column(
         ForeignKey("memory_items.id", ondelete="CASCADE"), primary_key=True
-    )
-
-
-class MessageJournalRef(Base):
-    __tablename__ = "message_journal_refs"
-    __table_args__ = (
-        Index("message_journal_refs_by_entry", "journal_entry_id"),
-        _STRICT,
-    )
-
-    message_id: Mapped[str] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True
-    )
-    journal_entry_id: Mapped[str] = mapped_column(
-        ForeignKey("journal_entries.id", ondelete="CASCADE"), primary_key=True
     )
 
 
@@ -286,6 +282,7 @@ class Event(Base):
         CheckConstraint("json_valid(payload)"),
         _importance(),
         Index("events_by_kind", "kind", "seq"),
+        Index("events_by_time", "occurred_at"),
         {"sqlite_autoincrement": True, **_STRICT},
     )
 
@@ -372,41 +369,6 @@ class SelfAdjustment(Base):
         ForeignKey("speech_decisions.id", ondelete="SET NULL")
     )
     undone_at: Mapped[str | None]
-
-
-# ── the companion's journal ───────────────────────────────────────────────
-
-
-class JournalEntry(Base):
-    __tablename__ = "journal_entries"
-    __table_args__ = (_importance(), _STRICT)
-
-    id: Mapped[str] = mapped_column(primary_key=True)
-    character_version_id: Mapped[str] = mapped_column(
-        ForeignKey("character_versions.id")
-    )
-    text: Mapped[str]
-    importance: Mapped[int | None]
-    last_retrieved_at: Mapped[str | None]
-    written_at: Mapped[str]
-    embedding: Mapped[bytes | None] = mapped_column(deferred=True)
-
-    sources: Mapped[list[JournalEntrySource]] = _owned("JournalEntrySource")
-
-
-class JournalEntrySource(Base):
-    __tablename__ = "journal_entry_sources"
-    __table_args__ = (
-        Index("journal_entry_sources_by_event", "event_seq"),
-        _STRICT,
-    )
-
-    journal_entry_id: Mapped[str] = mapped_column(
-        ForeignKey("journal_entries.id", ondelete="CASCADE"), primary_key=True
-    )
-    event_seq: Mapped[int] = mapped_column(
-        ForeignKey("events.seq", ondelete="CASCADE"), primary_key=True
-    )
 
 
 # ── speech decisions and explanations ─────────────────────────────────────

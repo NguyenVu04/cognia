@@ -39,10 +39,16 @@ class Bridge(QObject):
     conversationLoaded = Signal(object)
     #: Every conversation, and the id of the one in use.
     conversationsChanged = Signal(object, str)
+    #: The conversation, its messages, and the remembered lines that would go
+    #: with it.
+    conversationDeletionPreviewed = Signal(object, int, int)
+    #: A change to a conversation failed; nothing was changed.
+    conversationFailed = Signal(str)
     #: The user's message is recorded; a reply is on its way.
     messageAppended = Signal(object)
-    #: The reply text and the chip under it, or "".
-    replyFinished = Signal(str, str)
+    #: The reply text, the chip of what was stored, and the chip of numbers no
+    #: tool gave; each chip may be "".
+    replyFinished = Signal(str, str, str)
     #: The reply text, and why it could not be kept.
     replyNotSaved = Signal(str, str)
     replyFailed = Signal(str)
@@ -55,11 +61,23 @@ class Bridge(QObject):
     #: A step failed in a way nobody expected; nothing of it was kept. The
     #: sentence, and the command that failed, or ``None`` if the start failed.
     coreFailed = Signal(str, object)
+    #: The companion's face: a VRM preset and its weight from 0 to 1.
+    expressionChanged = Signal(str, float)
+    #: A gesture to play once, as part of a reply.
+    gestureShown = Signal(str)
+    #: An exercise to do together: its name and its steps.
+    activityStarted = Signal(str, object)
+    #: Whether desk awareness is on, and a sentence if it could not be changed
+    #: or went off by itself, or "".
+    awarenessChanged = Signal(bool, str)
 
     # ── to the model thread ───────────────────────────────────────────────
     askPrepare = Signal(object)
-    askReply = Signal(str, object, str)
+    #: A :class:`~src.app.chat_worker.ReplyRequest`.
+    askReply = Signal(object)
     askEmbed = Signal(object)
+    #: A :class:`~src.app.chat_worker.SummaryJob`.
+    askSummary = Signal(object)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -68,3 +86,12 @@ class Bridge(QObject):
     def send(self, command: Command) -> None:
         """Hand a command to the core thread. Safe from any thread."""
         self.commands.put(command)
+
+    def offer(self, command: Command) -> bool:
+        """Hand a command over only if the queue has room. For presence, which
+        the next sample repeats: a full queue never blocks the sampler."""
+        try:
+            self.commands.put_nowait(command)
+        except queue.Full:
+            return False
+        return True

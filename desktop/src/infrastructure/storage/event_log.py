@@ -85,6 +85,14 @@ class SqliteEventLog:
             yield from page
             last = page[-1].seq
 
+    def read_since(self, moment: datetime) -> Iterator[Event]:
+        # The stored time is fixed-width UTC text, so text order is time order.
+        since = to_text(moment)
+        last = 0
+        while page := self._page_after(last, since):
+            yield from page
+            last = page[-1].seq
+
     def delete(self, seqs: Collection[int]) -> None:
         seqs = list(seqs)
         try:
@@ -98,10 +106,11 @@ class SqliteEventLog:
     def close(self) -> None:
         pass
 
-    def _page_after(self, seq: int) -> list[Event]:
-        query = (
-            select(events).where(events.c.seq > seq).order_by(events.c.seq).limit(_PAGE)
-        )
+    def _page_after(self, seq: int, since: str | None = None) -> list[Event]:
+        query = select(events).where(events.c.seq > seq)
+        if since is not None:
+            query = query.where(events.c.occurred_at >= since)
+        query = query.order_by(events.c.seq).limit(_PAGE)
         try:
             with self._db.transaction() as db:
                 rows = db.execute(query).all()

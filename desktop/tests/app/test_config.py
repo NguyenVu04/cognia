@@ -8,7 +8,7 @@ DESKTOP = Path(config.__file__).resolve().parents[2]
 
 
 def test_shipped_defaults_load() -> None:
-    assert config.HISTORY_MESSAGES > 0
+    assert config.HISTORY_MAX_CHARS > 0
     assert config.CHAT_CONTEXT > 0
     assert 0 <= config.EMBEDDING_BASELINE < 1
     assert 0 < config.NEAR_DUPLICATE <= 1

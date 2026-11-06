@@ -15,5 +15,12 @@ class ShowExpression:
     expression: Expression
 
 
+@dataclass(frozen=True)
+class ShowGesture:
+    """Play this gesture once, as part of the reply to the message."""
+
+    name: str
+
+
 # Every kind of effect. A new kind joins this union.
-Effect = ShowExpression
+Effect = ShowExpression | ShowGesture

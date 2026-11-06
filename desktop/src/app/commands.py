@@ -6,11 +6,15 @@ returned. Frozen, so nothing changes under the one reader.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from concurrent.futures import Future
+from dataclasses import dataclass, field
+from datetime import datetime
 
-from src.app.chat_worker import Prepared
+from src.app.chat_worker import Prepared, SummaryDone
+from src.domain.awareness.models import PresenceChange
 from src.domain.erasure.models import Level
 from src.domain.memory.models import MemoryItem, Vector
+from src.domain.tools.models import ToolCall, ToolResult
 
 # ── from the GUI ───────────────────────────────────────────────────────────
 
@@ -28,6 +32,18 @@ class OpenConversation:
 @dataclass(frozen=True)
 class NewConversation:
     pass
+
+
+@dataclass(frozen=True)
+class PreviewConversationDeletion:
+    """Count what deleting a conversation would remove, before it goes."""
+
+    conversation_id: str
+
+
+@dataclass(frozen=True)
+class DeleteConversation:
+    conversation_id: str
 
 
 @dataclass(frozen=True)
@@ -67,6 +83,30 @@ class Erase:
 
 
 @dataclass(frozen=True)
+class SetAwareness:
+    """Switch desk awareness on or off. ``error`` says why it went off, when
+    the facts could not be read."""
+
+    on: bool
+    error: str = ""
+
+
+@dataclass(frozen=True)
+class PresenceReported:
+    """A change the presence sampler saw."""
+
+    change: PresenceChange
+
+
+@dataclass(frozen=True)
+class ActivityEnded:
+    """An exercise done together stopped, after ``seconds``."""
+
+    activity: str
+    seconds: int
+
+
+@dataclass(frozen=True)
 class Stop:
     """Close the database and end the core thread."""
 
@@ -81,14 +121,34 @@ class TurnPrepared:
 
 @dataclass(frozen=True)
 class ReplyArrived:
+    """The whole reply of turn ``turn_id``, and what each tool gave back."""
+
+    turn_id: int
     text: str
+    results: tuple[ToolResult, ...] = ()
+
+
+@dataclass(frozen=True)
+class ToolRequested:
+    """A tool in a reply needs the core's data. The core sets ``answer`` to a
+    sentence; the model thread waits for it."""
+
+    call: ToolCall
+    now: datetime
+    answer: Future = field(compare=False)
 
 
 @dataclass(frozen=True)
 class ReplyLost:
-    """No reply came. ``text`` says why, for the user."""
+    """No reply came for turn ``turn_id``. ``text`` says why, for the user."""
 
+    turn_id: int
     text: str
+
+
+@dataclass(frozen=True)
+class SummaryMade:
+    done: SummaryDone
 
 
 @dataclass(frozen=True)
@@ -105,6 +165,8 @@ Command = (
     SendMessage
     | OpenConversation
     | NewConversation
+    | PreviewConversationDeletion
+    | DeleteConversation
     | OfferCharacters
     | ChooseCharacter
     | RestoreVersion
@@ -112,10 +174,15 @@ Command = (
     | RemoveEntry
     | PreviewErasure
     | Erase
+    | ActivityEnded
+    | SetAwareness
+    | PresenceReported
     | Stop
     | TurnPrepared
     | ReplyArrived
     | ReplyLost
+    | SummaryMade
+    | ToolRequested
     | VectorsMade
     | DeviceChosen
 )

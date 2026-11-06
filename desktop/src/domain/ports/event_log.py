@@ -42,6 +42,10 @@ class EventLog(Protocol):
         """Every event with ``seq`` or a later one, in order."""
         ...
 
+    def read_since(self, moment: datetime) -> Iterator[Event]:
+        """Every event that occurred at ``moment`` or later, in order."""
+        ...
+
     def delete(self, seqs: Collection[int]) -> None:
         """Remove these events. A removed seq is never given again."""
         ...

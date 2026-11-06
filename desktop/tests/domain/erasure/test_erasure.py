@@ -10,7 +10,6 @@ MEMORY_GROUPS = (
     Group.MEMORY,
     Group.DESK,
     Group.LEARNING,
-    Group.JOURNAL,
     Group.SPEECH,
     Group.EVENTS,
 )

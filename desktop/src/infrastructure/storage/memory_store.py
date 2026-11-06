@@ -21,7 +21,6 @@ from src.infrastructure.storage.times import to_text
 
 memory_items = orm.MemoryItem.__table__
 memory_refs = orm.MessageMemoryRef.__table__
-journal_entries = orm.JournalEntry.__table__
 settings = orm.Settings.__table__
 
 UNREADABLE = (
@@ -101,7 +100,6 @@ class SqliteMemoryStore:
     def reset_embeddings(self, model: str) -> None:
         self._write(
             update(memory_items).values(embedding=None),
-            update(journal_entries).values(embedding=None),
             update(settings).values(embedding_model=model),
         )
 

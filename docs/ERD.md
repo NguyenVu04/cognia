@@ -22,7 +22,7 @@
 8. [Desk awareness](#8-desk-awareness)
 9. [Event log and emotion](#9-event-log-and-emotion)
 10. [Learning and self-adjustment](#10-learning-and-self-adjustment)
-11. [The companion's journal](#11-the-companions-journal)
+11. [The companion's journal (removed)](#11-the-companions-journal-removed)
 12. [Speech decisions and explanations](#12-speech-decisions-and-explanations)
 13. [Settings](#13-settings)
 14. [Deletion and erasure](#14-deletion-and-erasure)
@@ -47,7 +47,7 @@ revisions apply it to the file (ADR 0003).
 | Term | Meaning in this document |
 |---|---|
 | Event log | The append-only table `events`. ADR 0001 calls it "the journal". This document uses "event log" so that the word "journal" has one meaning only |
-| Journal | The companion's own written reflections (UC-25), in the table `journal_entries` |
+| Journal | The companion's written reflections of UC-25. D-73 in `ARCHITECTURE.md` removes them and their tables |
 | State table | A table that holds data the user owns and can read, correct or delete. A state table is the source of truth for its data |
 | Cache table | A table that the domain computes from the event log. The application can delete a cache table and compute it again with no loss |
 | Tombstone | A record that keeps only enough data to stop the companion from repeating a conclusion that the user rejected. A tombstone holds no user text |
@@ -110,7 +110,7 @@ rule.
 
 | Column | Reason |
 |---|---|
-| `character_version_id` in `messages`, `journal_entries`, `emotion_changes`, `settings` | A character version is deleted only by "erase everything", after its child rows. `messages` also has many writes |
+| `character_version_id` in `messages`, `emotion_changes`, `settings` | A character version is deleted only by "erase everything", after its child rows. `messages` also has many writes |
 | `message_kinds.streak_reset_seq` | The table has seven rows |
 
 **Other indexes that the design does not use.**
@@ -119,6 +119,9 @@ rule.
 |---|---|
 | `conversations (last_active_at)` | Each message updates this column, and the table has few rows |
 | `app_usage (app_name)`, or an expression on `events.payload` | Only UC-04-A3 needs them, and it is rare |
+
+**An index added later.** `events (occurred_at)`, from revision `0007`, lets the time at the
+machine and the causes of a feeling read the events of one day or one week (D-71, D-77).
 
 **The vector column.** `embedding` is the last column of its table, so a read of the other
 columns does not go through the overflow pages of the vector. The ORM marks it as deferred,
@@ -133,14 +136,11 @@ columns.
 erDiagram
     character_versions ||--o{ messages : "spoke"
     character_versions ||--o{ character_proposals : "base of"
-    character_versions ||--o{ journal_entries : "wrote"
     settings }o--|| character_versions : "current"
 
     conversations ||--o{ messages : "contains"
     messages ||--o{ message_memory_refs : "drew on"
-    messages ||--o{ message_journal_refs : "drew on"
     memory_items ||--o{ message_memory_refs : "used in"
-    journal_entries ||--o{ message_journal_refs : "used in"
 
     messages |o--o{ memory_items : "source of"
     memory_items ||--o{ memory_item_evidence : "has"
@@ -149,8 +149,6 @@ erDiagram
     messages |o--o| speech_decisions : "said"
 
     events ||--o| emotion_changes : "caused"
-    events ||--o{ journal_entry_sources : "used by"
-    journal_entries ||--o{ journal_entry_sources : "drew on"
 
     patterns ||--|{ pattern_evidence : "has"
     events ||--o{ pattern_evidence : "supports"
@@ -165,7 +163,7 @@ erDiagram
 ```
 
 Two tables are not in this diagram: `app_usage` and `app_exclusions`. They refer to no
-other table.
+other table. Nor is `messages_fts`, the search index of section 6.2, which is a virtual table.
 
 ## 5. Character
 
@@ -295,6 +293,8 @@ erDiagram
         TEXT id PK "UUID"
         TEXT title
         TEXT last_active_at
+        TEXT summary "the older messages in short, or NULL"
+        INTEGER summary_covers "messages the summary covers, from the first"
     }
     messages {
         TEXT id PK "UUID"
@@ -309,16 +309,10 @@ erDiagram
         TEXT message_id PK, FK
         TEXT memory_item_id PK, FK
     }
-    message_journal_refs {
-        TEXT message_id PK, FK
-        TEXT journal_entry_id PK, FK
-    }
     conversations ||--o{ messages : "contains"
     character_versions ||--o{ messages : "spoke"
     messages ||--o{ message_memory_refs : "drew on"
-    messages ||--o{ message_journal_refs : "drew on"
     memory_items ||--o{ message_memory_refs : "used in"
-    journal_entries ||--o{ message_journal_refs : "used in"
 ```
 
 ### 6.1 `conversations`
@@ -328,6 +322,12 @@ picker reads `title` and `last_active_at`.
 
 **No character column.** A conversation can outlive a character edit. Each companion
 message therefore carries its own character version (D-13).
+
+**The summary (D-72).** When a conversation outgrows its budget, `summary` holds the
+model's short form of its oldest `summary_covers` messages. Only the model reads it: no
+screen shows it, it is not a memory, and no line comes from it. A summary that covers fewer
+messages than the one stored is refused. It goes with its row. Revision `0004` adds both
+columns in place.
 
 ### 6.2 `messages`
 
@@ -349,19 +349,22 @@ companion message. Its decision is in `speech_decisions` (section 12).
 
 **Index.** `(conversation_id, created_at)` supports the history query of ADR 0002.
 
+**Search index (D-70).** `messages_fts` is an FTS5 table with `messages` as its content.
+Triggers keep it in step on insert, delete and update, so a message that goes, alone or
+with its conversation, leaves the index at once. Its option `secure-delete` removes an
+entry instead of masking it, and `PRAGMA secure_delete` zeroes the freed pages. VACUUM can
+renumber the rowids of `messages`, so an erasure rebuilds the index. Revision `0005`
+creates it by hand; `orm.py` does not describe it.
+
 ### 6.3 Reply source tables
 
-**Purpose.** These two tables record which remembered item a reply drew on
-(UC-09 step 3, UC-09-A1, UC-25 step 6). Each table links one message to one source.
+**Purpose.** `message_memory_refs` records which remembered item a reply drew on
+(UC-09 step 3, UC-09-A1). Each row links one message to one memory item.
+`message_journal_refs` went with the journal (D-73).
 
-| Table | Source | Use case |
-|---|---|---|
-| `message_memory_refs` | A memory item | UC-09 |
-| `message_journal_refs` | A journal entry | UC-25 |
-
-**Reason for two tables.** Each table has two real foreign keys and
-`ON DELETE CASCADE` on both (D-12). When the user deletes a source, its links go
-too. UC-13 step 2 reads the same tables to show "what else depends on" an item.
+**Real foreign keys.** The table has two real foreign keys and `ON DELETE CASCADE` on
+both (D-12). When the user deletes a source, its links go too. UC-13 step 2 reads the
+same table to show "what else depends on" an item.
 
 ## 7. Memory
 
@@ -413,12 +416,11 @@ that has no evidence rows (UC-12 step 4).
 deletes a conversation, the item stays, and only the link goes.
 
 **Retrieval columns.** `importance` is the score that the AI model gave when the
-domain stored the row (UC-25 step 1). `embedding` is the vector of `text`, in the
+domain stored the row, from the interpretation of the message (UC-09). `embedding` is the vector of `text`, in the
 binary form of 32-bit floats. `last_retrieved_at` sets the recency term of retrieval.
 An edit in UC-13 sets `embedding` to `NULL`, and a later job computes it again. The
 `embedding` column is derived data. UC-12 does not show it, and `secure_delete`
-removes it with the row. `journal_entries` has the same columns
-(ADR 0007).
+removes it with the row (ADR 0007).
 
 ### 7.2 `memory_item_evidence`
 
@@ -519,28 +521,27 @@ Examples:
 | `kind` | `payload` holds |
 |---|---|
 | `user_message` | The message ID, the event class from the AI model (praise, complaint, good news, bad news, shared worry), and its confidence |
-| `presence` | Idle seconds, lock state, presentation state |
+| `presence` | Whether the user is at the desk, idle seconds, lock state, presentation state, `first` after a start or a clock gap, and `stopped` when reading stops (D-77) |
 | `foreground_app` | The application name, at each change, if the user did not exclude it (C-05) |
-| `app_hour_closed` | The local day, the hour, the application name and its minutes |
+| `app_hour_closed` | The start of the hour that ended. Its minutes go to `app_usage` in the same transaction (D-77) |
 | `paused`, `resumed` | Nothing. No appraisal rule reads these two kinds (BR-04, UC-23-A4) |
 | `setting_changed`, `character_changed` | The setting name and value, or the version ID |
 | `message_answered`, `message_passed_over` | The decision ID, and whether the user was at the desk |
-| `activity_started`, `activity_ended` | The tool name, and the minutes on `activity_ended` (UC-27-A2) |
+| `activity_started`, `activity_ended` | The activity, and the seconds on `activity_ended` (UC-27-A2, D-76) |
 | `adjustment_applied`, `adjustment_undone` | The adjustment ID |
 | `pattern_rejected` | The fingerprint and the evidence seqs. This is the tombstone (section 10.2) |
-| `reflection_deleted` | The entry ID and the source seqs. This is the tombstone (section 11.3) |
 
 **Model interpretation.** The AI model classifies a user message once, before the
 event enters the queue (ADR 0004). The class is the event. A replay reads the class
 and never calls the model. If the user deletes the message, the class stays, so the
 replay stays the same.
 
-**Importance.** `importance` holds the score that the AI model gave when the domain
-recorded the event (UC-25 step 1). The 1-to-10 scale follows Generative Agents. A replay
-reads the stored score and never scores again. `NULL` means that the event has no
-importance for reflection.
+**Importance.** `importance` holds the score that the AI model gave to the message of a
+`user_message` event. The 1-to-10 scale follows Generative Agents. A replay reads the
+stored score and never scores again. `NULL` means that the event has no importance.
 
-**Index.** `(kind, seq)` supports the counting rules of UC-24.
+**Indexes.** `(kind, seq)` supports the counting rules of UC-24. `(occurred_at)` supports
+the reads of one day or one week (revision `0007`).
 
 ### 9.2 The current emotion point
 
@@ -665,56 +666,12 @@ the same pattern (UC-24 step 6).
 **Pattern link.** `pattern_id` uses `ON DELETE CASCADE`. The application undoes the
 adjustments before it deletes a pattern (section 10.2).
 
-## 11. The companion's journal
+## 11. The companion's journal (removed)
 
-```mermaid
-erDiagram
-    journal_entries {
-        TEXT id PK "UUID"
-        TEXT character_version_id FK "voice it wrote in"
-        TEXT text "the companion's words, never edited"
-        INTEGER importance "1 to 10, or NULL"
-        TEXT last_retrieved_at
-        TEXT written_at
-        BLOB embedding "NULL until computed, last column"
-    }
-    journal_entry_sources {
-        TEXT journal_entry_id PK, FK
-        INTEGER event_seq PK, FK
-    }
-    character_versions ||--o{ journal_entries : "wrote"
-    journal_entries ||--o{ journal_entry_sources : "drew on"
-    events ||--o{ journal_entry_sources : "used by"
-```
-
-### 11.1 `journal_entries`
-
-**Purpose.** One row holds one entry that the companion wrote when it reflected
-(UC-25, FR-35). UC-12 shows it in full under *about me*.
-
-**No edit.** The application never updates `text`. The user can read and delete an
-entry, but cannot rewrite it (UC-13-A2). The words belong to the companion.
-
-**Character version.** `character_version_id` records the voice that wrote the entry.
-A later character edit does not change what an old entry means.
-
-### 11.2 `journal_entry_sources`
-
-**Purpose.** One row links one entry to one event that the reflection drew on
-(UC-25 step 5, UC-25-A1).
-
-**Reflection count.** The database stores no running total of importance. The domain
-adds `events.importance` for the events after the last `reflection_written` event.
-If the model is not available, nothing changes, and the total stays for the next
-chance (UC-25-E1).
-
-### 11.3 A deleted journal entry
-
-**Purpose.** The event `reflection_deleted` is the tombstone for a journal entry that the
-user deleted (UC-25-A2). It has no table (D-11).
-
-**Content.** The payload holds the entry ID and the set of source seqs. It holds no text.
-The domain does not write an entry again from the same set of events.
+D-73 in `ARCHITECTURE.md` removes UC-25. Revision `0006` drops `journal_entries`,
+`journal_entry_sources` and `message_journal_refs`, and deletes the events
+`reflection_written` and `reflection_deleted`. The number stays, so that later sections
+keep theirs.
 
 ## 12. Speech decisions and explanations
 
@@ -900,9 +857,8 @@ measured". It is not user data and holds no user text. "Erase everything" sets i
 |---|---|
 | A memory item | Deletes the row, with its embedding. Its evidence links and reply links go by `ON DELETE CASCADE` |
 | A learned pattern | Undoes its adjustments, writes a `pattern_rejected` event, deletes the pattern |
-| A journal entry | Writes a `reflection_deleted` event with its source seqs, deletes the entry |
 | A past mood | Deletes the events behind it, which removes the changes by cascade. Then folds the event log again |
-| A conversation | Deletes the conversation and its messages. Items that came from it stay, with `source_message_id` set to `NULL` |
+| A conversation | Deletes each memory item told in it, with a `memory_removed` event each, then the conversation, its messages, its summary and their search entries (D-74). The schema keeps `ON DELETE SET NULL` on `source_message_id`, so a line that the service did not delete stays |
 
 If any step fails, the transaction rolls back. The item stays exactly as it was
 (UC-13-E1).
@@ -912,12 +868,11 @@ If any step fails, the transaction rolls back. The item stays exactly as it was
 | Table | Erase memory, keep the character | Erase everything |
 |---|---|---|
 | `character_versions`, `character_proposals` | Kept | Deleted |
-| `conversations`, `messages`, reply source tables | Deleted | Deleted |
+| `conversations` with their summaries, `messages`, `message_memory_refs`, `messages_fts` by its triggers | Deleted | Deleted |
 | `memory_items`, `memory_item_evidence` | Deleted | Deleted |
 | `app_usage` | Deleted | Deleted |
 | `events`, `emotion_changes` | Deleted | Deleted |
 | `patterns`, `self_adjustments` | Deleted | Deleted |
-| `journal_entries`, `journal_entry_sources` | Deleted | Deleted |
 | `speech_decisions`, `decision_factors` | Deleted | Deleted |
 | `app_exclusions`, `message_kinds`, `settings` | Kept, because they are settings | Reset to defaults |
 
@@ -947,7 +902,7 @@ erases each table group in its own transaction and reports each result.
 | FR-13, FR-14, UC-09 | `conversations`, `messages`, `memory_items`, reply source tables, the retrieval columns |
 | FR-15, UC-10 | `memory_items` of kind `noticed` |
 | FR-16, FR-23, FR-34, UC-24 | `patterns`, `pattern_evidence`, `self_adjustments`, `character_proposals`, `message_kinds` |
-| FR-17, UC-12 | All state tables, `emotion_changes`, `journal_entries` |
+| FR-17, UC-12 | All state tables, `emotion_changes` |
 | FR-18, FR-19, NFR-03, UC-13, UC-14 | Section 14 |
 | FR-20, UC-16 | `speech_decisions` of kind `greeting`, `decision_factors` |
 | FR-21, NFR-09, UC-17 | `speech_decisions`, `decision_factors`, `emotion_changes`, evidence tables |
@@ -958,7 +913,6 @@ erases each table group in its own transaction and reports each result.
 | FR-38, FR-39, UC-26 | No table. The audio is never stored, and the text becomes a row of `messages` |
 | FR-40, FR-41, UC-27 | `events` of kind `activity_started` and `activity_ended`. The list of tool servers has no table yet (section 16) |
 | FR-32, BR-08, UC-23 | `events`, `emotion_changes`, temperament columns |
-| FR-35, UC-25 | `journal_entries`, `journal_entry_sources`, `reflection_deleted` events, `events.importance` |
 | NFR-07 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
 | NFR-13 | `events` with stored model classes, stored importance and `utc_offset_min` |
 | G-06 | `memory_item_evidence`, `pattern_evidence`, `emotion_changes.event_seq`, `decision_factors.event_seq` |
@@ -971,10 +925,10 @@ These items are outside this design, or need a decision before implementation.
 2. **Temperament ranges.** The ranges in section 5.1 are proposals. Trial use sets
    them (ADR 0004).
 3. **Importance scale.** The 1-to-10 scale follows Generative Agents. The
-   specification does not set a scale or the reflection threshold (UC-25 notes).
+   specification does not set a scale.
 4. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
    gives the closed set of event kinds. The exact fields of each payload belong to the
    domain code.
-5. **Tool servers and the shorter history.** D-60 and D-57 in `ARCHITECTURE.md` need a list of the tool
-   servers that the user added, and a column for the shorter history of a conversation. Their tables come
-   with the code that uses them, through a new revision.
+5. **Tool servers.** D-60 in `ARCHITECTURE.md` needs a list of the tool servers that the user added. Its
+   table comes with the code that uses it, through a new revision. The shorter history has its columns
+   (revision `0004`, D-72).

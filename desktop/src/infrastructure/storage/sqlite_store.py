@@ -17,13 +17,22 @@ raises immediately instead of corrupting the file quietly.
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import replace
 from datetime import datetime
 
-from sqlalchemy import Row, delete, insert, literal_column, select, update
+from sqlalchemy import Row, delete, insert, literal_column, select, text, update
+from sqlalchemy.exc import SQLAlchemyError
 
-from src.domain.conversation.models import COMPANION, USER, Conversation, Message
+from src.domain.conversation.models import (
+    COMPANION,
+    USER,
+    Conversation,
+    Message,
+    Summary,
+)
+from src.domain.ports import ConversationStoreFailed
 from src.infrastructure.storage import orm
 from src.infrastructure.storage.database import Database
 from src.infrastructure.storage.times import to_text, to_utc
@@ -33,6 +42,9 @@ messages = orm.Message.__table__
 
 UNTITLED = "New conversation"
 TITLE_LENGTH = 40
+NOT_DELETED = "The conversation could not be deleted. Nothing was changed."
+NOT_READ = "The conversation could not be read."
+NOT_SAVED = "The conversation could not be saved. Nothing was changed."
 
 # The file spells a role in full, so that it reads without this code.
 _ROLE_TO_STORED = {USER: "user", COMPANION: "companion"}
@@ -98,11 +110,69 @@ class SqliteConversationStore:
                 .values(title=title)
             )
 
+    def summary(self, conversation_id: str) -> Summary | None:
+        query = select(conversations.c.summary, conversations.c.summary_covers).where(
+            conversations.c.id == conversation_id
+        )
+        try:
+            with self._db.transaction() as db:
+                row = db.execute(query).first()
+        except SQLAlchemyError as error:
+            raise ConversationStoreFailed(NOT_READ) from error
+        if row is None or row.summary is None:
+            return None
+        return Summary(row.summary, row.summary_covers)
+
+    def set_summary(self, conversation_id: str, summary: Summary) -> bool:
+        # A summary made for fewer messages arrived late; the newer one stays.
+        statement = (
+            update(conversations)
+            .where(conversations.c.id == conversation_id)
+            .where(conversations.c.summary_covers < summary.covers)
+            .values(summary=summary.text, summary_covers=summary.covers)
+        )
+        try:
+            with self._db.transaction() as db:
+                return db.execute(statement).rowcount == 1
+        except SQLAlchemyError as error:
+            raise ConversationStoreFailed(NOT_SAVED) from error
+
+    def search(
+        self, query: str, limit: int, exclude_message_id: str | None = None
+    ) -> list[Message]:
+        # Each word is quoted, so nothing the model writes is read as the
+        # index's own syntax; words side by side must all match.
+        words = re.findall(r"\w+", query)
+        if not words:
+            return []
+        match = " ".join(f'"{word}"' for word in words)
+        statement = text(
+            "SELECT m.* FROM messages_fts JOIN messages AS m "
+            "ON m.rowid = messages_fts.rowid "
+            "WHERE messages_fts MATCH :match AND m.id != :exclude "
+            "ORDER BY messages_fts.rank LIMIT :limit"
+        )
+        try:
+            with self._db.transaction() as db:
+                rows = db.execute(
+                    statement,
+                    {"match": match, "exclude": exclude_message_id or "",
+                     "limit": limit},
+                ).all()
+        except SQLAlchemyError as error:
+            raise ConversationStoreFailed(NOT_READ) from error
+        return [self._message(row) for row in rows]
+
     def delete(self, conversation_id: str) -> None:
-        with self._db.transaction() as db:
-            db.execute(
-                delete(conversations).where(conversations.c.id == conversation_id)
-            )
+        try:
+            with self._db.transaction() as db:
+                db.execute(
+                    delete(conversations).where(
+                        conversations.c.id == conversation_id
+                    )
+                )
+        except SQLAlchemyError as error:
+            raise ConversationStoreFailed(NOT_DELETED) from error
 
     # ── messages ──────────────────────────────────────────────────────────
 

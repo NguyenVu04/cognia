@@ -8,7 +8,11 @@ the development file named in ``alembic.ini``.
 from alembic import context
 from sqlalchemy import create_engine
 
-from src.infrastructure.storage.orm import Base
+from src.infrastructure.storage.orm import Base, outside_orm
+
+
+def _described(name, type_, parent_names) -> bool:
+    return not (type_ == "table" and outside_orm(name))
 
 
 def _migrate(connection) -> None:
@@ -17,6 +21,7 @@ def _migrate(connection) -> None:
         connection=connection,
         target_metadata=Base.metadata,
         render_as_batch=True,
+        include_name=_described,
     )
     with context.begin_transaction():
         context.run_migrations()

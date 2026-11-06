@@ -1,9 +1,15 @@
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from src.domain.companion import rules
-from src.domain.companion.models import CompanionState, ShowExpression, StepResult
+from src.domain.companion.models import (
+    CompanionState,
+    ShowExpression,
+    ShowGesture,
+    StepResult,
+)
 from src.domain.emotion import rules as emotion_rules
 from src.domain.emotion.models import Expression, Pad, Temperament
 from src.domain.events.models import Event, EventKind, Payload
@@ -78,9 +84,10 @@ def test_step_praise() -> None:
     result = _last(_chosen(), _praise(2, 10))
 
     assert _axes(result.state.emotion.mood) == pytest.approx((0.30, 0.08, 0.04))
-    (effect,) = result.effects
+    effect, bow = result.effects
     assert effect.expression.preset == "happy"
     assert effect.expression.weight == pytest.approx(0.867, abs=1e-3)
+    assert bow == ShowGesture("bow")
 
 
 def test_step_decay_changes_face() -> None:
@@ -181,3 +188,126 @@ def test_fold_twice_equal() -> None:
     second = rules.fold(rules.initial_state(), events, TEMPERAMENTS)
 
     assert first == second
+
+
+def _message(seq: int, minutes: int, kind: str) -> Event:
+    return _event(seq, minutes, EventKind.USER_MESSAGE, {"class": kind})
+
+
+def _gestures(result: StepResult) -> list[ShowGesture]:
+    return [e for e in result.effects if isinstance(e, ShowGesture)]
+
+
+def test_step_good_news_cheers() -> None:
+    assert _gestures(_last(_chosen(), _message(2, 10, "good_news"))) == [
+        ShowGesture("cheer")
+    ]
+
+
+def test_step_good_news_when_low_nods() -> None:
+    state = _last(_chosen()).state
+    state = replace(state, emotion=replace(state.emotion, mood=Pad(-1.0, -0.8, 0.0)))
+
+    result = rules.step(state, _message(2, 0, "good_news"), TEMPERAMENTS)
+
+    assert emotion_rules.name(result.state.emotion.shown()) == "low"
+    assert _gestures(result) == [ShowGesture("nod")]
+
+
+def test_step_nothing_no_gesture() -> None:
+    assert _gestures(_last(_chosen(), _message(2, 10, "nothing"))) == []
+
+
+def test_step_moods_off_no_gesture() -> None:
+    result = _last(_chosen(), _moods(False, 2, 5), _praise(3, 10))
+
+    assert _gestures(result) == []
+
+
+def test_step_before_character_no_gesture() -> None:
+    assert _gestures(_last(_praise(1, 10))) == []
+
+
+def test_step_other_kind_no_gesture() -> None:
+    assert _gestures(_last(_chosen(), _presence(2, 10))) == []
+
+
+def test_shown_at_decays() -> None:
+    state = _last(_chosen(), _praise(2, 10)).state
+
+    shown = rules.shown_at(state, MONDAY + timedelta(minutes=40), TEMPERAMENTS)
+
+    assert _axes(shown) == pytest.approx((0.544, 0.178, 0.089), abs=1e-3)
+
+
+def test_shown_at_clock_set_back() -> None:
+    state = _last(_chosen(), _praise(2, 10)).state
+
+    shown = rules.shown_at(state, MONDAY, TEMPERAMENTS)
+
+    assert shown == state.emotion.shown()
+
+
+def test_shown_at_moods_off_is_rest() -> None:
+    state = _last(_chosen(), _moods(False, 2, 5)).state
+
+    assert rules.shown_at(state, MONDAY, TEMPERAMENTS) == REST
+
+
+def test_shown_at_no_character() -> None:
+    assert rules.shown_at(rules.initial_state(), MONDAY, TEMPERAMENTS) is None
+
+
+# ── why_i_feel ───────────────────────────────────────────────────────────
+
+
+def test_explain_praise() -> None:
+    events = [_chosen(), _event(2, 10, EventKind.USER_MESSAGE,
+                                {"class": "praise", "confidence": 0.9})]
+    state = rules.fold(rules.initial_state(), events, TEMPERAMENTS)
+
+    text = rules.explain_feeling(
+        state, events, TEMPERAMENTS, MONDAY + timedelta(minutes=10), timezone.utc
+    )
+
+    assert text == (
+        "Feeling now: lively (pleasure 0.80, arousal 0.28). Events that moved it: "
+        "Mon 2 Nov 08:10, praise (confidence 0.90): pleasure +0.50, arousal +0.20. "
+        "Resting mood: calm."
+    )
+
+
+def test_explain_keeps_the_last_five() -> None:
+    events = [_chosen()] + [_message(n, n, "good_news") for n in range(2, 10)]
+    state = rules.fold(rules.initial_state(), events, TEMPERAMENTS)
+
+    text = rules.explain_feeling(state, events, TEMPERAMENTS, MONDAY, timezone.utc)
+
+    assert text.count("good news") == rules.CAUSE_LIMIT
+
+
+def test_explain_no_events() -> None:
+    state = rules.fold(rules.initial_state(), [_chosen()], TEMPERAMENTS)
+
+    text = rules.explain_feeling(state, [_chosen()], TEMPERAMENTS, MONDAY, timezone.utc)
+
+    assert text == (
+        "Nothing has moved the feeling in the last 7 days. It is the resting "
+        "mood: calm."
+    )
+
+
+def test_explain_moods_off() -> None:
+    state = rules.fold(rules.initial_state(), [_chosen(), _moods(False, 2, 1)],
+                       TEMPERAMENTS)
+
+    assert rules.explain_feeling(state, [], TEMPERAMENTS, MONDAY, timezone.utc) == (
+        rules.MOODS_OFF
+    )
+
+
+def test_explain_no_character() -> None:
+    with pytest.raises(ValueError):
+        rules.explain_feeling(
+            rules.initial_state(), [], TEMPERAMENTS, MONDAY, timezone.utc
+        )

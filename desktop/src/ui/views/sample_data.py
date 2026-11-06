@@ -80,7 +80,6 @@ NEVER_READS: list[str] = [
     "The screen",
     "The clipboard",
     "Browsing history",
-    "Which application or window is open — including where it sits",
 ]
 
 LEVELS: list[Level] = [

@@ -34,6 +34,7 @@ GLYPHS: dict[str, str] = {
     "pause-circle": "",
     "clock": "",
     "moon": "",
+    "trash": "\ue4a6",
     "power": "",
 }
 

@@ -46,3 +46,24 @@ def test_unreadable_gives_none(settings: SqliteSettings, path: Path) -> None:
 
     assert settings.chat_device() is None
     settings.set_chat_device(GPU)  # does not raise
+
+
+def test_awareness_off_by_default_and_saved(settings) -> None:
+    assert settings.awareness_on() is False
+
+    settings.set_awareness_on(True)
+
+    assert settings.awareness_on() is True
+
+
+def test_awareness_not_saved_raises(settings, monkeypatch) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    from src.infrastructure.storage.settings_store import NOT_SAVED, SettingNotSaved
+
+    def broken():
+        raise OperationalError("UPDATE", {}, Exception("disk I/O error"))
+
+    monkeypatch.setattr(settings._db, "transaction", broken)
+    with pytest.raises(SettingNotSaved, match=NOT_SAVED):
+        settings.set_awareness_on(True)

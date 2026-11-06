@@ -41,7 +41,7 @@ jobs:
         run: uv sync --locked
 
       - name: Lint the application
-        run: uv run ruff check src tests
+        run: uv run ruff check src tests scripts
 
       - name: Test the application
         run: uv run pytest --cov=src --cov-report=xml:coverage.xml

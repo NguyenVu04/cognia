@@ -40,6 +40,13 @@ def found(facts=()) -> Interpretation:
     return Interpretation(5, tuple(facts))
 
 
+# Holds every word of the facts in the select tests, so grounding passes them.
+SAID = (
+    "I have a cat. I'm a student writing a thesis, and I work on it every day. "
+    "I live in Hanoi now, which is a fact."
+)
+
+
 # ── cosine ───────────────────────────────────────────────────────────────
 
 
@@ -178,20 +185,20 @@ def test_known_newest_without_query() -> None:
 
 
 def test_select_drops_blank_and_long() -> None:
-    chosen = rules.select(found(["  ", "x" * 201, "Has a cat"]), [], {}, CAL)
+    chosen = rules.select(found(["  ", "x" * 201, "Has a cat"]), [], {}, CAL, SAID)
 
     assert chosen == ("Has a cat",)
 
 
 def test_select_tidies_spacing() -> None:
-    chosen = rules.select(found(["  Has   a cat "]), [], {}, CAL)
+    chosen = rules.select(found(["  Has   a cat "]), [], {}, CAL, SAID)
 
     assert chosen == ("Has a cat",)
 
 
 def test_select_exact_duplicate() -> None:
     chosen = rules.select(
-        found(["is writing a thesis."]), [item("Is writing a thesis")], {}, CAL
+        found(["is writing a thesis."]), [item("Is writing a thesis")], {}, CAL, SAID
     )
 
     assert chosen == ()
@@ -202,20 +209,20 @@ def test_select_near_duplicate() -> None:
     vectors = {"Works on a thesis": at(0.96), "Lives in Hanoi": at(0.5)}
 
     chosen = rules.select(
-        found(["Works on a thesis", "Lives in Hanoi"]), existing, vectors, CAL
+        found(["Works on a thesis", "Lives in Hanoi"]), existing, vectors, CAL, SAID
     )
 
     assert chosen == ("Lives in Hanoi",)
 
 
 def test_select_duplicate_in_message() -> None:
-    chosen = rules.select(found(["Has a cat", "has a cat"]), [], {}, CAL)
+    chosen = rules.select(found(["Has a cat", "has a cat"]), [], {}, CAL, SAID)
 
     assert chosen == ("Has a cat",)
 
 
 def test_select_caps_per_message() -> None:
-    chosen = rules.select(found([f"Fact {n}" for n in range(5)]), [], {}, CAL)
+    chosen = rules.select(found([f"Fact {n}" for n in range(5)]), [], {}, CAL, SAID)
 
     assert chosen == ("Fact 0", "Fact 1", "Fact 2")
 
@@ -223,7 +230,7 @@ def test_select_caps_per_message() -> None:
 def test_select_no_vectors() -> None:
     existing = [item("Is writing a thesis", embedding=QUERY)]
 
-    chosen = rules.select(found(["Works on a thesis"]), existing, {}, CAL)
+    chosen = rules.select(found(["Works on a thesis"]), existing, {}, CAL, SAID)
 
     assert chosen == ("Works on a thesis",)
 
@@ -232,7 +239,7 @@ def test_select_keeps_contradiction() -> None:
     existing = [item("Lives in Saigon", embedding=QUERY)]
 
     chosen = rules.select(
-        found(["Lives in Hanoi"]), existing, {"Lives in Hanoi": at(0.88)}, CAL
+        found(["Lives in Hanoi"]), existing, {"Lives in Hanoi": at(0.88)}, CAL, SAID
     )
 
     assert chosen == ("Lives in Hanoi",)
@@ -240,10 +247,41 @@ def test_select_keeps_contradiction() -> None:
 
 def test_select_keeps_new_facts_only() -> None:
     chosen = rules.select(
-        found(["Is a student", "is a student.", ""]), [], {}, CAL
+        found(["Is a student", "is a student.", ""]), [], {}, CAL, SAID
     )
 
     assert chosen == ("Is a student",)
+
+
+def test_select_drops_ungrounded() -> None:
+    chosen = rules.select(
+        found(["Is writing a thesis", "Has a cat"]), [], {}, CAL, "I have a cat."
+    )
+
+    assert chosen == ("Has a cat",)
+
+
+# ── grounding ────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("line", "message", "expected"),
+    [
+        ("Is writing a thesis", "I'm writing my thesis", True),
+        ("Is writing a thesis", "I had pasta for lunch", False),
+        ("Has a cat called Miso", "I have a cat named Miso", True),
+        ("Lives in Hanoi", "I moved to Hanoi", True),
+        ("Works at a bank", "I'm a banker", True),
+        ("Is ok", "x", True),
+        ("Likes green tea", "I like coffee", False),
+    ],
+)
+def test_grounded(line: str, message: str, expected: bool) -> None:
+    assert rules.grounded(line, message) is expected
+
+
+def test_grounded_curly_apostrophe() -> None:
+    assert rules.grounded("Is moving to Hanoi", "I’m moving to Hanoi")
 
 
 # ── lines for the prompt and the user ────────────────────────────────────
@@ -310,3 +348,45 @@ def test_stored_note_two_missing() -> None:
     assert rules.stored_note(["A", "B"], date(2026, 11, 5)) == (
         "Stored — you told me: “A” · “B” · 5 Nov"
     )
+
+
+def test_from_messages() -> None:
+    told = [
+        replace(item(id="a"), source_message_id="m1"),
+        replace(item(id="b"), source_message_id=None),
+        replace(item(id="c"), source_message_id="m9"),
+    ]
+
+    assert [e.id for e in rules.from_messages(told, {"m1", "m2"})] == ["a"]
+
+
+# ── recall_memory ────────────────────────────────────────────────────────
+
+
+def test_related_drops_unrelated_and_orders() -> None:
+    close = item("Has a cat called Miso", embedding=at(0.9), id="a")
+    closer = item("Feeds the cat at 7", embedding=at(0.95), id="b")
+    unrelated = item("Lives in Hanoi", embedding=at(0.40), id="c")
+    waiting = item("Likes tea", embedding=None, id="d")
+
+    found = rules.related([close, closer, unrelated, waiting], QUERY, CAL)
+
+    assert [e.id for e in found] == ["b", "a"]
+
+
+def test_related_limit() -> None:
+    lines = [item(f"Line {n}", embedding=at(0.9), id=f"i{n}") for n in range(8)]
+
+    assert len(rules.related(lines, QUERY, CAL)) == 5
+
+
+def test_recall_text_lists_days() -> None:
+    told = item("Has a cat called Miso", recorded_hours_ago=0)
+
+    text = rules.recall_text("cat", [told], timezone.utc)
+
+    assert text == "Stored lines: Has a cat called Miso (told 6 November 2026)"
+
+
+def test_recall_text_none() -> None:
+    assert rules.recall_text("pet", [], timezone.utc) == "No stored line matches 'pet'."

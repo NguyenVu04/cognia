@@ -7,13 +7,15 @@ the answer and is dropped.
 
 from __future__ import annotations
 
+import importlib
 import json
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 
 import httpx
 
 from src.domain.conversation.models import Message
 from src.domain.ports import EmbedFailed, InterpretFailed, ReplyFailed
+from src.domain.tools.models import ToolCall, ToolSpec, ToolStarted
 from src.infrastructure.ai.supervisor import (
     CHAT,
     EMBEDDING,
@@ -28,6 +30,13 @@ LOST = (
 )
 REFUSED = "The model on this machine returned an error. Try again."
 GARBLED = "The model on this machine sent an answer that could not be read."
+TOO_LONG = (
+    "This conversation is too long for the model on this machine. Start a new "
+    "conversation with the + button; your remembered lines stay."
+)
+
+# What llama-server names an error for a prompt longer than its context.
+_TOO_LONG_TYPE = "exceed_context_size_error"
 
 # A reply can think for a while before its first word, and a CPU is slow.
 _TIMEOUT = httpx.Timeout(300, connect=5)
@@ -39,7 +48,9 @@ class LlamaClient:
     :class:`~src.domain.ports.Embedder`.
 
     ``max_chars`` cuts each text before it is embedded, because the embedding
-    model reads a limited number of tokens and refuses a longer text.
+    model reads a limited number of tokens and refuses a longer text. A reply
+    goes through the tool loop; ``reply_http`` replaces its HTTP client in a
+    test.
     """
 
     def __init__(
@@ -48,34 +59,65 @@ class LlamaClient:
         *,
         max_chars: int,
         http: httpx.Client | None = None,
+        reply_http: object | None = None,
     ) -> None:
         self._supervisor = supervisor
         self._max_chars = max_chars
         self._http = http or httpx.Client(timeout=_TIMEOUT)
+        self._reply_http = reply_http
 
     # ── Replier ───────────────────────────────────────────────────────────
 
     def stream_reply(
-        self, system_prompt: str, history: Sequence[Message], turn: str
-    ) -> Iterator[str]:
+        self,
+        system_prompt: str,
+        history: Sequence[Message],
+        turn: str,
+        tools: Sequence[ToolSpec] = (),
+        run_tool: Callable[[ToolCall], str] | None = None,
+    ) -> Iterator[str | ToolStarted]:
         endpoint = self._endpoint(CHAT, ReplyFailed)
-        body = {"messages": messages(system_prompt, history, turn), "stream": True}
+        tool_loop = importlib.import_module("src.infrastructure.ai.tool_loop")
+        yield from tool_loop.stream(
+            endpoint,
+            messages(system_prompt, history, turn),
+            tools,
+            run_tool or _no_tool,
+            http_client=self._reply_http,
+        )
+
+    def stream_text(self, system_prompt: str, text: str) -> Iterator[str]:
+        return self._stream(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ]
+        )
+
+    def _stream(self, sent: list[dict[str, str]]) -> Iterator[str]:
+        """The answer's pieces. Closing the iterator closes the connection, and
+        the server then stops generating."""
+        endpoint = self._endpoint(CHAT, ReplyFailed)
+        body = {"messages": sent, "stream": True}
         try:
             with self._http.stream(
                 "POST", _chat_url(endpoint), json=body, headers=_auth(endpoint)
             ) as response:
                 if response.status_code != 200:
-                    raise ReplyFailed(REFUSED)
+                    raise ReplyFailed(_refusal(response.read()))
                 for line in response.iter_lines():
                     if not line.startswith("data: "):
                         continue
                     data = line.removeprefix("data: ")
                     if data == "[DONE]":
                         return
-                    piece = json.loads(data)["choices"][0].get("delta", {})
-                    text = piece.get("content")
+                    choice = json.loads(data)["choices"][0]
+                    text = choice.get("delta", {}).get("content")
                     if text:
                         yield text
+                    # The context filled up, so the answer stops mid-way.
+                    if choice.get("finish_reason") == "length":
+                        raise ReplyFailed(TOO_LONG)
         except httpx.HTTPError as error:
             raise ReplyFailed(LOST) from error
         except (ValueError, KeyError, IndexError, TypeError) as error:
@@ -94,6 +136,9 @@ class LlamaClient:
         body = {
             "messages": messages(system_prompt, history, turn),
             "stream": False,
+            # The same message gives the same reading, so a replay of the
+            # feeling it caused is explainable.
+            "temperature": 0,
             # This build applies a schema only in the OpenAI form.
             "response_format": {
                 "type": "json_schema",
@@ -107,7 +152,7 @@ class LlamaClient:
         except httpx.HTTPError as error:
             raise InterpretFailed(LOST) from error
         if response.status_code != 200:
-            raise InterpretFailed(REFUSED)
+            raise InterpretFailed(_refusal(response.content))
         try:
             answer = json.loads(response.json()["choices"][0]["message"]["content"])
         except (ValueError, KeyError, IndexError, TypeError) as error:
@@ -154,12 +199,16 @@ def messages(
     system_prompt: str, history: Sequence[Message], turn: str
 ) -> list[dict[str, str]]:
     """The request messages. ``turn`` joins the last user message, after a
-    blank line."""
+    blank line. Two messages in a row from the same side join the same way."""
     built = [{"role": "system", "content": system_prompt}]
-    built += [
-        {"role": "user" if m.from_user else "assistant", "content": m.text}
-        for m in history
-    ]
+    for m in history:
+        role = "user" if m.from_user else "assistant"
+        # The chat template refuses two messages in a row from one side, which
+        # a reply that failed leaves behind.
+        if len(built) > 1 and built[-1]["role"] == role:
+            built[-1]["content"] += f"\n\n{m.text}"
+        else:
+            built.append({"role": role, "content": m.text})
     if turn:
         last_user = next(
             (m for m in reversed(built) if m["role"] == "user"), None
@@ -167,6 +216,19 @@ def messages(
         if last_user is not None:
             last_user["content"] += f"\n\n{turn}"
     return built
+
+
+def _no_tool(call: ToolCall) -> str:
+    raise ValueError(f"No tool was offered, yet the model called {call.name!r}.")
+
+
+def _refusal(body: bytes) -> str:
+    """The sentence for an answer that is not 200: too long, or anything else."""
+    try:
+        kind = json.loads(body)["error"]["type"]
+    except (ValueError, KeyError, TypeError):
+        return REFUSED
+    return TOO_LONG if kind == _TOO_LONG_TYPE else REFUSED
 
 
 def _chat_url(endpoint: Endpoint) -> str:
