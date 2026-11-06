@@ -55,10 +55,12 @@ MODEL_IDLE_SECONDS: int | None = _DEFAULTS["MODEL_IDLE_SECONDS"]
 MODEL_START_SECONDS: float = _DEFAULTS["MODEL_START_SECONDS"]
 MODEL_RESTARTS: int = _DEFAULTS["MODEL_RESTARTS"]
 
-#: How many past messages go to the model. The window is deliberately smaller
-#: than the model's context: a long history costs first-token latency, and
-#: the first words must appear within three seconds.
-HISTORY_MESSAGES: int = _DEFAULTS["HISTORY_MESSAGES"]
+#: The characters of history that go to the model. Measured on the chat model:
+#: 4 160 of its 8 192 tokens are left for the history once the system text, a
+#: summary, the tool schemas, layer 4, tool results and the reply are counted,
+#: and short messages cost one token for every 2.6 characters. Past three
+#: quarters of this, the older messages are summarized.
+HISTORY_MAX_CHARS: int = _DEFAULTS["HISTORY_MAX_CHARS"]
 
 #: The longest message the user can send. About 190 tokens of English, as
 #: measured: a long paragraph, read in about 2 seconds on a CPU, and the whole

@@ -7,7 +7,7 @@ the right.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from src.ui import icons, theme
@@ -23,6 +23,9 @@ CARD_WIDTH = (GRID_WIDTH - 22) // 2
 
 
 class DeskView(QWidget):
+    #: The user switched desk awareness on (``True``) or off.
+    awarenessToggled = Signal(bool)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
@@ -60,7 +63,22 @@ class DeskView(QWidget):
 
         column.addSpacing(26)
         column.addWidget(self._state_row(), 0, Qt.AlignmentFlag.AlignLeft)
+        column.addSpacing(12)
+        self.error = paragraph(
+            "", font=theme.font(12.5), colour=theme.ACCENT_TEXT, max_width=GRID_WIDTH
+        )
+        self.error.setVisible(False)
+        column.addWidget(self.error, 0, Qt.AlignmentFlag.AlignLeft)
         column.addStretch(1)
+
+    def setAwareness(self, on: bool) -> None:  # noqa: N802 - matches Qt naming
+        """Show whether desk awareness is on, as the core recorded it."""
+        self.toggle.setChecked(on)
+
+    def showError(self, text: str) -> None:  # noqa: N802 - matches Qt naming
+        """Say why desk awareness is off or could not change; "" hides it."""
+        self.error.setText(text)
+        self.error.setVisible(bool(text))
 
     def _list_card(
         self, title: str, icon_name: str, title_colour, entries: list[str], alpha: float
@@ -109,7 +127,7 @@ class DeskView(QWidget):
         text = QVBoxLayout()
         text.setSpacing(3)
         self.state_label = label(
-            "Desk awareness is on", font=theme.font(15, 500), colour=theme.TEXT
+            "Desk awareness is off", font=theme.font(15, 500), colour=theme.TEXT
         )
         text.addWidget(self.state_label)
         text.addWidget(
@@ -121,11 +139,15 @@ class DeskView(QWidget):
         )
         row.addLayout(text, 1)
 
-        self.toggle = PillToggle("large", checked=True)
+        self.toggle = PillToggle("large", checked=False)
         self.toggle.toggled.connect(
             lambda on: self.state_label.setText(
                 f"Desk awareness is {'on' if on else 'off'}"
             )
+        )
+        # Only a click by the user asks for a change; setAwareness does not.
+        self.toggle.clicked.connect(
+            lambda: self.awarenessToggled.emit(self.toggle.isChecked())
         )
         row.addWidget(self.toggle, 0, Qt.AlignmentFlag.AlignVCenter)
         card.body().addLayout(row)

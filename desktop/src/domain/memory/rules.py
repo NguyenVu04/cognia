@@ -7,7 +7,8 @@ start values; trial use sets the real ones.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping, Sequence
+import re
+from collections.abc import Collection, Mapping, Sequence
 from datetime import date, datetime, tzinfo
 
 from src.domain.conversation.models import Interpretation
@@ -29,8 +30,24 @@ KNOWN_LIMIT = 5
 LINE_LIMIT = 200
 # New facts kept from one message.
 PER_MESSAGE = 3
+UNSEARCHABLE = "The memory cannot be searched just now."
+
+# Words too common to show that a fact came from the message. Words shorter
+# than three letters are left out as well.
+STOP_WORDS = frozenset(
+    "the and for are but not you your yours with has have had was were will "
+    "would can could should does did doing done this that these those they them "
+    "their there here what when where which who whom why how all any some very "
+    "just also into onto from about after before over under than then too out "
+    "its it's i'm i've i'll i'd one ones own same such only more most much many "
+    "really still lot lots like is".split()
+)
+# A word of the fact matches a word of the message when their first letters
+# agree, so "banker" grounds "bank" and "writing" grounds "writes".
+_STEM = 4
 
 _EDGES = " .!?;:,\"'“”‘’"
+_WORD = re.compile(r"[^\W_]+(?:'[^\W_]+)?")
 
 
 def tidy(text: str) -> str:
@@ -105,25 +122,41 @@ def known(
     return tuple(nearest[:limit])
 
 
+def grounded(line: str, message: str) -> bool:
+    """Whether ``line`` comes from ``message``: at least half of its content
+    words, rounded up, match a word of the message. A line with no content
+    word passes, because there is nothing to check."""
+    words = _content_words(line)
+    if not words:
+        return True
+    stems = {_stem(word) for word in _words(message)}
+    matched = sum(1 for word in words if _stem(word) in stems)
+    return matched * 2 >= len(words)
+
+
 def select(
     found: Interpretation,
     existing: Sequence[MemoryItem],
     vectors: Mapping[str, Vector],
     calibration: Calibration,
+    message: str,
 ) -> tuple[str, ...]:
-    """The new lines worth keeping.
+    """The new lines worth keeping from ``message``.
 
-    A line is left out if it is blank, longer than ``LINE_LIMIT``, the same as
-    a stored or an earlier new line apart from case and edge punctuation, or at
-    least ``near_duplicate`` similar to one of them. ``vectors`` holds the
-    vector of each new line by its tidied text; a line with no vector skips the
-    similarity check. Two lines that disagree are both kept.
+    A line is left out if it is blank, longer than ``LINE_LIMIT``, not
+    :func:`grounded` in the message, the same as a stored or an earlier new line
+    apart from case and edge punctuation, or at least ``near_duplicate`` similar
+    to one of them. ``vectors`` holds the vector of each new line by its tidied
+    text; a line with no vector skips the similarity check. Two lines that
+    disagree are both kept.
     """
     seen = {_key(entry.text) for entry in existing}
     kept_vectors = [e.embedding for e in existing if e.embedding is not None]
 
     def fresh(line: str) -> bool:
         if not line or len(line) > LINE_LIMIT or _key(line) in seen:
+            return False
+        if not grounded(line, message):
             return False
         vector = vectors.get(line)
         if vector is not None and any(
@@ -141,6 +174,44 @@ def select(
         if len(facts) < PER_MESSAGE and fresh(line):
             facts.append(line)
     return tuple(facts)
+
+
+def related(
+    entries: Sequence[MemoryItem],
+    query: Vector,
+    calibration: Calibration,
+    limit: int = 5,
+) -> tuple[MemoryItem, ...]:
+    """The stored lines closest in meaning to ``query``, closest first. A line
+    no closer than two unrelated lines is left out, and so is a line that waits
+    for its vector."""
+    near = [
+        (cosine(query, e.embedding), e)
+        for e in entries
+        if e.embedding is not None
+    ]
+    near = [
+        (similarity, e)
+        for similarity, e in near
+        if relevance(similarity, calibration.baseline) > 0
+    ]
+    near.sort(key=lambda pair: (-pair[0], pair[1].id))
+    return tuple(e for _, e in near[:limit])
+
+
+def recall_text(query: str, found: Sequence[MemoryItem], zone: tzinfo) -> str:
+    """What ``recall_memory`` tells the model: the lines with the day each was
+    told, or that none matches."""
+    if not found:
+        return f"No stored line matches '{query}'."
+    return "Stored lines: " + "; ".join(recalled_line(e, zone) for e in found)
+
+
+def from_messages(
+    entries: Sequence[MemoryItem], message_ids: Collection[str]
+) -> tuple[MemoryItem, ...]:
+    """The lines that the user told in one of ``message_ids``."""
+    return tuple(e for e in entries if e.source_message_id in message_ids)
 
 
 def recalled_line(entry: MemoryItem, zone: tzinfo) -> str:
@@ -164,6 +235,18 @@ def stored_note(missing: Sequence[str], day: date) -> str:
         return f"Stored — you told me · {when}"
     lines = " · ".join(f"“{line}”" for line in missing)
     return f"Stored — you told me: {lines} · {when}"
+
+
+def _words(text: str) -> list[str]:
+    return _WORD.findall(text.casefold().replace("’", "'"))
+
+
+def _content_words(text: str) -> list[str]:
+    return [w for w in _words(text) if len(w) >= 3 and w not in STOP_WORDS]
+
+
+def _stem(word: str) -> str:
+    return word[:_STEM]
 
 
 def _flat(text: str) -> str:

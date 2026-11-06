@@ -8,13 +8,27 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
+from datetime import datetime, tzinfo
 
-from src.domain.companion.models import CompanionState, ShowExpression, StepResult
+from src.domain.companion.models import (
+    CompanionState,
+    Effect,
+    ShowExpression,
+    ShowGesture,
+    StepResult,
+)
+from src.domain.conversation.rules import DAYS, MONTHS
 from src.domain.emotion import rules as emotion_rules
-from src.domain.emotion.models import Expression, Temperament
+from src.domain.emotion.models import Expression, Pad, Temperament
 from src.domain.events.models import Event, EventKind
 
 MOODS_ON = "moods_on"
+# How far back, and how many of the events that moved the feeling, an answer to
+# "why do you feel this way" names.
+CAUSE_DAYS = 7
+CAUSE_LIMIT = 5
+MOODS_OFF = "Moods are switched off, so there is no feeling to explain."
+_ZERO = Pad(0.0, 0.0, 0.0)
 
 
 def initial_state() -> CompanionState:
@@ -41,8 +55,28 @@ def step(
             state = replace(state, moods_on=bool(event.payload.get("value")))
         state = _feel(state, event, temperaments)
     after = _face(state)
-    effects = (ShowExpression(after),) if after and after != before else ()
+    effects: tuple[Effect, ...] = ()
+    if after and after != before:
+        effects += (ShowExpression(after),)
+    chosen = _gesture(state, event)
+    if chosen is not None:
+        effects += (ShowGesture(chosen),)
     return StepResult(state, effects, next_wake=None)
+
+
+def shown_at(
+    state: CompanionState, at: datetime, temperaments: Mapping[str, Temperament]
+) -> Pad | None:
+    """The point the user sees at ``at``, after the decay since the last event.
+    The resting point with moods off, and ``None`` with no character. A clock
+    set back decays nothing."""
+    if state.version_id is None or state.emotion is None:
+        return None
+    temperament = _temperament(temperaments, state.version_id)
+    if not state.moods_on:
+        return temperament.rest
+    minutes = max(0.0, (at - state.emotion.computed_at).total_seconds() / 60)
+    return emotion_rules.decay(state.emotion, temperament, minutes).shown()
 
 
 def fold(
@@ -96,6 +130,62 @@ def _is_moods_setting(event: Event) -> bool:
         event.kind == EventKind.SETTING_CHANGED
         and event.payload.get("name") == MOODS_ON
     )
+
+
+def explain_feeling(
+    state: CompanionState,
+    events: Iterable[Event],
+    temperaments: Mapping[str, Temperament],
+    at: datetime,
+    zone: tzinfo,
+) -> str:
+    """The feeling at ``at``, the last events among ``events`` that moved it with
+    how far each pushed, and the resting mood, from the recorded figures only.
+    Raises ``ValueError`` with no character."""
+    if not state.moods_on:
+        return MOODS_OFF
+    point = shown_at(state, at, temperaments)
+    if point is None:
+        raise ValueError("No character is in force.")
+    rest = emotion_rules.name(_temperament(temperaments, state.version_id).rest)
+    causes = [(e, emotion_rules.appraise(e)) for e in events]
+    causes = [(e, push) for e, push in causes if push != _ZERO][-CAUSE_LIMIT:]
+    if not causes:
+        return (
+            f"Nothing has moved the feeling in the last {CAUSE_DAYS} days. It is "
+            f"the resting mood: {rest}."
+        )
+    feeling = (
+        f"Feeling now: {emotion_rules.name(point)} (pleasure {point.pleasure:.2f}, "
+        f"arousal {point.arousal:.2f})."
+    )
+    moved = "; ".join(_cause(e, push, zone) for e, push in causes)
+    return f"{feeling} Events that moved it: {moved}. Resting mood: {rest}."
+
+
+def _cause(event: Event, push: Pad, zone: tzinfo) -> str:
+    when = event.occurred_at.astimezone(zone)
+    day = f"{DAYS[when.weekday()][:3]} {when.day} {MONTHS[when.month - 1][:3]}"
+    if event.kind == EventKind.USER_MESSAGE:
+        kind = str(event.payload.get("class", "message")).replace("_", " ")
+        confidence = event.payload.get("confidence")
+        if isinstance(confidence, int | float):
+            kind = f"{kind} (confidence {confidence:.2f})"
+    else:
+        kind = event.kind.value.replace("_", " ")
+    return (
+        f"{day} {when:%H:%M}, {kind}: pleasure {push.pleasure:+.2f}, "
+        f"arousal {push.arousal:+.2f}"
+    )
+
+
+def _gesture(state: CompanionState, event: Event) -> str | None:
+    if event.kind != EventKind.USER_MESSAGE or not state.moods_on:
+        return None
+    if state.emotion is None:
+        return None
+    feeling = emotion_rules.name(state.emotion.shown())
+    return emotion_rules.gesture(event.payload.get("class"), feeling)
 
 
 def _face(state: CompanionState) -> Expression | None:

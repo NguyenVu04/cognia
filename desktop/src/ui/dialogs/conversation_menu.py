@@ -13,18 +13,19 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtWidgets import QLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
 
 from src.domain.conversation.models import Conversation
 from src.ui import theme
-from src.ui.widgets.buttons import menu_button
+from src.ui.widgets.buttons import TextButton, menu_button
+from src.ui.widgets.scroll import ScrollPane
 from src.ui.widgets.shadow import ShadowWindow
 from src.ui.widgets.surface import rule
 from src.ui.widgets.typography import kicker
 
 WIDTH = 288
-#: Enough to find your way back without growing a popup taller than the window.
-MOST_RECENT = 10
+#: Past this, the list scrolls, so the popup never grows taller than the window.
+MAX_LIST_HEIGHT = 360
 
 
 class ConversationMenu(ShadowWindow):
@@ -32,6 +33,7 @@ class ConversationMenu(ShadowWindow):
 
     chosen = Signal(str)  # the Conversation id
     newRequested = Signal()
+    deleteRequested = Signal(str)  # the Conversation id
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
@@ -58,11 +60,9 @@ class ConversationMenu(ShadowWindow):
         heading_layout.addWidget(kicker("Conversations", alpha=0.38, px=10.5))
         content.addWidget(heading)
 
-        self._list = QWidget()
-        self._list_layout = QVBoxLayout(self._list)
-        self._list_layout.setContentsMargins(0, 0, 0, 0)
-        self._list_layout.setSpacing(0)
-        content.addWidget(self._list)
+        self._scroll = ScrollPane()
+        self._list_layout = self._scroll.column
+        content.addWidget(self._scroll)
 
         divider = QWidget()
         divider_layout = QVBoxLayout(divider)
@@ -85,19 +85,46 @@ class ConversationMenu(ShadowWindow):
             if (widget := item.widget()) is not None:
                 widget.deleteLater()
 
-        for conversation in list(conversations)[:MOST_RECENT]:
-            here = conversation.id == current_id
-            button = menu_button(
-                conversation.title, "check-circle" if here else "chat-circle"
+        for conversation in conversations:
+            self._list_layout.addWidget(
+                self._row(conversation, conversation.id == current_id)
             )
-            button.clicked.connect(
-                lambda _=False, i=conversation.id: self._choose(i)
-            )
-            self._list_layout.addWidget(button)
+        self._scroll.refresh()
+        wanted = self._list_layout.sizeHint().height()
+        self._scroll.setFixedHeight(min(wanted, MAX_LIST_HEIGHT))
+
+    def rows(self) -> int:
+        """How many conversations the list holds."""
+        return self._list_layout.count()
+
+    def _row(self, conversation: Conversation, here: bool) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        button = menu_button(
+            conversation.title, "check-circle" if here else "chat-circle"
+        )
+        button.clicked.connect(lambda _=False, i=conversation.id: self._choose(i))
+        layout.addWidget(button, 1)
+        delete = TextButton(
+            "", font=theme.font(13), fg=theme.muted(0.45), radius=7,
+            padding=(9, 10), hover_fill=theme.wash(0.12),
+            hover_fg=theme.ACCENT_TEXT, icon_name="trash", icon_px=13,
+        )
+        delete.setToolTip("Delete conversation")
+        delete.setObjectName("delete")
+        delete.clicked.connect(lambda _=False, i=conversation.id: self._delete(i))
+        layout.addWidget(delete)
+        return row
 
     def _choose(self, conversation_id: str) -> None:
         self.hide()
         self.chosen.emit(conversation_id)
+
+    def _delete(self, conversation_id: str) -> None:
+        self.hide()
+        self.deleteRequested.emit(conversation_id)
 
     def _start(self) -> None:
         self.hide()

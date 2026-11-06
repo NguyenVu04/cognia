@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.domain.erasure.models import Group
@@ -17,19 +17,18 @@ from src.infrastructure.storage import orm
 from src.infrastructure.storage.database import Database
 
 _TABLES = orm.Base.metadata.tables
+SEARCH = orm.SEARCH_TABLE
 
 # Settings are reset, not deleted; every other table in a group is emptied.
 GROUP_TABLES: dict[Group, tuple[str, ...]] = {
     Group.CONVERSATIONS: (
         "message_memory_refs",
-        "message_journal_refs",
         "messages",
         "conversations",
     ),
     Group.MEMORY: ("memory_item_evidence", "memory_items"),
     Group.DESK: ("app_usage",),
     Group.LEARNING: ("pattern_evidence", "self_adjustments", "patterns"),
-    Group.JOURNAL: ("journal_entry_sources", "journal_entries"),
     Group.SPEECH: ("decision_factors", "speech_decisions"),
     Group.EVENTS: ("emotion_changes", "events"),
     Group.CHARACTER: ("character_proposals", "character_versions"),
@@ -42,7 +41,6 @@ _COUNTED: dict[Group, tuple[str, ...]] = {
     Group.MEMORY: ("memory_items",),
     Group.DESK: ("app_usage",),
     Group.LEARNING: ("patterns",),
-    Group.JOURNAL: ("journal_entries",),
     Group.SPEECH: ("speech_decisions",),
     Group.EVENTS: ("events",),
     Group.CHARACTER: ("character_versions",),
@@ -91,6 +89,10 @@ class SqliteErasureStore:
     def compact(self) -> None:
         try:
             self._db.compact()
+            # VACUUM can renumber the rowids of messages, which the search
+            # index refers to, so the index is built again from the messages.
+            with self._db.transaction() as db:
+                db.execute(text(f"INSERT INTO {SEARCH}({SEARCH}) VALUES ('rebuild')"))
         except (sqlite3.Error, SQLAlchemyError) as error:
             raise ErasureFailed(NOT_COMPACTED) from error
 

@@ -44,4 +44,10 @@ tasks:
     desc: Check the code with Ruff
     dir: '{{.APP_DIR}}'
     cmds:
-      - uv run ruff check src tests
+      - uv run ruff check src tests scripts
+
+  dictionary:
+    desc: "Build the dictionary from an Open English WordNet release: task dictionary -- <release.xml.gz>"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python scripts/build_dictionary.py {{.CLI_ARGS}} src/resources/dictionary/oewn.sqlite3

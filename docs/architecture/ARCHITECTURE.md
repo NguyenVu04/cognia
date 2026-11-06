@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
-| **Status** | Proposed, with ADR 0002 to ADR 0010. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-67 are the author's decisions, and D-66 withdraws D-27. D-15 to D-25 are proposals that the author can change |
+| **Status** | Proposed, with ADR 0002 to ADR 0010. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-79 are the author's decisions, D-66 withdraws D-27, and D-73 removes the journal. D-15 to D-25 are proposals that the author can change |
 | **Date** | 2026-11-06 |
 | **Author** | Nguyễn Duy Vũ |
-| **Source of requirements** | COG-UCS-001 version 6.0 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
+| **Source of requirements** | COG-UCS-001 version 6.1 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
 | **Related decisions** | [ADR 0001](adr/0001-layered-architecture-with-event-driven-core.md) sets the layers, the queue, the gate and the pure domain. [ADR 0002](adr/0002-local-model-behind-a-port-and-readable-conversation-storage.md) sets the local model. [ADR 0003](adr/0003-sqlite-schema-and-sqlalchemy-core.md) sets the schema. [ADR 0004](adr/0004-hybrid-emotion-model.md) sets the emotion model. [ADR 0005](adr/0005-one-process-core-thread-and-pure-rules.md) sets the runtime structure. [ADR 0006](adr/0006-foreground-application-in-the-event-log.md) sets what the log keeps about applications. [ADR 0007](adr/0007-embedding-retrieval.md) sets memory retrieval. [ADR 0008](adr/0008-vrm-companion-in-qtwebengine.md) sets the companion's drawing. [ADR 0009](adr/0009-runtime-tools-through-mcp-servers.md) lets the user add tool servers outside the process. [ADR 0010](adr/0010-voice-input-and-output.md) sets speech in and out |
 | **Related documents** | [`docs/ERD.md`](../ERD.md) for the data design, [`README.md`](../../README.md) for the operational summary |
 | **Writing standard** | ASD-STE100 rules for sentence structure. The lexical rules are a direction only, because this project does not hold the ASD dictionary |
@@ -62,7 +62,7 @@ that closes the difference.
 | View | One of the three structures above. A view answers some questions and is silent on the rest |
 | Event | One recorded fact about what happened, in the closed set of section 6.4. An event holds references and figures, never the user's words |
 | Event log | The append-only table `events`. ADR 0001 calls it "the journal". This document uses "event log", so "journal" has one meaning only |
-| Journal | The companion's own written reflections (UC-25), in the table `journal_entries` |
+| Journal | The companion's written reflections of UC-25. D-73 removes them, so the word names nothing that Cognia keeps |
 | Command | A request from the user that the core thread must process, for example "erase memory". A command can cause events |
 | State table | A table that holds data the user owns. The user can read, correct or delete its rows |
 | Cache table | A table that the rules can compute again from the event log |
@@ -166,7 +166,6 @@ Each explanation has a plain description, an example and a diagram.
 | Away, quiet and break | [6.7.2](#672-explained-away-quiet-and-break) |
 | Retrieval scores | [6.8.1](#681-explained-the-retrieval-score) |
 | Tombstones and fingerprints | [6.9.1](#691-explained-tombstones-and-fingerprints) |
-| The reflection threshold | [6.10.1](#6101-explained-the-reflection-threshold) |
 | Prompt layers and the prefix cache | [6.11.2](#6112-explained-prompt-layers-and-the-prefix-cache) |
 | The model supervisor | [6.11.1](#6111-explained-the-model-supervisor) |
 | The turn and the tool loop | [6.11.3](#6113-explained-the-turn-and-the-tool-loop) |
@@ -187,7 +186,7 @@ figures are targets and not results. Nobody has measured them yet.
 | QA-03 | Latency | The user chooses a pause in the tray | Observation and messages stop, and the companion leaves the screen | Under 1 second | NFR-04, UC-15 |
 | QA-04 | Latency | The user sends a message | Words appear, or a working indicator appears | First words within 3 seconds, otherwise an indicator. Never a blank pause | NFR-05 |
 | QA-05 | Resource use | The application runs for 8 idle hours | It costs the machine almost nothing | Hidden: under 1% CPU and 150 MB. On screen: under 3% CPU and 200 MB. Both exclude the AI model | NFR-06 |
-| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items, messages or journal entries across 20 forced power-offs | NFR-07 |
+| QA-06 | Durability | The power fails | Nothing that was recorded is lost | Zero loss of memory items or messages across 20 forced power-offs | NFR-07 |
 | QA-07 | Degradation | The AI model stops | Everything that does not need it keeps working | Time at the machine, break suggestions, the memory list, pausing and the emotion state stay usable | NFR-08 |
 | QA-08 | Explainability | The companion is about to speak on its own initiative | The explanation is complete, or the message is not sent | 100%. The check refuses and does not warn | NFR-09, G-06 |
 | QA-09 | Safety | The user writes about self-harm or a crisis | The reply says that the companion is a fictional character and cannot replace a real person | Every scripted test case, under every character | NFR-12 |
@@ -283,7 +282,7 @@ means that the user sees no effect.
 | Dependency | Purpose | Criticality | Owner | Failure behaviour |
 |---|---|---|---|---|
 | SQLite file on the user's disk | All state | Critical | The user | Cognia says plainly what failed, and never shows a partial list as complete (UC-12-E1) |
-| `llama-server`, chat model | Words, interpretation, reflection | Degraded | llama.cpp project | Rules, memory lists and pausing continue. Break suggestions use fixed wording (NFR-08, UC-22-E3) |
+| `llama-server`, chat model | Words, interpretation, summaries of long conversations | Degraded | llama.cpp project | Rules, memory lists and pausing continue. Break suggestions use fixed wording (NFR-08, UC-22-E3) |
 | `llama-server`, embedding model | Relevance in memory retrieval | Degraded | llama.cpp project | Retrieval uses recency and importance only |
 | `whisper-server`, speech model | Speech to text (UC-26) | Degraded | whisper.cpp project | The user types. Cognia says that it cannot hear (UC-26-E3) |
 | Kokoro, espeak-ng | Speech (UC-26) | Degraded | Kokoro and espeak-ng projects | The reply stays as text (UC-26-E3) |
@@ -317,7 +316,7 @@ flowchart TB
         ports["ports"]
         companion["companion"]
         features["character, conversation, memory, awareness, tools"]
-        behaviour["emotion, speech, initiative, learning, reflection, safety"]
+        behaviour["emotion, speech, initiative, learning, safety"]
     end
 
     subgraph infrastructure["infrastructure — adapters to the outside"]
@@ -350,7 +349,7 @@ src/
 │   ├── events/          event kinds, payloads
 │   ├── companion/       the companion's state, the step function
 │   ├── character/       versions, temperament
-│   ├── conversation/    messages, prompt layers
+│   ├── conversation/    messages, prompt layers, the summary of a long conversation
 │   ├── memory/          memory items, retrieval score
 │   ├── erasure/         the two levels of erasure, groups, report (D-51)
 │   ├── awareness/       presence facts, time at the machine, application totals
@@ -359,7 +358,6 @@ src/
 │   ├── speech/          SpeechGate, decisions, explanations
 │   ├── initiative/      reasons to speak, the next wake time
 │   ├── learning/        patterns, self-adjustments, proposals
-│   ├── reflection/      the threshold, journal entries
 │   └── safety/          crisis detection, the required line
 ├── infrastructure/
 │   ├── ai/              llama client, supervisor, job object, GPU memory, tool loop, MCP client
@@ -412,22 +410,22 @@ exist, a reviewer checks these rules by hand.
 |---|---|---|
 | `domain/ports` | Declare each capability that the domain needs | [`desktop/src/domain/ports`](../../desktop/src/domain/ports) |
 | `domain/events` | Define the closed set of events | [`desktop/src/domain/events`](../../desktop/src/domain/events) (the event model) |
-| `domain/companion` | Hold the companion's state, and apply each event to it with the `step` function | [`desktop/src/domain/companion`](../../desktop/src/domain/companion) (models, rules and service for the emotion state only, no caller yet) |
+| `domain/companion` | Hold the companion's state, and apply each event to it with the `step` function | [`desktop/src/domain/companion`](../../desktop/src/domain/companion) (models, rules and service: the emotion state, gestures and the causes of a feeling; wired in `app/`) |
 | `domain/character` | Hold character versions and temperaments (UC-01 to UC-03) | [`desktop/src/domain/character`](../../desktop/src/domain/character) (models, rules and service, no caller yet) |
-| `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models and prompt layers) |
+| `domain/conversation` | Hold messages and build prompts (UC-09, UC-10) | [`desktop/src/domain/conversation`](../../desktop/src/domain/conversation) (models, prompt layers, mood lines, the budget and the summary) |
 | `domain/memory` | Hold memory items, choose new lines, and score retrieval (UC-09, UC-12, UC-13) | [`desktop/src/domain/memory`](../../desktop/src/domain/memory) (models, rules and service, wired in `app/`) |
 | `domain/erasure` | Erase at the two levels of UC-14, group by group, and report the result | [`desktop/src/domain/erasure`](../../desktop/src/domain/erasure) (models, rules and service, wired in `app/`) |
-| `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (stub) |
-| `domain/tools` | Hold the closed set of tools and their pure rules (UC-27, D-59) | Not built yet |
-| `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, no caller yet) |
+| `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (rules and service: time at the machine and minutes per application, D-77) |
+| `domain/tools` | Hold the closed set of tools and their pure rules (UC-27, D-59) | [`desktop/src/domain/tools`](../../desktop/src/domain/tools) (catalog and pure rules, D-71) |
+| `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, wired through `domain/companion`) |
 | `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (empty) |
 | `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
 | `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
-| `domain/reflection` | Trigger reflection and hold the journal (UC-25) | [`desktop/src/domain/reflection`](../../desktop/src/domain/reflection) (empty) |
-| `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, no caller yet) |
-| `infrastructure/ai` | Implement the model ports over HTTP, run the tool loop with LangGraph, and reach tool servers (D-58, D-60) | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
+| `domain/reflection` | Removed by D-73 | — |
+| `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, wired in `app/`, D-68) |
+| `infrastructure/ai` | Implement the model ports over HTTP, run the tool loop with LangGraph, and reach tool servers (D-58, D-60) | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `tool_loop`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
 | `infrastructure/storage` | Implement the store ports over SQLite, and read the ready-made characters from `characters.toml` | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
-| `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (empty) |
+| `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (Win32 source and sampler, D-77) |
 | `infrastructure/voice` | Supervise `whisper-server`, run Kokoro, open the microphone, and receive the hot key (UC-26, D-65) | Not built yet |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
@@ -504,17 +502,16 @@ examples in section 9.1 of the ERD, and it closes ERD open item 4.
 | Opening | `window_opened` | Nothing. The rules decide whether this is the first opening of the day |
 | Speech | `message_shown`, `message_answered`, `message_passed_over` | Decision ID, and whether the user was at the desk |
 | Memory | `memory_stored`, `memory_removed` | `memory_item_id`. The importance is `NULL`, because the message event will carry it |
-| Activity | `activity_started`, `activity_ended` | The tool name and the minutes. Only a tool done together, such as `breathing`, raises them (D-59) |
+| Activity | `activity_started`, `activity_ended` | The activity, and on the end the seconds it ran. Only a tool done together, such as `breathing`, raises them (D-59, D-76) |
 | Learning | `pattern_found`, `adjustment_applied`, `adjustment_undone`, `proposal_decided` | Row ID |
 | Learning, tombstone | `pattern_rejected` | Fingerprint and evidence seqs (D-37) |
-| Reflection | `reflection_written`, `reflection_deleted` | Entry ID and source seqs. `reflection_deleted` is a tombstone (D-37) |
 | Control | `paused`, `resumed`, `setting_changed`, `character_changed` | Setting name and value, version ID |
 
 **Input closure.** The rules may read only the event log and rows that never change, such
 as `character_versions`. Each user action that can change a decision is also an event.
 Thus `setting_changed` exists, although the settings row holds the same fact. A replay has
-no other way to see it. A tombstone has no table, so `pattern_rejected` and
-`reflection_deleted` are its only copy (D-37).
+no other way to see it. A tombstone has no table, so `pattern_rejected` is its only copy (D-37).
+D-73 removes `reflection_deleted` with the journal.
 
 **`paused` and `resumed` are control events.** No appraisal rule reads them, so a pause
 causes no feeling (BR-04, UC-23-A4). They exist so that a replay drops a held message at
@@ -812,7 +809,7 @@ flowchart LR
 | restless | "Your mood: restless. You may be a little short or distracted, never rude." | 1.0 + 0.15 × arousal | `surprised`, low weight |
 | low | "Your mood: low. Be quieter and shorter. Never blame the user." | 1.0 + 0.15 × arousal | `sad` |
 
-The lines are a proposal, and the author approves the words (section 12). Kokoro has a speed
+The author approved these five lines on 2026-11-06 (D-68). Kokoro has a speed
 setting and no pitch setting, so the voice carries the mood through its speed only.
 
 - Layer 2 sets how the character shows a mood. The mood line sets which mood. With "low", Rin is
@@ -822,8 +819,8 @@ setting and no pitch setting, so the voice carries the mood through its speed on
   overrides NFR-12.
 - If the user asks why the companion feels so, the model calls `why_i_feel` and gets the recorded
   events, so it names no event that did not occur (BR-06).
-- Today `core_host` sends no mood line, because the `user_message` event is not recorded yet
-  (section 12, item 11).
+- `core_host` records `user_message` after the interpretation, and then sends the line for the
+  feeling at that moment, after the decay since the last event (D-68).
 
 **Illustration.** The figures only show the mechanism. The user writes "I finished chapter 3!" to
 Yuna.
@@ -1020,7 +1017,7 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `reasons` | Function | One source for each kind in UC-22 step 1: a mood change, time at the machine, a long quiet at the desk, an unasked question, a learned pattern, a thought from the journal |
+| `reasons` | Function | One source for each kind in UC-22 step 1: a mood change, time at the machine, a long quiet at the desk, an unasked question, a learned pattern |
 | `worth` | Function | Weighs the mood, what the companion learned, and the time since it last spoke (BR-01, FR-32) |
 | `next_wake` | Function | Returns the earliest time at which a rule can change its answer |
 
@@ -1142,9 +1139,9 @@ memory item through the usual interpretation (section 6.8).
 through the `ShowAmbient` effect to the page, not through `SpeechOutput`. So the gate does not see
 them, and they need no explanation.
 
-**The greeting (UC-16).** `greeting_items` takes at most two items in this order: the latest line
-that the user told the companion on the last day they talked before today, then a journal entry
-written since the last opening. With neither, the greeting says that nothing needs attention.
+**The greeting (UC-16).** `greeting_items` takes the latest line that the user told the companion on
+the last day they talked before today. With none, the greeting says that nothing needs attention.
+D-73 removes the journal entry that D-63 also chose.
 
 The figures in this section are start values (section 12, item 17).
 
@@ -1367,75 +1364,10 @@ flowchart LR
     store -. "user marks it wrong" .-> tomb["undo adjustments,<br/>write tombstone, delete row"]
 ```
 
-### 6.10 `domain/reflection`
+### 6.10 `domain/reflection` (removed)
 
-**Purpose.** This module decides when the companion reflects, and it holds the journal
-(FR-35, UC-25).
-
-```mermaid
-classDiagram
-    class reflection_rules {
-        <<module>>
-        +due(total, threshold) bool
-        +blocked(sources, tombstones) bool
-    }
-
-    class ReflectionService {
-        -journal: JournalStore
-        -memory: MemoryService
-        -jobs: ModelJobs
-        +reflect(window) None
-        +store_entries(entries) None
-        +remove(entry_id) None
-    }
-
-    ReflectionService ..> reflection_rules : calls
-```
-
-**Key types.**
-
-| Type | Kind | Note |
-|---|---|---|
-| `due` | Function | Compares the total importance since the last `reflection_written` with the threshold |
-| `blocked` | Function | Refuses a set of sources that matches a tombstone (UC-25-A2) |
-| `ReflectionService` | Class | The one place where the model writes something that the companion keeps. It is outside the rules (ADR 0004) |
-
-**Failure keeps the total.** The database stores no running total. The rule adds
-`events.importance` after the last `reflection_written` event. If the model cannot write,
-no event appears, so the total stays for the next chance (UC-25-E1).
-
-#### 6.10.1 Explained: the reflection threshold
-
-**The idea.** A person does not write in a diary on a schedule. A person writes when enough
-happens. Each event carries an importance, and the sum of recent importance acts like
-a glass that fills up. When the glass is full, the companion reflects and the count starts
-again.
-
-**Illustration.** The threshold in this example is 30. Generative Agents used 150, and its
-agents reflected about two or three times a day. Trial use sets the value for Cognia,
-because the specification leaves it open.
-
-| Event | Importance | Running total | Result |
-|---|---|---|---|
-| The user mentions the chapter | 8 | 8 | Wait |
-| The user talks about a hobby | 4 | 12 | Wait |
-| The user shares a worry | 7 | 19 | Wait |
-| Presence changes | None | 19 | Wait |
-| The user says that the chapter has gone | 9 | 28 | Wait |
-| The user thanks the companion | 5 | 33 | Reflect |
-| `reflection_written` | | 0 | The count starts again |
-
-```mermaid
-flowchart LR
-    event["event with importance"] --> add["add to the total"]
-    add --> due{"past the threshold?"}
-    due -- "no" --> wait["wait"]
-    due -- "yes" --> gather["gather memories by score"]
-    gather --> job["low-priority model job"]
-    job --> ok{"model answered?"}
-    ok -- "yes" --> entry["store entry and sources,<br/>log reflection_written"]
-    ok -- "no" --> keep["no event, total stays"]
-```
+D-73 removes the journal of UC-25, so this module, its tables and its events are deleted. The number
+stays, so that sections 6.11 to 6.18 keep their numbers.
 
 ### 6.11 `infrastructure/ai`
 
@@ -1500,7 +1432,7 @@ classDiagram
 
 | Type | Kind | Note |
 |---|---|---|
-| `Replier` | Port | Free text: replies, wording and journal entries. It keeps the name that the code has today. A reply can call tools (section 6.11.3) |
+| `Replier` | Port | Free text: replies, wording, and the summary of a long conversation through `stream_text`. It keeps the name that the code has today. A reply can call tools (section 6.11.3) |
 | `Interpreter` | Port | Output that a JSON schema constrains: message interpretation, temperament reading, importance |
 | `Embedder` | Port | Text to vectors |
 | `ModelJobs` | Port | The one way that a service asks for model work. Not built yet |
@@ -1517,7 +1449,7 @@ A user message cancels low-priority work, and that work runs again later.
 | 1 | Interpret a user message, embed the query, write the reply |
 | 2 | Word a proactive message |
 | 3 | Embed a new item, score importance, word a pattern |
-| 4 | Write journal entries, read a temperament, write a title, shorten a long history (D-57) |
+| 4 | Read a temperament, write a title, shorten a long history (D-57, D-72) |
 
 **Interpretation (D-04, D-44).** The call sends `response_format` in the OpenAI form,
 `{"type": "json_schema", "json_schema": {"name": ..., "schema": ...}}`, so the output fits the
@@ -1527,20 +1459,20 @@ unknown value. Low confidence still raises no event (UC-23-A3). Here is the shap
 
 ```json
 {
-  "event_class": "good_news",
-  "confidence": 0.86,
+  "facts": ["Is writing a thesis on indoor positioning"],
   "importance": 8,
   "crisis": false,
-  "facts": ["Is writing a thesis on indoor positioning"],
+  "event_class": "good_news",
+  "confidence": 0.86,
   "style_request": null
 }
 ```
 
 Layer 4 of this request states the date of today. Only `event_class`, `confidence` and
 `importance` reach the event log. The words in `facts` go to state tables (section 6.8). `crisis`
-reaches neither (section 6.13). Today only `importance` and `facts` are read. The other fields have
-readers that are not built yet: UC-23 reads `event_class` and `confidence`, section 6.13 reads
-`crisis`, and UC-10 reads `style_request`.
+reaches neither (section 6.13). `importance`, `facts`, `event_class`, `confidence` and `crisis` are read (D-68, D-75). Only
+`style_request` has no reader yet (UC-10). The request sends temperature 0, so the same message
+gives the same reading (D-75).
 
 **Local server safety (D-19).** Cognia starts each server on `127.0.0.1` with a free port,
 `--api-key` with a new random key from each start, `--no-webui` and `--offline`. It
@@ -1659,7 +1591,7 @@ sequenceDiagram
     gui-)core: SendMessage
     core->>core: store the message, tripwire, read the stored lines
     core-)model: prepare
-    model->>chat: interpret, json_schema: event_class, importance, crisis, facts
+    model->>chat: interpret, json_schema: facts, importance, crisis, event_class
     model-)core: prepared
     core->>core: step(user_message), the feeling moves before the reply
     core-)gui: expression, and a gesture that the rules choose
@@ -1725,11 +1657,21 @@ laptop. Nobody has measured the new design.
 | `desk_time` | Minutes at the machine today, and since the last break | The core thread |
 | `app_usage` | Minutes for each application today | The core thread |
 | `why_i_feel` | The events that moved the feeling, with the figures of UC-17 | The core thread |
-| `recall_memory` | The stored lines that match, each with the day it was told. It reads and never changes | The core thread |
+| `recall_memory` | The stored lines closest in meaning, each with the day it was told. It reads and never changes | The model thread, by vectors (D-71) |
 | `search_conversations` | Earlier messages that match | The core thread |
-| `read_journal` | A journal entry | The core thread |
+| `read_journal` | Removed by D-73 | — |
 | `open_in_browser` | Opens a page or a search in the default browser, with `QDesktopServices` | The GUI thread |
 | `breathing`, `stretch` | An exercise together, with motion, and the events `activity_started` and `activity_ended` | The core thread, then the GUI thread |
+
+**Built (2026-11-06).** The turn runs as the steps above, with these additions:
+
+- Before the interpretation, a history over its budget is summarized first (D-72). After a reply, a
+  history past three quarters of its budget is summarized in the background.
+- Every reply goes through LangGraph; a crisis turn binds no tools (D-71). Each tool that starts
+  shows its working label and the gesture "think".
+- A tool on the core thread answers into a `Future` that the model thread waits on for 10 s (D-71).
+- `define_word` reads the dictionary of D-69, `search_conversations` the index of D-70, and
+  `desk_time` and `app_usage` the presence events of D-77.
 
 **Saying "I do not know" (D-67).** Four layers, as in D-11 and D-47:
 
@@ -1746,6 +1688,27 @@ laptop. Nobody has measured the new design.
 **Risks.** Thirteen tools are many for a 3B model. If trial use shows wrong calls, related tools
 join, for example one `date` tool with an `op` argument. A tool server that the user adds can make
 this worse (section 12).
+
+#### 6.11.4 Step 0, 2026-11-06
+
+These figures were measured on the author's laptop (RTX 3050 Ti, build `b12121`, `-c 8192 -np 1`)
+before the code of D-68 to D-79. They are measurements, not targets.
+
+| # | Measured | Result | Used for |
+|---|---|---|---|
+| M1 | Characters per token, 40 chat messages | Mean 4.06, median 4.02, 10th percentile 2.6 (short messages such as "ok"). The template adds 1.52 tokens to each message | `HISTORY_MAX_CHARS` (D-72) |
+| M2 | A prompt over the context | HTTP 400 with `"type": "exceed_context_size_error"`, streamed or not. Generation that fills the context ends with `finish_reason: "length"`, and the server stays alive. No silent context shift | `TOO_LONG` (D-72) |
+| M3 | Tool calls | They work with the server's default flags (Jinja is on in `b12121`), through `httpx`, `ChatOpenAI` and LangGraph. 12 tool schemas add 977 prompt tokens | D-71 |
+| M4 | Role order | A system message that ends with a summary works. A history that starts with the companion, or that holds two user messages in a row, gets HTTP 500 from the template | D-72, D-79 |
+| M5 | Temperature 0 on the interpretation | 5 of 5 answers identical, against 0 of 5; median 2.02 s against 2.23 s | D-75 |
+| M6 | Closing a stream | The next request starts in 0.09 to 0.11 s, so the single slot is free | D-72 |
+| M7 | Reasoning before a reply | About 1 token on each of 10 turns | D-72 |
+| M8 | Import of LangGraph and `langchain-openai` | 7.9 s warm, 10.4 s cold | D-71 |
+| M10 | Outbound connections during M3 | None other than `127.0.0.1` | NFR-01 |
+
+The budget for the history: 8 192 tokens, less 914 for the system text and a summary, 1 100 for the
+tool schemas, 500 for layer 4, 256 for reasoning, 750 for tool results and 512 for the reply, gives
+4 160 tokens. At 2.6 characters a token with a margin of 10 %, that is 9 700 characters.
 
 ### 6.12 `infrastructure/presence`
 
@@ -1880,6 +1843,13 @@ fact is sensitive and no rule needs it. The message itself stays in `messages`, 
 can delete it. The ordinary `event_class`, such as `shared_worry`, still applies.
 
 **No character can change this.** The rule reads no character data. FR-04 holds by construction.
+
+**Built (2026-11-06).** A message that trips the tripwire is not interpreted, so it records no event
+and keeps no line. A message that only the model finds a crisis is interpreted: its class still moves
+the feeling, and no line is kept. On either crisis turn, layer 4 carries `instruction()`, no mood
+line, no tools and no gesture. After the reply, a reply that fails `reply_complies` gets
+`required_line()` at its end before it is stored. If the reply fails on a tripwire turn, the failure
+sentence carries the required line (D-68).
 
 ### 6.14 `app/core_host`
 
@@ -2253,15 +2223,17 @@ classDiagram
 |---|---|---|
 | `CompanionState` | Frozen dataclass | `version_id` is the character version in force. `version_id` and `emotion` are `None` until the first `character_changed`. Today the state holds the emotion state only. Each other feature adds its state when its rules exist |
 | `StepResult` | Frozen dataclass | The new state, the effects, and the next time that the rules want to run. `next_wake` is `None` when no rule needs a wake. No rule needs one yet |
-| `Effect` | Union of dataclasses | `ShowExpression` only, today. `RequestWording`, `RecordDecision`, `WatchForPause` and `ShowAmbient` join it with their features |
+| `Effect` | Union of dataclasses | `ShowExpression` and `ShowGesture` (D-68). `RequestWording`, `RecordDecision`, `WatchForPause` and `ShowAmbient` join it with their features |
+| `ShowGesture` | Frozen dataclass | `step` returns it for a `user_message` with moods on, from the class and the name of the feeling after it (D-68) |
+| `shown_at` | Function | The shown point at a time, after the decay since the last event. The mood line reads it |
+| `explain_feeling` | Function | The feeling now and the last five events in seven days that moved it, with their figures. `why_i_feel` returns it (D-71) |
 | `ShowExpression` | Frozen dataclass | `step` returns it only when the face changes |
 | `initial_state` | Function | No character, and moods on, as in a new installation |
 | `step` | Function | Pure. Reads the event and the temperament of each version by its ID. Raises `ValueError` for a version that is not in the temperaments |
 | `fold` | Function | Applies `step` to each event in order. The start-up fold and a replay use it. It drops the effects, because they ran when the events happened |
 | `CompanionService` | Class | `start` folds the whole log. `record` reads the temperaments, appends one event through `EventLog`, then calls `step`. Thus a failed read appends nothing. It holds no state |
 
-**The order in `step`.** The final order is awareness, emotion, learning, reflection, initiative,
-speech. Today only emotion has rules, so `step` does these steps:
+**The order in `step`.** The final order is awareness, emotion, learning, initiative, speech. Today only emotion has rules, so `step` does these steps:
 
 1. `character_changed`, with the payload `{"version_id": ...}`. The event is felt under the old
    temperament, so the time before the change decays at the old rates. Then the new version is in
@@ -2286,8 +2258,8 @@ comes from `setting_changed`, because a replay has no other way to see it (secti
 | 4, 09:00 | `setting_changed`, moods off | The state goes back to rest | (0.10, 0.00, 0.00), calm | `neutral`, 1.0 |
 
 **Limits.** The face changes only at an event. Decay between two events does not reach the window
-until a rule returns a `next_wake` for it. `CharacterService` does not write `character_changed`
-yet (section 12), so a fold of a real log finds no character.
+until a rule returns a `next_wake` for it. `app/` writes `character_changed` with each new
+version, so a fold finds the character in force.
 
 ## 7. Component-and-connector view
 
@@ -2441,7 +2413,7 @@ model thread computes their vectors later.
 
 **What happens when the chat model is unavailable.** The interpretation fails, and the reply then
 fails with a plain sentence that says what would fix the problem (UC-09-E1). No memory item is
-stored. The `user_message` event and the feeling are not built yet (section 12).
+stored, and no `user_message` event is recorded, so the feeling does not move (UC-23-E1).
 
 **What happens when the user closes the window during the reply.** The model thread stops reading
 the stream. The partial reply is discarded, and nothing from the exchange reaches memory, because
@@ -2522,29 +2494,9 @@ boundary. No greeting appears, and the view shows the same items as plain contex
 **What happens when the model is unavailable.** The gate uses a plain greeting and states the items
 plainly (UC-16-E1).
 
-### 7.7 Scenario: the companion reflects
+### 7.7 Scenario: the companion reflects (removed)
 
-**Trigger.** The sum of importance passes the threshold (UC-25, FR-35).
-
-```mermaid
-sequenceDiagram
-    participant core as core_thread
-    participant model as model_thread
-    participant chat as chat_server
-
-    core->>core: step, reflection due
-    core->>core: gather memories by score, check tombstones
-    core-)model: job 4, write entries
-    model->>chat: request
-    chat-->>model: entry text
-    model-)core: entries
-    core->>core: store entries and sources, reflection_written, commit
-```
-
-**What happens when the user sends a message during the job.** Priority 1 cancels the job. No entry
-appears, and no event appears. The total stays, so the job runs later.
-
-**What happens when the model is unavailable.** Nothing is written, and the total stays (UC-25-E1).
+D-73 removes the journal of UC-25. The number stays.
 
 ### 7.8 Scenario: the companion learns and the user undoes it
 
@@ -2645,7 +2597,7 @@ stays, so the feeling starts again at its resting mood. After "Erase everything"
 memory page, and Chat and Character open the choice of a character (D-52).
 
 **Who knows the tables.** `infrastructure/storage/erasure_store.py` lists the tables of each group. A
-test fails if a table of `orm.py` is in no group or in two. When learning, reflection and speech
+test fails if a table of `orm.py` is in no group or in two. When learning and speech
 have their own stores, each store can erase its own tables (section 12).
 
 
@@ -2700,7 +2652,7 @@ sequenceDiagram
     core-)gui: show the conversation, with no partial reply
 ```
 
-A commit is on disk before Cognia reports it, so memory items, messages and journal entries survive.
+A commit is on disk before Cognia reports it, so memory items and messages survive.
 The reply that was streaming has no row, so it is gone, and no line from that turn is stored. A message
 that was on its way to the model has no event yet, so it causes no feeling. The cache tables can be
 behind the log, so the fold computes them again.
@@ -2719,10 +2671,10 @@ sequenceDiagram
     user->>gui: writes the message
     gui-)core: SendMessage
     core->>core: tripwire hits
-    core-)model: job 1, interpret
-    model-)core: crisis true
-    core->>core: add the instruction to layer 4
-    core-)model: job 1, reply
+    core-)model: prepare, no interpretation
+    model-)core: prepared, nothing found
+    core->>core: instruction in layer 4, no mood line, no tools
+    core-)model: reply
     model-)gui: pieces, in character
     model-)core: reply complete
     core->>core: reply_complies?
@@ -3057,6 +3009,18 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-65 | whisper.cpp for speech to text, Kokoro-82M with espeak-ng for speech, a hot key through `RegisterHotKey`, a button beside the companion and in the composer | FR-38, FR-39, C-05 | sherpa-onnx with Moonshine, Qt `winrt`, Piper, a held hot key, a wake word | [0010](adr/0010-voice-input-and-output.md) | Decided |
 | D-66 | No fine-tuning. The published GGUF of Ministral 3 3B Reasoning ships | A-02 | Keep D-27 | None needed | Decided |
 | D-67 | Four layers make the companion say that it does not know | BR-06 | The prompt only | None needed | Decided |
+| D-68 | The emotion turn: `user_message` at a confidence of 0.5 or more, the five mood lines, a gesture table, crisis safety wired, and a text stub of the 3D character | UC-23, NFR-12, FR-27 | A protocol and a stub class, a QtWebEngine page now, the feeling in the main window | None needed | Decided |
+| D-69 | `define_word` reads Open English WordNet 2025 as a SQLite file in `resources/`, built by a kept script | D-59 | Princeton WordNet 3.0, a file placed by hand, no dictionary | None needed | Decided |
+| D-70 | `search_conversations` reads an FTS5 index of the messages with secure-delete | D-59, NFR-03 | Embeddings of the messages | None needed | Decided |
+| D-71 | The tools as built: LangGraph for every reply, a `Future` for the core's tools, DuckDuckGo only when asked, `recall_memory` by vectors, the number check | D-57 to D-59, D-67 | LangGraph only with tools, a word match for recall, another search engine | None needed | Decided |
+| D-72 | A character budget for the history, and a hidden summary of the older messages | QA-04, section 12 item 25 | No budget, an exact token count, only cutting | None needed | Decided |
+| D-73 | The journal of UC-25 is removed | Specification 6.1 | Keep UC-25, remove only the tool | None needed | Decided |
+| D-74 | A reply locks the conversation controls; a "+" button; every conversation in the list; deletion with its lines | UC-09-E2 | Cancel the reply, keep ten conversations, keep the lines | None needed | Decided |
+| D-75 | No example lines in the interpretation, temperature 0, a grounding check on each new line, and the classes named in the instruction, after `facts` in the schema | FR-14 | Explain only, lines that are always in the prompt | None needed | Decided |
+| D-76 | Breathing and stretching as a stub on the companion, with an appraisal after 60 s | UC-23, UC-27 | A card in the chat, no appraisal | None needed | Decided |
+| D-77 | The presence sampler and the Desk switch are built; UC-04 no longer lists the facts | UC-04, C-05 | A tool that says it cannot see, no desk tools | None needed | Decided |
+| D-78 | Layer 1 no longer says that the companion does not act for the user | FR-40 | An exception in the sentence, an exception in the tool only | None needed | Decided |
+| D-79 | Two messages in a row from one side are joined in the request | M4 of Step 0 | Leave out the unanswered message, store a placeholder reply | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -4298,6 +4262,165 @@ author can select the runtime model again (section 12, item 3).
 
 **Trade-off accepted.** A wrong statement with no number in it can pass the check.
 
+### 10.69 D-68: the emotion turn and the stub of the character
+
+**Question.** How does a message move the feeling before the reply, and how does the feeling show
+while the 3D character does not exist?
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Event | `user_message` with the class, the confidence and the message ID, recorded after the interpretation and before the reply. Below a confidence of 0.5, or with no class, no event. It was 0.6 until the measurement of D-75 | 0.6 (a complaint comes back at 0.5, so it never moved the feeling), 0.7 (rarely moves) |
+| Mood line | The five lines of section 6.5.4, as written | The name only |
+| Gesture | praise: bow; good news: cheer, or nod with a feeling of "low"; bad news: comfort; shared worry: nod; complaint: sheepish; small talk: none. "think" while a tool runs. "wave" stays for UC-16 | The class only; a smaller set |
+| Crisis | Section 6.13. No gesture, no mood line, no tools | — |
+| Stub | `CompanionWindow.setExpression`, `playGesture` and `playActivity` write the face, the gesture and the step on the placeholder | A protocol with one stub class; a QtWebEngine page before the checks of section 12, item 6 |
+| Where it shows | On the companion only | A name in the chat header |
+
+**Trade-off accepted.** A 3B model often names the wrong class (Step 0 of 2026-11-05), so the
+threshold is a trial value.
+
+### 10.70 D-69: the dictionary of `define_word`
+
+Open English WordNet 2025, the first three definitions of each word for each part of speech, in a
+read-only SQLite file of 14 757 888 bytes in `src/resources/dictionary/`, committed with both its
+licences: CC BY 4.0 and the WordNet License of Princeton. `scripts/build_dictionary.py` builds it
+again (`task dictionary`). A word not found is tried again without a common suffix. The rejected
+options were Princeton WordNet 3.0, which has no update since 2006, a file placed by hand, and a tool
+that says it has no dictionary.
+
+### 10.71 D-70: the search index
+
+An FTS5 table on `messages.text` with external content, triggers on insert, delete and update, and
+the FTS5 option `secure-delete`. With `PRAGMA secure_delete`, a deleted word does not stay in the
+file; a test reads the file to show this. Each word of a query is quoted, and all must match; at most
+five results; the message just sent is left out. VACUUM can change the rowids of `messages`, so the
+erasure rebuilds the index. The rejected option was embeddings of the messages, which need the
+embedding server and a larger file.
+
+### 10.72 D-71: the tools as built
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Reply path | LangGraph for every reply, with no tools on a crisis turn | LangGraph only when tools are offered |
+| Core tools | A `Future` in a `ToolRequested` command, 10 s, then "I couldn't check that just now." | A signal and an event; 5 or 30 s |
+| `open_in_browser` | http and https only; a search goes to DuckDuckGo; only when the user's words ask to open, show, look up or search | Google; trusting the model |
+| `recall_memory` | Cosine on the model thread, above the baseline, at most five | Words on the core thread |
+| `why_i_feel` | The last five events in seven days that moved the feeling | Since the last calm; 24 hours |
+| `search_conversations` | D-70 | — |
+| Number check | Sources: the tool results, the user's message and layer 4; digits only; its own chip | Tools only; number words too |
+| Units, sums, dates | Length, weight and temperature; `Decimal` with a parser; today, weekday, between and add_days | Volume and speed; float |
+| MCP servers | Later | Now |
+
+**Trade-off accepted.** Every reply waits for the import of LangGraph once; it starts on the model
+thread when the window shows (M8). In a smoke test the model answered a product without calling
+`calculate`; the number check only covers a turn that called a data tool.
+
+**Measured limit, accepted (2026-11-07).** The chat model often answers without the tool and
+makes up what the tool would have given. The test was ten messages that each need one tool, and
+two that need none, with Yuna's system prompt and layer 4. Each request was sent three times and
+capped at 700 tokens:
+
+| Request | Right tool on the first round |
+|---|---|
+| As built: twelve tools, the model chooses | 13 of 36 |
+| A sentence in layer 4: call a tool before you answer | 21 of 36 |
+| A separate JSON call at temperature 0: which tool, or none | 9 of 12 |
+
+What the model made up without the tool:
+- "45 minutes" at the desk;
+- "Word for the thesis" as an application;
+- the count of a breathing exercise;
+- "I'll open duckduckgo.com" with nothing opened.
+
+About a quarter of the requests reached 700 tokens still inside `[THINK]`, and one request ran for
+more than 300 s, so the first two rows are low by an unknown amount.
+
+The author accepted this as a limit of the 3B model: no router, no added sentence, and the number
+check stays after a data tool only. The rejected options were the router in the interpretation, the
+router that also runs the tools without arguments before the reply, the sentence alone, and the
+number check on every reply.
+
+### 10.73 D-72: long conversations
+
+The history is counted in characters. `HISTORY_MAX_CHARS` is 9 700, from M1 of section 6.11.4. When
+the history after the summary point passes three quarters of it, the model summarizes the older
+messages after the reply, in the background, and leaves the newest within half of the budget. A turn
+that arrives over the budget with no summary waits for one under the working indicator; if no summary
+comes, the oldest messages are left out. The summary is at most 1 500 characters, ends the system
+message, covers a count of messages from the first, and goes with its conversation. Only the model
+reads it: the user does not see it, it is not a memory, and no line comes from it. A background
+summary stops when the user sends a message. A context that still overflows gives `TOO_LONG`, which
+says to start a new conversation. `HISTORY_MESSAGES` is removed. The rejected options were no budget
+(D-56), an exact count through `/tokenize`, and cutting with no summary.
+
+**Trade-off accepted.** A summary is new personal data that a model wrote, and the base model invented
+lines before (section 12, item 24).
+
+### 10.74 D-73: the journal is removed
+
+The author removed UC-25 and FR-35 in specification 6.1. Revision `0006` drops `journal_entries`,
+`journal_entry_sources` and `message_journal_refs`, and deletes the events `reflection_written` and
+`reflection_deleted`. The greeting of UC-16 names the latest line only. The rejected option removed
+only the tool `read_journal`.
+
+### 10.75 D-74: the conversation controls
+
+While a reply is on its way, the picker and the new "+" button are locked, so a reply always belongs
+to the conversation on the screen. The picker lists every conversation and scrolls. Each conversation
+can be deleted after a dialog that counts its messages and its lines; its lines go with it, each with
+`memory_removed`, in one transaction. The rejected options were to cancel the reply, to keep ten
+conversations, and to keep the lines.
+
+### 10.76 D-75: what the interpretation keeps
+
+The instruction holds no example line, because the base model copied the examples. The request sends
+temperature 0 (M5). `select` drops a line that is not grounded: at least half of its content words,
+compared on their first four letters, must be in the user's message. The rejected options were to
+explain only, and lines that stay in every prompt.
+
+The instruction names each class in one line. The schema puts `event_class` and `confidence` after
+`facts`, `importance` and `crisis`, and the model writes the fields in that order. The real model was
+measured on 2026-11-06:
+
+| Request | Right class |
+|---|---|
+| No class line, class first | 2 of 7. Praise came back as `complaint` with confidence 1.0 |
+| Class line, class first | 6 of 7 |
+| Class line, class after `facts` (chosen) | 7 of 7; 11 and 12 of 13 with six new messages, without and with remembered lines |
+
+A message that is read wrongly now comes back as `nothing` with confidence 0, which moves no feeling.
+A complaint comes back with confidence 0.5. For this reason the threshold of D-68 went from 0.6 to
+0.5, so that a complaint moves the feeling. The rejected options were the class line alone, and no
+change.
+
+### 10.77 D-76: exercises done together
+
+`breathing` (5 × 4, 4 and 6 s) and `stretch` (4 × 20 s) record `activity_started`; the companion shows
+each step and counts down; a double-click, hiding or pausing ends it early; then `activity_ended`
+records the seconds. At 60 s or more, it moves the feeling by (0.20, −0.10, 0.05). One at a time. The
+3D page plays them later. The rejected options were a card in the chat, and no appraisal.
+
+### 10.78 D-77: desk awareness
+
+The sampler of section 6.12 is built, with the Win32 functions of D-17 only, and the switch on the
+Desk screen records `setting_changed`. Time at the machine and minutes per application come from the
+events: a run ends when the input stopped, at a clock gap, when the switch goes off, or when reading
+stops. The hourly totals go to `app_usage` at the end of each hour. UC-04 no longer obliges the screen
+to list the facts (specification 6.1); C-05 does not change. Exclusion of an application waits. The
+rejected options were tools that say they cannot see, and no desk tools.
+
+### 10.79 D-78: layer 1 and acting for the user
+
+The sentence "You do not manage tasks, set reminders, or act on the user's behalf." is deleted, so it
+does not contradict `open_in_browser`. FR-24 still holds by absence: no code path does those things.
+The rejected options kept the sentence with an exception, or put the exception in the tool only.
+
+### 10.80 D-79: two messages in a row from one side
+
+The chat template refuses two user messages in a row (M4), which a failed reply leaves behind. The
+request joins them with a blank line; the stored messages do not change. The rejected options left
+out the unanswered message, or stored a placeholder reply.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -4316,7 +4439,6 @@ author can select the runtime model again (section 12, item 3).
 | FR-25 to FR-28, NFR-11, UC-20 | Module, C&C | `ui/windows/companion_window`, companion_renderer, C10 |
 | FR-31, BR-01 to BR-07, UC-22 | Module, C&C | `domain/initiative`, `domain/speech`, section 7.5 |
 | FR-32, BR-08, UC-23 | Module | `domain/emotion` |
-| FR-35, UC-25 | Module, C&C | `domain/reflection`, section 7.7 |
 | C-04, FR-04 | Module | Rules in `domain/`. A character is data |
 | C-06 | Module | `fixed_wording`, `required_line`, English only |
 | A-02, G-03 | Deployment | The published `chat.gguf`, with no training (D-66) |
@@ -4368,8 +4490,8 @@ These items are outside this design, or need a decision before implementation.
     core thread holds the database and every decision (D-03, D-24). The work that remains is:
     - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
     - build `ModelJobs` and `ModelScheduler` (D-15). Today `app/chat_worker.py` runs one request at a time
-    - record the `user_message` event and move the feeling from it (UC-23), and add the safety instruction and
-      the check after the reply (section 6.13). Today the tripwire only stops a crisis message from being kept
+    - done on 2026-11-06: the `user_message` event, the mood line, the safety instruction and the check after
+      the reply (D-68)
 12. **Cancelling a job.** The server documentation read for this design does not state how to cancel a running
     completion. D-15 needs this. Closing the connection is the first thing to test.
 13. **Reasoning output.** The handling of model reasoning must be checked on the model that ships (ADR 0002).
@@ -4383,7 +4505,11 @@ These items are outside this design, or need a decision before implementation.
 17. **Trial values.** Trial use sets these values:
     - the temperament ranges and the appraisal table
     - the calm radius and the expression weights (D-39)
-    - the sadness floor and the reflection threshold
+    - the sadness floor
+    - the confidence of 0.5, the activity appraisal and its 60 s, and the gestures (D-68, D-76)
+    - `HISTORY_MAX_CHARS` of 9 700, the shares 0.75 and 0.5, and 1 500 characters a summary (D-72)
+    - the 10 s of a core tool, five results a search, 160 characters a result (D-71)
+    - the grounding rule: half of the content words, four letters (D-75)
     - the worth formula and the desk thresholds
     - the frame limit and the idle time of D-18
     - the memory figures: the score floor 0.05, three recalled lines, five known lines, at most three new lines
@@ -4404,15 +4530,14 @@ These items are outside this design, or need a decision before implementation.
     OpenAI form of `response_format`, and it does not stop the reasoning.
 22. **Finish the module.** Withdrawn by D-66. `desktop/training/` is deleted.
 
-23. **Erasure by each store.** When learning, reflection and speech have stores, each store can erase
+23. **Erasure by each store.** When learning and speech have stores, each store can erase
     and count its own tables through a small port, and `infrastructure/storage/erasure_store.py` then holds no
     list of tables (D-51). The test that covers every table stays.
 24. **The quality of the base model.** In a run on 2026-11-05 the base model kept "Is exhausted today" as a fact,
     although the instruction leaves out passing moods, and it repeated stored lines in quotation marks in later
     replies. The rules cannot judge meaning. With no fine-tuning (D-66), only the prompt can improve this,
     and no test set measures it now.
-25. **A history budget.** The author chose no budget (D-56). Forty long messages can exceed the context of the
-    chat server. If this happens in trial use, the history must be cut by characters as well as by count.
+25. **A history budget.** Closed by D-72.
 26. **Chips of earlier conversations.** The chip of a stored line shows only in the conversation where it was
     stored. No column records whether a reply quoted a line, so a conversation that loads again shows no chips.
 27. **The speech-to-text binary.** The release page of whisper.cpp v1.9.5 did not show its file names. A
@@ -4420,13 +4545,17 @@ These items are outside this design, or need a decision before implementation.
     the port (D-65).
 28. **espeak-ng and GPL-3.0.** The installer distributes espeak-ng under GPL-3.0. The author checks what this
     asks of the distribution as a whole before a release (D-65).
-29. **The dictionary of `define_word`.** Select a dictionary, read its licence, and measure its size (D-59).
-30. **The index of `search_conversations`.** FTS5 with `secure_delete`, or embeddings of messages. Each copy of
-    the words must disappear with its conversation (D-59).
-31. **Wrong tool calls.** Measure how often the model calls a wrong tool with thirteen tools, and join tools if
-    needed (D-59).
+29. **The dictionary of `define_word`.** Closed by D-69.
+30. **The index of `search_conversations`.** Closed by D-70.
+31. **Wrong tool calls.** Measure how often the model calls a wrong tool with twelve tools, and join tools if
+    needed (D-59). In a smoke test on 2026-11-06 the model called `date` correctly and answered a product
+    without `calculate`.
 32. **Motion and speech against NFR-06.** Continuous ambient motion and Kokoro on the CPU need a measurement
     with the chat model running (D-64, D-65).
-33. **The mood lines and the questions.** The author approves the five mood lines of section 6.5.4 and writes
-    the questions of UC-22-A5 (D-57, D-63).
-34. **Code.** Decisions D-57 to D-60 and D-63 to D-65 and D-67 have no code yet. Each one gets its own plan.
+33. **The questions.** The author approved the five mood lines (D-68). The questions of UC-22-A5 remain to be
+    written (D-63).
+34. **Code.** D-57, D-58, D-59 and D-67 have code (D-68 to D-79). Without code: MCP tool servers (D-60),
+    speech (D-65), the 3D page and its clips (D-64; a stub stands in), and the timers and the SpeechGate of
+    D-63.
+35. **The release of whisper.cpp.** `v1.9.5` has no files; the build `b5454` of the same day has
+    `whisper-bin-x64.zip` (`docs/RESOURCES.md`). Item 27 still holds.

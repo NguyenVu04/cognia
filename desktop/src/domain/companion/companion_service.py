@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, tzinfo
 
 from src.domain.companion import rules
 from src.domain.companion.models import CompanionState, StepResult
 from src.domain.emotion.emotion_service import EmotionService
+from src.domain.emotion.models import Pad
 from src.domain.events.models import EventKind, Payload
 from src.domain.ports import EventLog
 
@@ -45,3 +46,15 @@ class CompanionService:
         temperaments = self._emotion.temperaments()
         event = self._log.append(occurred_at, utc_offset_min, kind, payload, importance)
         return rules.step(state, event, temperaments)
+
+    def why(self, state: CompanionState, at: datetime, zone: tzinfo) -> str:
+        """The feeling at ``at`` and the recorded events that moved it. Raises
+        ``ValueError`` with no character."""
+        since = at - timedelta(days=rules.CAUSE_DAYS)
+        return rules.explain_feeling(
+            state, self._log.read_since(since), self._emotion.temperaments(), at, zone
+        )
+
+    def shown_at(self, state: CompanionState, at: datetime) -> Pad | None:
+        """The point the user sees at ``at``. ``None`` with no character."""
+        return rules.shown_at(state, at, self._emotion.temperaments())

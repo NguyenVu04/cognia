@@ -21,7 +21,6 @@ class Group(StrEnum):
     MEMORY = "memory"
     DESK = "desk"
     LEARNING = "learning"
-    JOURNAL = "journal"
     SPEECH = "speech"
     EVENTS = "events"
     CHARACTER = "character"

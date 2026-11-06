@@ -131,7 +131,7 @@ def test_conversations_group_keeps_memory(filled: Database, path: Path) -> None:
 def test_memory_level_keeps_character_and_settings(filled, path: Path) -> None:
     store = SqliteErasureStore(filled)
     for group in (Group.CONVERSATIONS, Group.MEMORY, Group.DESK, Group.LEARNING,
-                  Group.JOURNAL, Group.SPEECH, Group.EVENTS):
+                  Group.SPEECH, Group.EVENTS):
         store.erase(group)
 
     assert rows(path, "SELECT count(*) FROM memory_items") == [(0,)]
@@ -190,3 +190,24 @@ def test_failed_group(filled: Database, path: Path) -> None:
 
     with pytest.raises(ErasureFailed, match=NOT_ERASED):
         SqliteErasureStore(filled).erase(Group.SPEECH)
+
+
+def test_search_index_rebuilt_after_compact(tmp_path) -> None:
+    from datetime import datetime, timezone
+
+    from src.domain.conversation.models import USER, Message
+    from src.infrastructure.storage.sqlite_store import SqliteConversationStore
+
+    db = Database.open(tmp_path / "cognia.sqlite3")
+    conversations = SqliteConversationStore(db)
+    start = datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc)
+    first, second = conversations.create(start), conversations.create(start)
+    conversations.append(Message.new(first.id, USER, "Miso is my cat", start))
+    conversations.append(Message.new(second.id, USER, "Tea at noon", start))
+    conversations.delete(first.id)
+
+    SqliteErasureStore(db).compact()
+
+    assert [m.text for m in conversations.search("tea", 5)] == ["Tea at noon"]
+    assert conversations.search("miso", 5) == []
+    db.close()

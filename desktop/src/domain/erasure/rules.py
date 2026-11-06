@@ -9,7 +9,6 @@ _MEMORY = (
     Group.MEMORY,
     Group.DESK,
     Group.LEARNING,
-    Group.JOURNAL,
     Group.SPEECH,
     Group.EVENTS,
 )

@@ -32,6 +32,7 @@ from src.infrastructure.storage.orm import (
     Pattern,
     PatternEvidence,
     SpeechDecision,
+    outside_orm,
 )
 
 NOW = "2026-10-31T12:00:00.000+00:00"
@@ -39,7 +40,6 @@ NOW = "2026-10-31T12:00:00.000+00:00"
 # The parent table of these is emptied only after its children.
 UNINDEXED_FOREIGN_KEYS = {
     ("messages", "character_version_id"),
-    ("journal_entries", "character_version_id"),
     ("emotion_changes", "character_version_id"),
     ("settings", "character_version_id"),
     ("message_kinds", "streak_reset_seq"),
@@ -137,7 +137,14 @@ def add_proposal(db: Connection, id: str, result_version_id: str) -> None:
 @pytest.mark.filterwarnings("ignore:Skipped unsupported reflection")
 def test_orm_matches_migrations(engine: Engine) -> None:
     with engine.connect() as db:
-        context = MigrationContext.configure(db)
+        context = MigrationContext.configure(
+            db,
+            opts={
+                "include_name": lambda name, type_, parents: not (
+                    type_ == "table" and outside_orm(name)
+                )
+            },
+        )
         assert compare_metadata(context, Base.metadata) == []
 
 
@@ -149,8 +156,9 @@ def test_every_table_is_strict(engine: Engine) -> None:
                 "AND name NOT IN ('alembic_version', 'sqlite_sequence')"
             )
         ).all()
+    tables = [(name, sql) for name, sql in tables if not outside_orm(name)]
 
-    assert len(tables) == 21
+    assert len(tables) == 18
     assert all(sql.rstrip().endswith("STRICT") for _, sql in tables)
 
 
@@ -293,8 +301,7 @@ def test_ceiling_query_uses_index(engine: Engine) -> None:
 def test_embedding_is_last_column(engine: Engine) -> None:
     columns = inspect(engine).get_columns
 
-    for table in ("memory_items", "journal_entries"):
-        assert columns(table)[-1]["name"] == "embedding"
+    assert columns("memory_items")[-1]["name"] == "embedding"
 
 
 # ── revision 0003 ────────────────────────────────────────────────────────
@@ -372,3 +379,115 @@ def test_0003_downgrade_restores_tables(tmp_path: Path) -> None:
     engine.dispose()
 
     _migrate(path, "head").dispose()
+
+
+# ── revision 0004 ────────────────────────────────────────────────────────
+
+
+def test_0004_keeps_messages(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    old = _migrate(path, "0003")
+    with old.begin() as db:
+        db.execute(text(
+            f"INSERT INTO conversations VALUES ('c1', 'Talk', '{NOW}')"
+        ))
+        db.execute(text(
+            "INSERT INTO messages (id, conversation_id, role, text, created_at) "
+            f"VALUES ('m1', 'c1', 'user', 'hi', '{NOW}')"
+        ))
+    old.dispose()
+
+    engine = _migrate(path, "0004")
+
+    assert _names(engine, "SELECT id FROM messages") == ["m1"]
+    assert _names(engine, "SELECT summary_covers FROM conversations") == [0]
+    engine.dispose()
+
+
+def test_0004_downgrade(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    _migrate(path, "0004").dispose()
+
+    engine = _migrate(path, "0003", down=True)
+
+    columns = [c["name"] for c in inspect(engine).get_columns("conversations")]
+    assert "summary" not in columns
+    assert "summary_covers" not in columns
+    engine.dispose()
+    _migrate(path, "head").dispose()
+
+
+# ── revisions 0005 and 0006 ──────────────────────────────────────────────
+
+
+def test_0005_indexes_existing_messages(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    old = _migrate(path, "0004")
+    with old.begin() as db:
+        db.execute(text(f"INSERT INTO conversations (id, title, last_active_at) "
+                        f"VALUES ('c1', 'Talk', '{NOW}')"))
+        db.execute(text(
+            "INSERT INTO messages (id, conversation_id, role, text, created_at) "
+            f"VALUES ('m1', 'c1', 'user', 'Miso is my cat', '{NOW}')"
+        ))
+    old.dispose()
+
+    engine = _migrate(path, "0005")
+
+    query = "SELECT rowid FROM messages_fts WHERE messages_fts MATCH 'miso'"
+    found = _names(engine, query)
+    assert len(found) == 1
+    engine.dispose()
+
+
+def test_0005_downgrade(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    _migrate(path, "0005").dispose()
+
+    engine = _migrate(path, "0004", down=True)
+
+    names = set(_names(engine, "SELECT name FROM sqlite_master"))
+    assert not any(name.startswith("messages_fts") for name in names)
+    engine.dispose()
+    _migrate(path, "head").dispose()
+
+
+def test_0006_drops_journal(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    old = _migrate(path, "0005")
+    with old.begin() as db:
+        db.execute(text(
+            "INSERT INTO events (occurred_at, utc_offset_min, kind, payload) VALUES "
+            f"('{NOW}', 0, 'memory_stored', '{{}}'), "
+            f"('{NOW}', 0, 'reflection_written', '{{}}')"
+        ))
+    old.dispose()
+
+    engine = _migrate(path, "0006")
+
+    assert _names(engine, "SELECT kind FROM events") == ["memory_stored"]
+    tables = set(inspect(engine).get_table_names())
+    assert not tables & {"journal_entries", "journal_entry_sources",
+                         "message_journal_refs"}
+    engine.dispose()
+
+
+def test_0006_downgrade_restores_tables(tmp_path: Path) -> None:
+    path = tmp_path / "cognia.sqlite3"
+    _migrate(path, "0006").dispose()
+
+    engine = _migrate(path, "0005", down=True)
+
+    tables = set(inspect(engine).get_table_names())
+    assert {"journal_entries", "journal_entry_sources",
+            "message_journal_refs"} <= tables
+    engine.dispose()
+    _migrate(path, "head").dispose()
+
+
+def test_0007_indexes_event_time(tmp_path: Path) -> None:
+    engine = _migrate(tmp_path / "cognia.sqlite3", "0007")
+
+    indexes = {i["name"] for i in inspect(engine).get_indexes("events")}
+    assert "events_by_time" in indexes
+    engine.dispose()

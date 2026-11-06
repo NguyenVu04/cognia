@@ -14,7 +14,7 @@ from src.domain.ports import CharacterStoreFailed
 from src.infrastructure.storage.character_store import SqliteCharacterStore
 from src.infrastructure.storage.database import Database, open_database
 from src.infrastructure.storage.event_log import SqliteEventLog
-from src.infrastructure.storage.orm import Base
+from src.infrastructure.storage.orm import Base, outside_orm
 
 MONDAY = datetime(2026, 11, 2, 1, 0, tzinfo=timezone.utc)
 V1 = Version(
@@ -55,9 +55,10 @@ def test_open_creates_schema(tmp_path: Path) -> None:
         revision = MigrationContext.configure(db).get_current_revision()
     engine.dispose()
 
+    tables = {name for name in tables if not outside_orm(name)}
     assert tables - {"alembic_version"} == set(Base.metadata.tables)
-    assert len(Base.metadata.tables) == 21
-    assert revision == "0003"
+    assert len(Base.metadata.tables) == 18
+    assert revision == "0007"
 
 
 def test_open_twice_changes_nothing(tmp_path: Path) -> None:

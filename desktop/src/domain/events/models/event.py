@@ -32,13 +32,13 @@ class EventKind(StrEnum):
     MESSAGE_PASSED_OVER = "message_passed_over"
     MEMORY_STORED = "memory_stored"
     MEMORY_REMOVED = "memory_removed"
+    ACTIVITY_STARTED = "activity_started"
+    ACTIVITY_ENDED = "activity_ended"
     PATTERN_FOUND = "pattern_found"
     ADJUSTMENT_APPLIED = "adjustment_applied"
     ADJUSTMENT_UNDONE = "adjustment_undone"
     PROPOSAL_DECIDED = "proposal_decided"
     PATTERN_REJECTED = "pattern_rejected"
-    REFLECTION_WRITTEN = "reflection_written"
-    REFLECTION_DELETED = "reflection_deleted"
     PAUSED = "paused"
     RESUMED = "resumed"
     SETTING_CHANGED = "setting_changed"
@@ -64,7 +64,8 @@ class Event:
     The payload keys the rules read: ``class`` on ``user_message``, a
     :class:`MessageClass` value; ``at_desk`` on ``message_answered`` and
     ``message_passed_over``; ``version_id`` on ``character_changed``; ``name``,
-    a column of the settings, and ``value`` on ``setting_changed``.
+    a column of the settings, and ``value`` on ``setting_changed``; ``seconds``
+    on ``activity_ended``, how long the exercise ran.
 
     Raises ``ValueError`` for a value the stored event would refuse.
     """

@@ -16,6 +16,11 @@ from src.domain.events.models import Event, EventKind, MessageClass
 FLOOR_PLEASURE = -0.30
 RESTORED_SHARE = 0.70
 CALM_RADIUS = 0.25
+# Below this, the model's reading of a message is a guess, and a feeling never
+# moves on a guess. The model gives a complaint 0.5 and a wrong reading 0.
+MIN_CONFIDENCE = 0.5
+# An exercise done together counts once it lasted this long.
+ACTIVITY_MIN_SECONDS = 60
 
 _ZERO = Pad(0.0, 0.0, 0.0)
 _IGNORED = Pad(-0.30, 0.0, 0.0)
@@ -34,7 +39,20 @@ _KIND_APPRAISAL = {
     EventKind.MESSAGE_ANSWERED: Pad(0.20, 0.10, 0.00),
 }
 
+# Doing something together pleases, and calms.
+_ACTIVITY_DONE = Pad(0.20, -0.10, 0.05)
+
 _TALK = (EventKind.USER_MESSAGE, EventKind.MESSAGE_ANSWERED)
+
+# The gesture that answers each kind of message. A low feeling meets good news
+# with a nod, because "low" means quieter. No gesture reproaches or asks.
+_GESTURES = {
+    MessageClass.PRAISE: "bow",
+    MessageClass.GOOD_NEWS: "cheer",
+    MessageClass.BAD_NEWS: "comfort",
+    MessageClass.SHARED_WORRY: "nod",
+    MessageClass.COMPLAINT: "sheepish",
+}
 
 # Name: (VRM preset, weight at the edge of calm, weight at full strength). No
 # angry face, because an angry face is a reproach.
@@ -84,6 +102,10 @@ def appraise(event: Event) -> Pad:
         return _MESSAGE_APPRAISAL.get(event.payload.get("class"), _ZERO)
     if _is_ignored(event):
         return _IGNORED
+    if event.kind == EventKind.ACTIVITY_ENDED:
+        seconds = event.payload.get("seconds")
+        done = isinstance(seconds, int) and seconds >= ACTIVITY_MIN_SECONDS
+        return _ACTIVITY_DONE if done else _ZERO
     return _KIND_APPRAISAL.get(event.kind, _ZERO)
 
 
@@ -162,6 +184,22 @@ def expression(point: Pad, moods_on: bool = True) -> Expression:
     share = (_intensity(point) - CALM_RADIUS) / (1 - CALM_RADIUS)
     share = max(0.0, min(1.0, share))
     return Expression(preset, weakest + (strongest - weakest) * share)
+
+
+def counts(event_class: MessageClass | None, confidence: float) -> bool:
+    """Whether a message read as ``event_class`` with ``confidence`` becomes a
+    ``user_message`` event. The class ``nothing`` counts: talking still restores
+    what being ignored took."""
+    return event_class is not None and confidence >= MIN_CONFIDENCE
+
+
+def gesture(event_class: object, feeling: str) -> str | None:
+    """The gesture for a message of ``event_class``, given the name of the
+    feeling after it. ``None`` for small talk or an unknown class."""
+    chosen = _GESTURES.get(event_class)
+    if chosen == "cheer" and feeling == "low":
+        return "nod"
+    return chosen
 
 
 def _is_ignored(event: Event) -> bool:

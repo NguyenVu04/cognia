@@ -43,6 +43,7 @@ class MainWindow(ShadowWindow):
     messageSent = Signal(str)
     conversationChosen = Signal(str)
     newConversationRequested = Signal()
+    deleteConversationRequested = Signal(str)
 
     def __init__(self) -> None:
         super().__init__(
@@ -100,16 +101,20 @@ class MainWindow(ShadowWindow):
         self.chat.messageSent.connect(self.messageSent)
         self.chat.conversationChosen.connect(self.conversationChosen)
         self.chat.newConversationRequested.connect(self.newConversationRequested)
+        self.chat.deleteConversationRequested.connect(
+            self.deleteConversationRequested
+        )
         self.character = CharacterView()
         self.memory = MemoryView()
         self.proactivity = ProactivityView()
+        self.desk = DeskView()
         self.proactivity.nudgeRequested.connect(self.nudgeRequested)
 
         self._by_id: dict[str, QWidget] = {
             "chat": self.chat,
             "memory": self.memory,
             "character": self.character,
-            "desk": DeskView(),
+            "desk": self.desk,
             "proactivity": self.proactivity,
         }
         for screen in self._by_id.values():
