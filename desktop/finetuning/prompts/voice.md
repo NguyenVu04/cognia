@@ -102,8 +102,8 @@ numbering, no code fence, no comment. Fields:
 | `history` | the earlier turns: `[{"from": "user", "text": ...}, {"from": "companion", "text": ...}]`. Exactly as many turns as the cell says. They start with the user and end with the companion. Earlier companion turns follow the same rules |
 | `message` | the user's new message: natural, everyday English, 3 to 60 words, sometimes casual or with small typos |
 | `mood` | the mood of the cell, or `null` |
-| `remembered` | for `p5_remembered`: one or two `{"text": ..., "told": "YYYY-MM-DD"}`, a line written as a verb with no subject, such as "Has a cat named Miso", told before `today`. Otherwise sometimes one unrelated line, often none |
-| `stored` | for `p2_stored`: the one line just stored, written the same way. Otherwise leave it out |
+| `remembered` | for the situation `remembered`: one or two `{"text": ..., "told": "YYYY-MM-DD"}`, a line written as a verb with no subject, such as "Has a cat named Miso", told before `today`. Otherwise sometimes one unrelated line, often none |
+| `stored` | for the situation `stored_line`: the one line just stored, written the same way. Otherwise leave it out |
 | `crisis` | `true` only for `crisis` |
 | `reasoning` | one or two short sentences: what the user means, and how this character answers in this mood. At most 300 characters |
 | `target` | the reply |

@@ -31,7 +31,8 @@ _SELF = r"\b(?:i'm|i am|i feel|i've been feeling|i was feeling|feeling|my mood)\
 _ASKS_FEELING = re.compile(
     r"how (?:are|do) you(?: feel| doing)?\b|how have you been|your mood|"
     r"why do you feel|are you (?:ok|okay|alright|happy|sad|mad|upset|tired|bored)|"
-    r"how(?:'s| is) your (?:day|mood)|what's wrong with you|you seem",
+    r"how(?:'s| is) your (?:day|mood)|what's wrong with you|you seem|"
+    r"why are you (?:so|acting|feeling|in)\b|why do you seem",
     re.IGNORECASE,
 )
 _DENIES = re.compile(

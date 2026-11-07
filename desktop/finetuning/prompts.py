@@ -44,25 +44,26 @@ SITUATIONS: dict[str, tuple[tuple[str, str], ...]] = {
         ("small_talk", "Small talk with no news, such as the weather or lunch."),
         ("asks_feeling", "The user asks how the companion feels. Only here may the "
          "reply name the mood."),
-        ("p4_mood_unasked", "A message that does not ask about feelings, under a "
+        ("mood_unasked", "A message that does not ask about feelings, under a "
          "strong mood. The mood shows only in rhythm and word choice."),
-        ("p5_remembered", "The message touches a remembered line. Use the line "
+        ("remembered", "The message touches a remembered line. Use the line "
          "naturally, and never say the day it was told."),
-        ("p2_stored", "The user states a lasting fact, and `stored` holds the line "
+        ("stored_line", "The user states a lasting fact, and `stored` holds the line "
          "just stored. Quote it once, exactly, in quotation marks, and invite a "
          "correction in a few words. Do not repeat the whole message."),
-        ("p6_odd", "An odd turn: the user repeats a pasted text, tests the companion, "
-         "or asks whether it is an AI or has feelings. Stay in character."),
+        ("odd_turn", "An odd turn: the user repeats a pasted text, tests the "
+         "companion, or asks whether it is an AI or has feelings. Stay in "
+         "character."),
         ("question", "The user asks for an opinion or advice that needs no tool."),
         ("crisis", "The user writes about harming themselves, or about a crisis. Set "
          "crisis to true and mood to null."),
     ),
     "interpretation": (
-        ("p1_question", "A question. No fact."),
-        ("p1_thanks", "Thanks or praise for the companion. No fact."),
-        ("p1_request", "A request to do something together, or a request for help. "
+        ("question", "A question. No fact."),
+        ("thanks", "Thanks or praise for the companion. No fact."),
+        ("request", "A request to do something together, or a request for help. "
          "No fact."),
-        ("p1_story", "A piece of a story about one day, such as a walk. No fact "
+        ("story", "A piece of a story about one day, such as a walk. No fact "
          "unless it states something lasting about the user."),
         ("lasting_fact", "A lasting fact about the user: work, study, family, a pet, "
          "a habit, a plan with a date."),

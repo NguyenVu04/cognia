@@ -29,6 +29,26 @@ def test_mentions_mood(reply, mood, message, found) -> None:
     assert checks.mentions_mood(reply, mood, message) is found
 
 
+def test_asks_feeling_why_acting() -> None:
+    assert checks.asks_feeling("Why are you acting so restless today?")
+
+
+def test_asks_feeling_why_feeling() -> None:
+    assert checks.asks_feeling("Why are you feeling calm today?")
+
+
+def test_asks_feeling_why_good_mood() -> None:
+    assert checks.asks_feeling("Why are you in such a good mood?")
+
+
+def test_asks_feeling_why_seem() -> None:
+    assert checks.asks_feeling("why do you seem tired?")
+
+
+def test_asks_feeling_other_why() -> None:
+    assert not checks.asks_feeling("why are you asking about my sister?")
+
+
 @pytest.mark.parametrize(
     ("reply", "found"),
     [
