@@ -120,6 +120,7 @@ class ModelSupervisor:
         embedding_model: Path,
         *,
         context: int,
+        cache_ram_mib: int,
         idle_seconds: int | None,
         start_seconds: float,
         restarts: int,
@@ -138,7 +139,10 @@ class ModelSupervisor:
         if idle_seconds is not None:
             idle = ("--sleep-idle-seconds", str(idle_seconds))
         self._servers = {
-            CHAT: _Server(chat_model, flags=("-c", str(context), *idle)),
+            CHAT: _Server(
+                chat_model,
+                flags=("-c", str(context), "--cache-ram", str(cache_ram_mib), *idle),
+            ),
             EMBEDDING: _Server(embedding_model, flags=("--embedding", *idle)),
         }
 
@@ -244,7 +248,9 @@ class ModelSupervisor:
         """A healthy server, or ``None`` if it did not become healthy in time."""
         port = self._platform.free_port()
         key = self._platform.new_key()
-        flags = (*device, *slot.flags)
+        # The server fits the layers to the GPU's free memory.
+        layers = ("-ngl", "auto") if exe == self._vulkan else ()
+        flags = (*device, *layers, *slot.flags)
         args = [
             str(exe), "-m", str(slot.model), "--host", _HOST, "--port", str(port),
             "--api-key", key, "--no-webui", "--offline", "-np", "1", *flags,

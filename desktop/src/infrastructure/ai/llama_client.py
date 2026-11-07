@@ -55,6 +55,8 @@ class LlamaClient:
     model reads a limited number of tokens and refuses a longer text. A reply
     goes through the tool loop, where ``reply_max_tokens`` caps each model
     call; ``reply_http`` replaces its HTTP client in a test.
+    ``interpret_max_tokens`` and ``summary_max_tokens`` cap an interpretation
+    and a summary. ``None`` leaves each to the context.
     """
 
     def __init__(
@@ -63,12 +65,16 @@ class LlamaClient:
         *,
         max_chars: int,
         reply_max_tokens: int | None = None,
+        interpret_max_tokens: int | None = None,
+        summary_max_tokens: int | None = None,
         http: httpx.Client | None = None,
         reply_http: object | None = None,
     ) -> None:
         self._supervisor = supervisor
         self._max_chars = max_chars
         self._reply_max_tokens = reply_max_tokens
+        self._interpret_max_tokens = interpret_max_tokens
+        self._summary_max_tokens = summary_max_tokens
         self._http = http or httpx.Client(timeout=_TIMEOUT)
         self._reply_http = reply_http
 
@@ -106,6 +112,11 @@ class LlamaClient:
         the server then stops generating."""
         endpoint = self._endpoint(CHAT, ReplyFailed)
         body = {"messages": sent, "stream": True}
+        if self._summary_max_tokens is not None:
+            body["max_tokens"] = self._summary_max_tokens
+        stopped_early = (
+            RAMBLED if self._summary_max_tokens is not None else TOO_LONG
+        )
         try:
             with self._http.stream(
                 "POST", _chat_url(endpoint), json=body, headers=_auth(endpoint)
@@ -122,9 +133,9 @@ class LlamaClient:
                     text = choice.get("delta", {}).get("content")
                     if text:
                         yield text
-                    # The context filled up, so the answer stops mid-way.
+                    # The cap or the context stopped the answer mid-way.
                     if choice.get("finish_reason") == "length":
-                        raise ReplyFailed(TOO_LONG)
+                        raise ReplyFailed(stopped_early)
         except httpx.HTTPError as error:
             raise ReplyFailed(LOST) from error
         except (ValueError, KeyError, IndexError, TypeError) as error:
@@ -152,6 +163,8 @@ class LlamaClient:
                 "json_schema": {"name": "interpretation", "schema": dict(schema)},
             },
         }
+        if self._interpret_max_tokens is not None:
+            body["max_tokens"] = self._interpret_max_tokens
         try:
             response = self._http.post(
                 _chat_url(endpoint), json=body, headers=_auth(endpoint)
@@ -161,7 +174,12 @@ class LlamaClient:
         if response.status_code != 200:
             raise InterpretFailed(_refusal(response.content))
         try:
-            answer = json.loads(response.json()["choices"][0]["message"]["content"])
+            choice = response.json()["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise InterpretFailed(
+                    RAMBLED if self._interpret_max_tokens is not None else TOO_LONG
+                )
+            answer = json.loads(choice["message"]["content"])
         except (ValueError, KeyError, IndexError, TypeError) as error:
             raise InterpretFailed(GARBLED) from error
         if not isinstance(answer, dict):

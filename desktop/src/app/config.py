@@ -46,13 +46,20 @@ EMBEDDING_MAX_CHARS: int = _DEFAULTS["EMBEDDING_MAX_CHARS"]
 #: model's full context, which needs far more memory than a conversation uses.
 CHAT_CONTEXT: int = _DEFAULTS["CHAT_CONTEXT"]
 
-#: Seconds without a request before a server frees its model. ``null`` keeps it
-#: loaded. Trial use sets this.
+#: MiB of RAM for the chat server's old prompts; the server's default is too large.
+CHAT_CACHE_RAM_MIB: int = _DEFAULTS["CHAT_CACHE_RAM_MIB"]
+
+#: Seconds without a request before a server frees its model; ``null`` keeps it.
 MODEL_IDLE_SECONDS: int | None = _DEFAULTS["MODEL_IDLE_SECONDS"]
 
-#: The most tokens one reply may generate, its reasoning included. ``null``
-#: leaves it to the context. Measure the replies before setting it.
+#: Most tokens one reply may generate, reasoning included; ``null`` means no cap.
 REPLY_MAX_TOKENS: int | None = _DEFAULTS["REPLY_MAX_TOKENS"]
+
+#: Most tokens one interpretation may generate, reasoning included.
+INTERPRET_MAX_TOKENS: int | None = _DEFAULTS["INTERPRET_MAX_TOKENS"]
+
+#: Most tokens one summary may generate, reasoning included.
+SUMMARY_MAX_TOKENS: int | None = _DEFAULTS["SUMMARY_MAX_TOKENS"]
 
 #: How long a server may take to load its model, and how often it may be
 #: started again after it ends, in one run.

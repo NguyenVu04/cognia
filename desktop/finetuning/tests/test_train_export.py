@@ -41,6 +41,60 @@ def test_main_refuses_empty_file(tmp_path: Path) -> None:
         train.main([str(path), str(tmp_path / "adapter")])
 
 
+def _answer(content: str, reasoning: str = "") -> dict:
+    message = {"role": "assistant", "content": content}
+    if reasoning:
+        message["reasoning_content"] = reasoning
+    return message
+
+
+def _keeps(row: dict) -> str:
+    parts = []
+    for m in row["messages"]:
+        if m.get("reasoning_content"):
+            parts.append(f"[THINK]{m['reasoning_content']}[/THINK]")
+        parts.append(m["content"])
+    return "".join(parts)
+
+
+def _drops(row: dict) -> str:
+    return "".join(m["content"] for m in row["messages"])
+
+
+def test_chat_texts_keeps_reasoning() -> None:
+    row = {"id": "1", "messages": [{"role": "user", "content": "hi"},
+                                   _answer("{}", "No fact.")]}
+
+    assert train.chat_texts([row], _keeps) == ["hi[THINK]No fact.[/THINK]{}"]
+
+
+def test_chat_texts_refuses_dropped() -> None:
+    row = {"id": "7", "messages": [{"role": "user", "content": "hi"},
+                                   _answer("{}", "No fact.")]}
+
+    with pytest.raises(ValueError, match="Row 7"):
+        train.chat_texts([row], _drops)
+
+
+def test_chat_texts_without_reasoning() -> None:
+    row = {"id": "2", "messages": [{"role": "user", "content": "hi"}, _answer("Mm.")]}
+
+    assert train.chat_texts([row], _drops) == ["hiMm."]
+
+
+def test_chat_texts_checks_every_reply() -> None:
+    row = {"id": "3", "messages": [
+        {"role": "user", "content": "time?"},
+        _answer("", "Ask the clock."),
+        {"role": "tool", "content": "10:00"},
+        _answer("Ten."),
+    ]}
+
+    assert train.chat_texts([row], _keeps) == [
+        "time?[THINK]Ask the clock.[/THINK]10:00Ten."
+    ]
+
+
 def test_split_deterministic() -> None:
     first = train.split(ROWS, 0.1, 7)
 

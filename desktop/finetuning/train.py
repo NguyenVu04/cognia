@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -84,6 +84,22 @@ def take_fraction(rows: Sequence[dict], fraction: float, seed: int) -> list[dict
     return shuffled[: round(len(shuffled) * fraction)]
 
 
+def chat_texts(rows: Sequence[dict], render: Callable[[dict], str]) -> list[str]:
+    """The training text of each row, from ``render``. Raises ``ValueError``
+    for a row whose text lost the reasoning of one of its answers."""
+    texts = []
+    for row in rows:
+        text = render(row)
+        for message in row["messages"]:
+            reasoning = message.get("reasoning_content")
+            if reasoning and f"[THINK]{reasoning}[/THINK]" not in text:
+                raise ValueError(
+                    f"Row {row.get('id')} lost its reasoning in the chat template."
+                )
+        texts.append(text)
+    return texts
+
+
 def train_lora(
     config: TrainConfig, train: Sequence[dict], val: Sequence[dict], output: Path
 ) -> Path:
@@ -92,6 +108,7 @@ def train_lora(
     # Imported here so that the tests and the other tools need no torch.
     from unsloth import FastModel  # isort: skip
     from datasets import Dataset
+    from transformers import AutoTokenizer
     from trl import SFTConfig, SFTTrainer
     from unsloth.chat_templates import train_on_responses_only
 
@@ -100,6 +117,9 @@ def train_lora(
         max_seq_length=config.max_seq_length,
         load_in_4bit=config.load_in_4bit,
     )
+    # The 4-bit copy that Unsloth loads has a template that drops the
+    # reasoning; the base model's template matches what llama.cpp renders.
+    tokenizer.chat_template = AutoTokenizer.from_pretrained(config.base).chat_template
     model = FastModel.get_peft_model(
         model,
         r=config.rank,
@@ -110,15 +130,15 @@ def train_lora(
     )
 
     def dataset(rows: Sequence[dict]) -> Dataset:
-        texts = [
-            tokenizer.apply_chat_template(
+        texts = chat_texts(
+            rows,
+            lambda row: tokenizer.apply_chat_template(
                 row["messages"],
                 tools=row.get("tools") or None,
                 tokenize=False,
                 add_generation_prompt=False,
-            )
-            for row in rows
-        ]
+            ),
+        )
         # The trainer adds the first token again.
         bos = tokenizer.bos_token or ""
         return Dataset.from_list([{"text": text.removeprefix(bos)} for text in texts])

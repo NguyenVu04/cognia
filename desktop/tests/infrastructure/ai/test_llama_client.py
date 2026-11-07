@@ -9,6 +9,7 @@ from src.domain.ports import EmbedFailed, InterpretFailed, ReplyFailed
 from src.infrastructure.ai.llama_client import (
     GARBLED,
     LOST,
+    RAMBLED,
     REFUSED,
     TOO_LONG,
     LlamaClient,
@@ -45,7 +46,9 @@ def delta(**fields) -> dict:
     return {"choices": [{"index": 0, "delta": fields}]}
 
 
-def client(handler, supervisor=None) -> tuple[LlamaClient, list[httpx.Request]]:
+def client(
+    handler, supervisor=None, **caps
+) -> tuple[LlamaClient, list[httpx.Request]]:
     seen: list[httpx.Request] = []
 
     def record(request: httpx.Request) -> httpx.Response:
@@ -53,7 +56,10 @@ def client(handler, supervisor=None) -> tuple[LlamaClient, list[httpx.Request]]:
         return handler(request)
 
     http = httpx.Client(transport=httpx.MockTransport(record))
-    return LlamaClient(supervisor or FakeSupervisor(), max_chars=1200, http=http), seen
+    llama = LlamaClient(
+        supervisor or FakeSupervisor(), max_chars=1200, http=http, **caps
+    )
+    return llama, seen
 
 
 # ── messages ─────────────────────────────────────────────────────────────
@@ -333,3 +339,64 @@ def test_stream_text_sends_system_and_text() -> None:
         {"role": "system", "content": "SUMMARIZE"},
         {"role": "user", "content": "Messages:\nUser: hi"},
     ]
+
+
+# ── token caps ──────────────────────────────────────────────────────────────
+
+
+def cut_off(content: str) -> httpx.Response:
+    return httpx.Response(200, json={"choices": [{
+        "finish_reason": "length",
+        "message": {"role": "assistant", "content": content}}]})
+
+
+def test_interpret_sends_max_tokens() -> None:
+    llama, seen = client(lambda r: answer("{}"), interpret_max_tokens=256)
+
+    llama.interpret("SYSTEM", HISTORY, "Answer.", {"type": "object"})
+
+    assert json.loads(seen[0].content)["max_tokens"] == 256
+
+
+def test_interpret_without_cap_sends_none() -> None:
+    llama, seen = client(lambda r: answer("{}"))
+
+    llama.interpret("SYSTEM", HISTORY, "Answer.", {"type": "object"})
+
+    assert "max_tokens" not in json.loads(seen[0].content)
+
+
+def test_interpret_cap_reached_is_rambled() -> None:
+    llama, _ = client(lambda r: cut_off('{"facts": ["a'), interpret_max_tokens=256)
+
+    with pytest.raises(InterpretFailed) as caught:
+        llama.interpret("SYSTEM", HISTORY, "Answer.", {"type": "object"})
+    assert str(caught.value) == RAMBLED
+
+
+def test_interpret_context_full_is_too_long() -> None:
+    llama, _ = client(lambda r: cut_off('{"facts": ["a'))
+
+    with pytest.raises(InterpretFailed) as caught:
+        llama.interpret("SYSTEM", HISTORY, "Answer.", {"type": "object"})
+    assert str(caught.value) == TOO_LONG
+
+
+def test_stream_text_sends_max_tokens() -> None:
+    body = sse(delta(content="ok"))
+    llama, seen = client(lambda r: httpx.Response(200, content=body),
+                         summary_max_tokens=1024)
+
+    list(llama.stream_text("SUMMARIZE", "Messages:\nUser: hi"))
+
+    assert json.loads(seen[0].content)["max_tokens"] == 1024
+
+
+def test_stream_text_cap_reached_is_rambled() -> None:
+    body = sse(delta(content="Once"), finish("length"))
+    llama, _ = client(lambda r: httpx.Response(200, content=body),
+                      summary_max_tokens=1024)
+
+    with pytest.raises(ReplyFailed) as caught:
+        list(llama.stream_text("SYSTEM", "hi"))
+    assert str(caught.value) == RAMBLED

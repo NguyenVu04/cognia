@@ -268,3 +268,160 @@ def test_token_count_reads_completion_tokens() -> None:
 def test_percentile() -> None:
     assert evaluate.percentile([3, 1, 2], 0.5) == 2
     assert evaluate.percentile([], 0.5) is None
+
+
+# ── run ─────────────────────────────────────────────────────────────────────
+
+
+class RunClient(FakeClient):
+    """A client for ``run``: counts the replies, and stops the run like Ctrl+C
+    at reply number ``stop_at``."""
+
+    def __init__(self, stop_at=None):
+        super().__init__("Hmph.")
+        self.stop_at, self.replies = stop_at, 0
+
+    def stream_reply(self, system, history, turn, tools=(), run_tool=None):
+        self.replies += 1
+        if self.replies == self.stop_at:
+            raise KeyboardInterrupt
+        yield from super().stream_reply(system, history, turn, tools, run_tool)
+
+    def close(self):
+        pass
+
+
+class FakeSupervisor:
+    def __init__(self):
+        self.stopped = False
+
+    def stop(self):
+        self.stopped = True
+
+
+EXAMPLES = [voice(id=f"voice-{n}") for n in (1, 2, 3)]
+
+
+@pytest.fixture
+def started(monkeypatch, tmp_path):
+    """Replaces the servers and the test set; returns the run's arguments."""
+    found = {"supervisor": FakeSupervisor(), "client": RunClient()}
+    monkeypatch.setattr(
+        evaluate, "_client", lambda gguf: (found["supervisor"], found["client"])
+    )
+    monkeypatch.setattr(evaluate, "accepted_tests", lambda data_dir: EXAMPLES)
+    gguf = tmp_path / "chat.gguf"
+    gguf.write_bytes(b"gguf")
+    found["args"] = (gguf, "tuned", tmp_path / "data", tmp_path / "eval")
+    found["folder"] = tmp_path / "eval" / "tuned"
+    return found
+
+
+def ids_in(path: Path) -> list[str]:
+    return [json.loads(line)["id"] for line in path.read_text("utf-8").splitlines()]
+
+
+def test_run_writes_results_and_metrics(started) -> None:
+    folder = evaluate.run(*started["args"])
+
+    assert ids_in(folder / "results.jsonl") == ["voice-1", "voice-2", "voice-3"]
+    assert (folder / "metrics.json").exists()
+    assert not (folder / evaluate.PARTIAL).exists()
+    assert started["supervisor"].stopped
+
+
+def test_run_keeps_rows_when_interrupted(started) -> None:
+    started["client"] = RunClient(stop_at=3)
+
+    with pytest.raises(KeyboardInterrupt):
+        evaluate.run(*started["args"])
+
+    folder = started["folder"]
+    assert ids_in(folder / evaluate.PARTIAL) == ["voice-1", "voice-2"]
+    assert not (folder / "results.jsonl").exists()
+    assert not (folder / "metrics.json").exists()
+    assert started["supervisor"].stopped
+
+
+def test_run_interrupted_leaves_previous_results(started) -> None:
+    folder = started["folder"]
+    folder.mkdir(parents=True)
+    (folder / "results.jsonl").write_text("old results\n", "utf-8")
+    (folder / "metrics.json").write_text("old metrics", "utf-8")
+    started["client"] = RunClient(stop_at=2)
+
+    with pytest.raises(KeyboardInterrupt):
+        evaluate.run(*started["args"])
+
+    assert (folder / "results.jsonl").read_text("utf-8") == "old results\n"
+    assert (folder / "metrics.json").read_text("utf-8") == "old metrics"
+
+
+def write_partial(folder: Path, *ids: str) -> None:
+    folder.mkdir(parents=True, exist_ok=True)
+    rows = [{"id": i, "job": "voice", "reply": "Hmph.", "seconds": 1.0,
+             "first_word_seconds": 0.5} for i in ids]
+    (folder / evaluate.PARTIAL).write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), "utf-8"
+    )
+
+
+def test_run_without_resume_starts_partial_again(started) -> None:
+    write_partial(started["folder"], "voice-1", "voice-2")
+
+    folder = evaluate.run(*started["args"])
+
+    assert started["client"].replies == 3
+    assert ids_in(folder / "results.jsonl") == ["voice-1", "voice-2", "voice-3"]
+
+
+def test_run_resume_skips_done_rows(started) -> None:
+    write_partial(started["folder"], "voice-1", "voice-2")
+
+    folder = evaluate.run(*started["args"], resume=True)
+
+    assert started["client"].replies == 1
+    assert ids_in(folder / "results.jsonl") == ["voice-1", "voice-2", "voice-3"]
+
+
+def test_run_resume_without_partial_starts_fresh(started) -> None:
+    folder = evaluate.run(*started["args"], resume=True)
+
+    assert started["client"].replies == 3
+    assert ids_in(folder / "results.jsonl") == ["voice-1", "voice-2", "voice-3"]
+
+
+def test_run_resume_drops_cut_off_line(started) -> None:
+    write_partial(started["folder"], "voice-1")
+    with (started["folder"] / evaluate.PARTIAL).open("a", encoding="utf-8") as f:
+        f.write('{"id": "voice-2", "job"')
+
+    folder = evaluate.run(*started["args"], resume=True)
+
+    assert started["client"].replies == 2
+    assert ids_in(folder / "results.jsonl") == ["voice-1", "voice-2", "voice-3"]
+
+
+def test_read_partial_drops_truncated_last_line(tmp_path: Path) -> None:
+    path = tmp_path / evaluate.PARTIAL
+    path.write_text('{"id": "a"}\n{"id": "b"}\n{"id": "x"', "utf-8")
+
+    rows = evaluate.read_partial(path, {"a", "b", "x"})
+
+    assert [row["id"] for row in rows] == ["a", "b"]
+
+
+def test_read_partial_bad_middle_line_raises(tmp_path: Path) -> None:
+    path = tmp_path / evaluate.PARTIAL
+    path.write_text('{"id": "a"}\n{"id"\n{"id": "b"}\n', "utf-8")
+
+    with pytest.raises(ValueError, match="Line 2"):
+        evaluate.read_partial(path, {"a", "b"})
+
+
+def test_read_partial_unknown_id_raises(tmp_path: Path) -> None:
+    path = tmp_path / evaluate.PARTIAL
+    path.write_text('{"id": "a"}\n{"id": "gone"}\n', "utf-8")
+
+    with pytest.raises(ValueError, match="gone is no longer a test example"):
+        evaluate.read_partial(path, {"a"})

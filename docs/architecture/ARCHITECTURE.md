@@ -1475,7 +1475,9 @@ Layer 4 of this request states the date of today. Only `event_class`, `confidenc
 `importance` reach the event log. The words in `facts` go to state tables (section 6.8). `crisis`
 reaches neither (section 6.13). `importance`, `facts`, `event_class`, `confidence` and `crisis` are read (D-68, D-75). Only
 `style_request` has no reader yet (UC-10). The request sends temperature 0, so the same message
-gives the same reading (D-75).
+gives the same reading (D-75). It also sends `max_tokens` from `INTERPRET_MAX_TOKENS` (256). A
+model that does not close its reasoning never reaches the schema. Without the cap it writes
+until the context is full, and the single slot is busy for minutes.
 
 **Local server safety (D-19).** Cognia starts each server on `127.0.0.1` with a free port,
 `--api-key` with a new random key from each start, `--no-webui` and `--offline`. It
@@ -1491,6 +1493,17 @@ memory to DXGI, so this check drops it. The supervisor then measures each remain
 short request that is not timed, then a prompt of about 400 tokens and 32 generated tokens. It
 keeps the fastest and stores its name in `settings.chat_device`, so later runs do not measure
 again. If no GPU starts, the CPU build runs the chat model for the rest of the run (D-49).
+
+Each start of the Vulkan build gets `-ngl auto`. The server then keeps 1 024 MiB of each GPU
+free (its `--fit` default) and puts the layers that do not fit on the CPU. On the author's laptop
+(RTX 3050 Ti, tuned model, 2026-11-07), this gave 30 tokens/s and used 475 ms of CPU time for each
+token. With `-ngl all`, every layer was on the GPU, and the server gave 47 to 51 tokens/s and used
+14 ms of CPU time for each token.
+
+The chat server also gets `--cache-ram` from `CHAT_CACHE_RAM_MIB` (1 024 MiB). The server keeps old
+prompts in RAM up to this limit. Its own default is 8 192 MiB. In the measurement of 2026-11-07,
+each prompt that filled the 8 192-token context kept about 740 MiB. The server then grew to
+11.4 GB, and the free RAM of the laptop went down to 55 MB.
 
 | Device on the author's laptop | First word | Generation |
 |---|---|---|
@@ -1528,6 +1541,8 @@ servers have one supervisor and separate states, because the failure of one does
 the other. Both are in a Windows job object, so they end with Cognia even after a crash
 (ADR 0002). `--sleep-idle-seconds` frees the memory of an idle model (D-18). The server loads
 the model again itself at the next request, so the supervisor has no sleeping state.
+`MODEL_IDLE_SECONDS` is 300, so both servers free their model, and the chat server its GPU
+memory, after 5 minutes with no request. The time to wake has not been measured.
 
 **Start again at the next need.** No thread watches the processes. The next request finds a
 process that ended, and the supervisor starts it again with a new port and a new key. The request
@@ -4527,7 +4542,7 @@ without a tool in 23 of 36 tool turns (D-71).
 | Measurement | The application's own `ModelSupervisor` and `LlamaClient`; the gates need the author's thresholds, set before training | Figures from the training library |
 | Layer 1 | "You have feelings and moods of your own; never say that you do not." The anime sentence replaces "Avoid anime cliches...": interjections, pauses and trailing words; still no stage directions and no melodrama | No change; stage directions allowed |
 | Mood line | Each line ends with "Let it show in how you speak; do not talk about your mood unless asked." | The name only; only when the feeling changes |
-| Reply cap | `REPLY_MAX_TOKENS` in `config.json`, `null` until the author sets it from the measured tokens; a reply that reaches it says "The model on this machine thought for too long and stopped. Try asking again." | 1 500 now; a shorter time-out |
+| Token caps | In `config.json`, set on 2026-11-07 before the tokens were measured: `REPLY_MAX_TOKENS` 768, the budget of section 6.11.4 (256 tokens of reasoning and 512 of reply); `INTERPRET_MAX_TOKENS` 256, for a JSON answer of about 50 tokens and its reasoning; `SUMMARY_MAX_TOKENS` 1 024, for a summary of 1 500 characters and its reasoning. A reply, an interpretation or a summary that reaches its cap fails with "The model on this machine thought for too long and stopped. Try asking again." The turn then goes on with no interpretation, or with no new summary | 1 500 now; a shorter time-out |
 | Summary | `tidy_summary` removes one leading heading that holds the word "summary" | Training only |
 
 **Reason.** The prompt alone did not fix these faults (D-71, D-75, section 12 item 24). The rules
@@ -4657,7 +4672,10 @@ These items are outside this design, or need a decision before implementation.
     Ministral 3 3B Reasoning on build `b12121`: both builds run it, the `json_schema` option works in the
     OpenAI form of `response_format`, and it does not stop the reasoning.
 22. **Run the training.** `desktop/finetuning/` holds the tools and the test set. Nobody has trained or
-    exported a model with them yet. `REPLY_MAX_TOKENS` waits for the measured tokens.
+    exported a model with them yet. The three token caps (`REPLY_MAX_TOKENS`,
+    `INTERPRET_MAX_TOKENS`, `SUMMARY_MAX_TOKENS`) come from the budget. `task ft:eval --
+    <model.gguf> <name> --lengths` measures the tokens of replies only, so check
+    `REPLY_MAX_TOKENS` against it. Nothing measures the other two yet.
 
 23. **Erasure by each store.** When learning and speech have stores, each store can erase
     and count its own tables through a small port, and `infrastructure/storage/erasure_store.py` then holds no
@@ -4687,4 +4705,4 @@ These items are outside this design, or need a decision before implementation.
     speech (D-65), the 3D page and its clips (D-64; a stub stands in), and the timers and the SpeechGate of
     D-63.
 35. **The release of whisper.cpp.** `v1.9.5` has no files; the build `b5454` of the same day has
-    `whisper-bin-x64.zip` (`docs/RESOURCES.md`). Item 27 still holds.
+    `whisper-bin-x64.zip`. Item 27 still holds.

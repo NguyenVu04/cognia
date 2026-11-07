@@ -255,7 +255,7 @@ flowchart TB
 | Python | 3.12 or later | `requires-python` in `desktop/pyproject.toml` |
 | [uv](https://docs.astral.sh/uv/) | Any recent | Installs dependencies into `desktop/.venv` |
 | [Task](https://taskfile.dev/) | 3 | Optional; runs the commands in `Taskfile.yml`. The `uv` commands below do the same |
-| `llama-server` build `b12121` and two GGUF files | Pinned | Placed by hand in `desktop/models/`, which Git ignores: `runtime/vulkan/` and `runtime/cpu/` from `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` (github.com/ggml-org/llama.cpp/releases/tag/b12121), `chat.gguf` from `Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf` (`mistralai/Ministral-3-3B-Reasoning-2512-GGUF`), and `embedding.gguf` from `bge-small-en-v1.5-q8_0.gguf` (`ggml-org/bge-small-en-v1.5-Q8_0-GGUF`). Without them the conversation says plainly that a file is missing (UC-09-E1). The 3D characters, the speech models and the dictionary are in [docs/RESOURCES.md](docs/RESOURCES.md) |
+| `llama-server` build `b12121` and two GGUF files | Pinned | Placed by hand in `desktop/models/`, which Git ignores: `runtime/vulkan/` and `runtime/cpu/` from `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` (github.com/ggml-org/llama.cpp/releases/tag/b12121), `chat.gguf` from `Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf` (`mistralai/Ministral-3-3B-Reasoning-2512-GGUF`), and `embedding.gguf` from `bge-small-en-v1.5-q8_0.gguf` (`ggml-org/bge-small-en-v1.5-Q8_0-GGUF`). Without them the conversation says plainly that a file is missing (UC-09-E1) |
 
 ### Run it
 
@@ -385,7 +385,6 @@ cognia/
 ├── docs/
 │   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v6.1
 │   ├── ERD.md                       the database design
-│   ├── RESOURCES.md                 the files beside the code: 3D, speech, dictionary
 │   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability

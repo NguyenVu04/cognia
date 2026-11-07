@@ -124,7 +124,8 @@ def platform() -> FakePlatform:
 def make(files, platform, *, device=None, idle=None, chosen=None) -> ModelSupervisor:
     return ModelSupervisor(
         files["vulkan"], files["cpu"], files["chat"], files["embedding"],
-        context=8192, idle_seconds=idle, start_seconds=10, restarts=3,
+        context=8192, cache_ram_mib=1024, idle_seconds=idle, start_seconds=10,
+        restarts=3,
         chat_device=device,
         on_device_chosen=(chosen.append if chosen is not None else lambda name: None),
         platform=platform,
@@ -140,7 +141,8 @@ def test_chat_args_exact(files, platform) -> None:
     assert platform.started[0].args == [
         str(files["vulkan"]), "-m", str(files["chat"]), "--host", "127.0.0.1",
         "--port", "9001", "--api-key", "key-1", "--no-webui", "--offline",
-        "-np", "1", "--device", "Vulkan1", "-c", "8192",
+        "-np", "1", "--device", "Vulkan1", "-ngl", "auto", "-c", "8192",
+        "--cache-ram", "1024",
     ]
     assert (endpoint.base_url, endpoint.api_key) == ("http://127.0.0.1:9001", "key-1")
     assert supervisor.state(CHAT) is ServerState.READY
@@ -154,6 +156,7 @@ def test_embedding_runs_on_cpu(files, platform) -> None:
     assert args[2] == str(files["embedding"])
     assert args[-1] == "--embedding"
     assert "--device" not in args
+    assert "--cache-ram" not in args
 
 
 def test_idle_flag_present(files, platform) -> None:
@@ -269,6 +272,14 @@ def test_no_gpu_runs_on_cpu(files, platform) -> None:
     assert [p.device for p in platform.started] == ["cpu"]
 
 
+def test_cpu_fallback_has_no_gpu_layers(files, platform) -> None:
+    platform.device_list = []
+
+    make(files, platform).endpoint(CHAT)
+
+    assert "-ngl" not in platform.started[0].args
+
+
 def test_cpu_fails_too(files, platform) -> None:
     platform.dies = {"Vulkan0", "Vulkan1", "cpu"}
     supervisor = make(files, platform)
@@ -315,6 +326,17 @@ def test_restart_keeps_the_device(files, platform) -> None:
     supervisor.endpoint(CHAT)
 
     assert [p.device for p in platform.started] == ["Vulkan1", "Vulkan1"]
+
+
+def test_restart_keeps_gpu_layers(files, platform) -> None:
+    supervisor = make(files, platform, device=NVIDIA.name)
+    supervisor.endpoint(CHAT)
+    platform.started[-1].code = 1
+
+    supervisor.endpoint(CHAT)
+
+    args = platform.started[-1].args
+    assert args[args.index("-ngl") + 1] == "auto"
 
 
 def test_stop_ends_everything(files, platform) -> None:

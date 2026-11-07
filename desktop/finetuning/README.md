@@ -163,6 +163,9 @@ tool), summary 120.
    task ft:eval -- <path to the tuned chat.gguf> tuned
    ```
 
+   If a measurement stops before the end, give the same command again with
+   `--resume`. The examples measured before the stop are kept.
+
    ```bash
    task ft:rate -- base tuned
    ```

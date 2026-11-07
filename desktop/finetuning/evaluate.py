@@ -19,10 +19,11 @@ import argparse
 import json
 import math
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import fmean
+from typing import TextIO
 
 import httpx
 
@@ -43,6 +44,7 @@ from src.infrastructure.ai.supervisor import CHAT, ModelSupervisor
 
 THRESHOLDS = Path("finetuning/thresholds.json")
 EVAL_DIR = Path("finetuning/out/eval")
+PARTIAL = "results.partial.jsonl"
 _DATA_TOOLS = {spec.name for spec in catalog.SPECS if spec.data}
 
 # Whether a larger value of a measure is better. Every gate reads this.
@@ -80,6 +82,7 @@ def _client(gguf: Path) -> tuple[ModelSupervisor, LlamaClient]:
         gguf,
         config.model_path(config.EMBEDDING_MODEL),
         context=config.CHAT_CONTEXT,
+        cache_ram_mib=config.CHAT_CACHE_RAM_MIB,
         idle_seconds=None,
         start_seconds=config.MODEL_START_SECONDS,
         restarts=config.MODEL_RESTARTS,
@@ -90,6 +93,8 @@ def _client(gguf: Path) -> tuple[ModelSupervisor, LlamaClient]:
         supervisor,
         max_chars=config.EMBEDDING_MAX_CHARS,
         reply_max_tokens=config.REPLY_MAX_TOKENS,
+        interpret_max_tokens=config.INTERPRET_MAX_TOKENS,
+        summary_max_tokens=config.SUMMARY_MAX_TOKENS,
     )
     return supervisor, client
 
@@ -210,6 +215,31 @@ def accepted_tests(data_dir: Path) -> list[Example]:
     return accepted(read_folder(data_dir / "test"), found)
 
 
+def read_partial(path: Path, ids: Collection[str]) -> list[dict]:
+    """The rows of an interrupted run. A last line that was cut off while it was
+    written is dropped, so its example is measured again. Raises ``ValueError``
+    for a line that cannot be read, or for a row whose example is not in
+    ``ids``."""
+    lines = path.read_text("utf-8").splitlines()
+    rows = []
+    for number, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError as error:
+            if number == len(lines):
+                break
+            raise ValueError(f"Line {number} of {path} cannot be read.") from error
+        if row["id"] not in ids:
+            raise ValueError(
+                f"{row['id']} is no longer a test example. Run again without "
+                "--resume."
+            )
+        rows.append(row)
+    return rows
+
+
 def run(
     gguf: Path,
     name: str,
@@ -218,36 +248,59 @@ def run(
     *,
     lengths: bool = False,
     limit: int | None = None,
+    resume: bool = False,
 ) -> Path:
     """Measure ``gguf`` on the accepted test examples and write
-    ``out/name/results.jsonl`` and ``metrics.json``. Returns the folder. Raises
-    ``ValueError`` if no test example is accepted."""
+    ``out/name/results.jsonl`` and ``metrics.json``. Returns the folder.
+
+    Each row goes to ``results.partial.jsonl`` as soon as it is measured, so an
+    interrupted run keeps its rows and leaves the files of the last finished
+    run alone. With ``resume`` the examples of that file are not measured
+    again; without it the file is started again. Raises ``ValueError`` if no
+    test example is accepted, and as :func:`read_partial` does."""
     examples = accepted_tests(data_dir)[:limit]
     if not examples:
         raise ValueError("No test example is accepted. Review data/test first.")
     folder = out / name
     folder.mkdir(parents=True, exist_ok=True)
-    supervisor, client = _client(gguf)
+    partial = folder / PARTIAL
     rows = []
+    if resume and partial.exists():
+        rows = read_partial(partial, {e.id for e in examples})
+        print(f"Resuming: {len(rows)} of {len(examples)} done")
+    done = {row["id"] for row in rows}
+    supervisor, client = _client(gguf)
     try:
-        for number, example in enumerate(examples, 1):
-            row = measure(client, example)
-            if lengths and example.job in ("voice", "tools"):
-                endpoint = supervisor.endpoint(CHAT)
-                row.update(token_count(endpoint.base_url, endpoint.api_key, example))
-            rows.append(row)
-            print(f"{number}/{len(examples)} {example.id} {row['seconds']} s"
-                  f"{' ' + str(row['failure']) if 'failure' in row else ''}")
+        # Written again from the rows read, which drops a cut-off last line.
+        with partial.open("w", encoding="utf-8") as file:
+            for row in rows:
+                _write_row(file, row)
+            for number, example in enumerate(examples, 1):
+                if example.id in done:
+                    continue
+                row = measure(client, example)
+                if lengths and example.job in ("voice", "tools"):
+                    endpoint = supervisor.endpoint(CHAT)
+                    row.update(
+                        token_count(endpoint.base_url, endpoint.api_key, example)
+                    )
+                rows.append(row)
+                _write_row(file, row)
+                print(f"{number}/{len(examples)} {example.id} {row['seconds']} s"
+                      f"{' ' + str(row['failure']) if 'failure' in row else ''}")
     finally:
         client.close()
         supervisor.stop()
-    with (folder / "results.jsonl").open("w", encoding="utf-8") as file:
-        for row in rows:
-            file.write(json.dumps(row, ensure_ascii=False) + "\n")
+    partial.replace(folder / "results.jsonl")
     found = metrics(rows, examples)
     found["cost"]["file_bytes"] = gguf.stat().st_size
     (folder / "metrics.json").write_text(json.dumps(found, indent=1), "utf-8")
     return folder
+
+
+def _write_row(file: TextIO, row: dict) -> None:
+    file.write(json.dumps(row, ensure_ascii=False) + "\n")
+    file.flush()
 
 
 # ── measures ────────────────────────────────────────────────────────────────
@@ -502,6 +555,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     ran.add_argument("--lengths", action="store_true",
                      help="also count the tokens of each reply, with no cap")
     ran.add_argument("--limit", type=int, default=None)
+    ran.add_argument("--resume", action="store_true",
+                     help="keep the rows of an interrupted run of this name")
     compared = commands.add_parser("report", help="compare two measurements")
     compared.add_argument("tuned")
     compared.add_argument("base")
@@ -510,7 +565,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "run":
         folder = run(args.gguf, args.name, args.data, args.out,
-                     lengths=args.lengths, limit=args.limit)
+                     lengths=args.lengths, limit=args.limit, resume=args.resume)
         print(json.dumps(json.loads((folder / "metrics.json").read_text("utf-8")),
                          indent=1))
         return 0

@@ -99,7 +99,7 @@ tasks:
       - uv run --project finetuning --extra gpu python -m finetuning.export finetuning/out/adapter finetuning/out/merged {{.CLI_ARGS}}
 
   ft:eval:
-    desc: "Measure a model on the test examples: task ft:eval -- <model.gguf> <name> [--lengths]"
+    desc: "Measure a model on the test examples: task ft:eval -- <model.gguf> <name> [--lengths] [--resume]"
     dir: '{{.APP_DIR}}'
     cmds:
       - uv run python -m finetuning.evaluate run {{.CLI_ARGS}}

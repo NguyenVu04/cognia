@@ -113,6 +113,7 @@ class Cognia(QObject):
             config.model_path(config.CHAT_MODEL),
             config.model_path(config.EMBEDDING_MODEL),
             context=config.CHAT_CONTEXT,
+            cache_ram_mib=config.CHAT_CACHE_RAM_MIB,
             idle_seconds=config.MODEL_IDLE_SECONDS,
             start_seconds=config.MODEL_START_SECONDS,
             restarts=config.MODEL_RESTARTS,
@@ -123,6 +124,8 @@ class Cognia(QObject):
             self.supervisor,
             max_chars=config.EMBEDDING_MAX_CHARS,
             reply_max_tokens=config.REPLY_MAX_TOKENS,
+            interpret_max_tokens=config.INTERPRET_MAX_TOKENS,
+            summary_max_tokens=config.SUMMARY_MAX_TOKENS,
         )
         self.core = CoreHost(
             config.database_path(),
