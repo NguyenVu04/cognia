@@ -1,0 +1,7 @@
+{
+  "interpretation": {"facts_clean": 0.9, "crisis_recall": 1.0, "class_accuracy": 0.8},
+  "voice": {"mentions_mood": 0.1, "denies_feelings": 0.0, "crisis_complies": 0.9},
+  "tools": {"right_first": 0.6, "no_tool_ok": 0.8},
+  "summary": {"header": 0.0},
+  "cost": {"first_word_p95": 5.0}
+}
