@@ -243,7 +243,7 @@ flowchart TB
 |---|---|---|---|
 | QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
-| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and calls tools. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, time at the machine, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | The published GGUF of Ministral 3 3B Reasoning, with no fine-tuning (D-28, D-66), and bge-small-en-v1.5 for embeddings (D-55) |
+| AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and calls tools. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, time at the machine, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | The published GGUF of Ministral 3 3B Reasoning (D-28), replaced only by a tuned file that passes the gates of `desktop/finetuning/` (D-80), and bge-small-en-v1.5 for embeddings (D-55) |
 
 ## Getting started
 
@@ -379,6 +379,7 @@ cognia/
 │   │   ├── resources/               vendored fonts, the QSS style sheet, characters.toml, the dictionary; companion/ is empty
 │   │   └── utils/                   paths
 │   ├── scripts/                     build_dictionary.py, through task dictionary
+│   ├── finetuning/                  examples, prompts, review page, training and measurement of the chat model (task ft:*)
 │   ├── tests/                       pytest suite, one folder for each module of src/
 │   └── data/                        the development database, not in git
 ├── docs/
@@ -494,7 +495,7 @@ own account boundary and nothing further. This follows from C-02.
 | **Retention** | Held until the user deletes it. No sound is kept. Any single item is removable (UC-13); memory can be erased while keeping the character, or everything erased (UC-14) |
 | **Residency** | The user's own disk. No second copy anywhere (NFR-03) |
 | **Sub-processors** | None |
-| **Model training** | No model is trained. The published model ships as it is (D-66), so user data never trains a model, and UC-14 never has weights to erase |
+| **Model training** | Only synthetic examples, reviewed by the author, train the chat model, at build time on a rented GPU (D-80). User data never trains a model, so UC-14 never has weights to erase |
 | **Subject access / erasure** | UC-12 shows everything held, in three groups; UC-13 corrects or removes one item; UC-14 erases. Target: any item reachable in 2 clicks and deletable in 2 more (G-04) |
 | **Audit logging** | The local event journal, on the user's disk and erasable by them like anything else |
 

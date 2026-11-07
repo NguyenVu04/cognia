@@ -5,8 +5,6 @@ screens can be drawn with something in them. None
 of it is read from disk, none of it is a model, and nothing in the
 specification depends on it. When the domain arrives this module is deleted
 whole and the views are fed from ``src/domain/`` instead.
-
-Nothing else under ``src/ui/`` may hard-code screen copy.
 """
 
 from __future__ import annotations
@@ -73,6 +71,7 @@ READS: list[str] = [
     "How long since the mouse or keyboard was touched",
     "Whether the machine is locked",
     "Whether you are presenting full-screen",
+    "The name of the application in front",
 ]
 
 NEVER_READS: list[str] = [

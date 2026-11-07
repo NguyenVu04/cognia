@@ -8,7 +8,7 @@ from src.domain.ports import ReplyFailed
 from src.domain.tools.catalog import TOOL_ROUNDS, spec
 from src.domain.tools.models import ToolCall, ToolStarted
 from src.infrastructure.ai import tool_loop
-from src.infrastructure.ai.llama_client import LOST, TOO_LONG
+from src.infrastructure.ai.llama_client import LOST, RAMBLED, TOO_LONG
 from src.infrastructure.ai.supervisor import Endpoint
 
 ENDPOINT = Endpoint("http://127.0.0.1:9001", "key-1")
@@ -56,7 +56,7 @@ def tool_call(name: str, arguments: dict, call_id: str = "call1") -> httpx2.Resp
     )
 
 
-def run(answers, tools=(), run_tool=None):
+def run(answers, tools=(), run_tool=None, max_tokens=None):
     """Every piece the loop yields, and every request body it sent."""
     seen: list[dict] = []
     queue = list(answers)
@@ -70,7 +70,7 @@ def run(answers, tools=(), run_tool=None):
     pieces = list(
         tool_loop.stream(
             ENDPOINT, SENT, tools, run_tool or (lambda call: "done"),
-            http_client=client,
+            max_tokens=max_tokens, http_client=client,
         )
     )
     return pieces, seen
@@ -142,6 +142,28 @@ def test_length_is_too_long() -> None:
     with pytest.raises(ReplyFailed) as caught:
         run([answer])
     assert str(caught.value) == TOO_LONG
+
+
+def test_stream_sends_max_tokens() -> None:
+    _, seen = run([text("Hi")], max_tokens=900)
+
+    # LangChain sends the newer OpenAI name, which llama-server also reads.
+    assert seen[0]["body"]["max_completion_tokens"] == 900
+
+
+def test_stream_omits_max_tokens_when_none() -> None:
+    _, seen = run([text("Hi")])
+
+    assert "max_tokens" not in seen[0]["body"]
+    assert "max_completion_tokens" not in seen[0]["body"]
+
+
+def test_stream_length_with_cap_is_rambled() -> None:
+    answer = sse(chunk(role="assistant", content="Once"), chunk(finish="length"))
+
+    with pytest.raises(ReplyFailed) as caught:
+        run([answer], max_tokens=900)
+    assert str(caught.value) == RAMBLED
 
 
 def test_overflow_400_is_too_long() -> None:

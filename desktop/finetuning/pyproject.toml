@@ -1,0 +1,42 @@
+[project]
+name = "finetuning"
+version = "0.1.0"
+description = "Builds and measures the tuned chat model. Nothing here ships."
+requires-python = ">=3.12,<3.14"
+dependencies = []
+
+# Only training and export need these, on a machine with a CUDA GPU. Every other
+# step runs in the environment of desktop/.
+[project.optional-dependencies]
+gpu = [
+    "unsloth>=2026.10.11",
+    "torch>=2.14.1",
+    "xformers>=0.0.35",
+    "datasets",
+    "trl",
+]
+
+# PyPI has only a CPU build of torch for Windows, and its xformers is built for
+# another torch. uv applies a source to a declared dependency only, so both are
+# named above.
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+xformers = { index = "pytorch-cu130" }
+
+# The tests run in the environment of desktop/, from desktop/:
+#   uv run pytest -c finetuning/pyproject.toml finetuning/tests
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".."]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+src = [".."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

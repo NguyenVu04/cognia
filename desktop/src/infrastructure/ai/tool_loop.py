@@ -29,6 +29,7 @@ from src.domain.tools.models import ToolCall, ToolSpec, ToolStarted  # noqa: E40
 from src.infrastructure.ai.llama_client import (  # noqa: E402
     GARBLED,
     LOST,
+    RAMBLED,
     REFUSED,
     TOO_LONG,
 )
@@ -50,16 +51,22 @@ def stream(
     tools: Sequence[ToolSpec],
     run_tool: Callable[[ToolCall], str],
     *,
+    max_tokens: int | None = None,
     http_client: object | None = None,
 ) -> Iterator[str | ToolStarted]:
     """The pieces of the answer to ``sent``, and a :class:`ToolStarted` before
-    each tool runs. Raises :class:`ReplyFailed` with a sentence for the user."""
+    each tool runs. ``max_tokens`` caps each model call, reasoning included, and
+    ``None`` leaves it to the context. Raises :class:`ReplyFailed` with a
+    sentence for the user."""
+    # A reasoning model can think in circles until the context is full.
+    stopped_early = RAMBLED if max_tokens is not None else TOO_LONG
     model = ChatOpenAI(
         base_url=f"{endpoint.base_url}/v1",
         api_key=endpoint.api_key,
         model="chat",
         max_retries=0,
         streaming=True,
+        max_tokens=max_tokens,
         request_timeout=_TIMEOUT_SECONDS,
         http_client=http_client,
     )
@@ -109,9 +116,9 @@ def stream(
                 continue
             if isinstance(message.content, str) and message.content:
                 yield message.content
-            # The context filled up, so the answer stops mid-way.
+            # The cap or the context stopped the answer mid-way.
             if message.response_metadata.get("finish_reason") == "length":
-                raise ReplyFailed(TOO_LONG)
+                raise ReplyFailed(stopped_early)
     except openai.APIConnectionError as error:
         raise ReplyFailed(LOST) from error
     except openai.APIStatusError as error:

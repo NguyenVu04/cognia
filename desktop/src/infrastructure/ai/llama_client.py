@@ -30,6 +30,10 @@ LOST = (
 )
 REFUSED = "The model on this machine returned an error. Try again."
 GARBLED = "The model on this machine sent an answer that could not be read."
+RAMBLED = (
+    "The model on this machine thought for too long and stopped. Try asking "
+    "again."
+)
 TOO_LONG = (
     "This conversation is too long for the model on this machine. Start a new "
     "conversation with the + button; your remembered lines stay."
@@ -49,8 +53,8 @@ class LlamaClient:
 
     ``max_chars`` cuts each text before it is embedded, because the embedding
     model reads a limited number of tokens and refuses a longer text. A reply
-    goes through the tool loop; ``reply_http`` replaces its HTTP client in a
-    test.
+    goes through the tool loop, where ``reply_max_tokens`` caps each model
+    call; ``reply_http`` replaces its HTTP client in a test.
     """
 
     def __init__(
@@ -58,11 +62,13 @@ class LlamaClient:
         supervisor: ModelSupervisor,
         *,
         max_chars: int,
+        reply_max_tokens: int | None = None,
         http: httpx.Client | None = None,
         reply_http: object | None = None,
     ) -> None:
         self._supervisor = supervisor
         self._max_chars = max_chars
+        self._reply_max_tokens = reply_max_tokens
         self._http = http or httpx.Client(timeout=_TIMEOUT)
         self._reply_http = reply_http
 
@@ -83,6 +89,7 @@ class LlamaClient:
             messages(system_prompt, history, turn),
             tools,
             run_tool or _no_tool,
+            max_tokens=self._reply_max_tokens,
             http_client=self._reply_http,
         )
 

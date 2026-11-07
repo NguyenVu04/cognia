@@ -7,8 +7,12 @@ __pycache__/
 .coverage
 coverage*.xml
 
-# uv virtual environment
+# uv virtual environments
 desktop/.venv/
+desktop/finetuning/.venv/
+
+# Generated prompts, training files, adapters, model files and measurements
+desktop/finetuning/out/
 
 # Model files and llama-server builds, placed by hand (several GB, own licences)
 desktop/models/
@@ -33,3 +37,6 @@ Thumbs.db
 CLAUDE.md
 AGENTS.md
 .codex/
+
+# Assets and other large files
+assets/

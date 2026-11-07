@@ -50,6 +50,10 @@ CHAT_CONTEXT: int = _DEFAULTS["CHAT_CONTEXT"]
 #: loaded. Trial use sets this.
 MODEL_IDLE_SECONDS: int | None = _DEFAULTS["MODEL_IDLE_SECONDS"]
 
+#: The most tokens one reply may generate, its reasoning included. ``null``
+#: leaves it to the context. Measure the replies before setting it.
+REPLY_MAX_TOKENS: int | None = _DEFAULTS["REPLY_MAX_TOKENS"]
+
 #: How long a server may take to load its model, and how often it may be
 #: started again after it ends, in one run.
 MODEL_START_SECONDS: float = _DEFAULTS["MODEL_START_SECONDS"]

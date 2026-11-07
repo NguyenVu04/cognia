@@ -51,3 +51,79 @@ tasks:
     dir: '{{.APP_DIR}}'
     cmds:
       - uv run python scripts/build_dictionary.py {{.CLI_ARGS}} src/resources/dictionary/oewn.sqlite3
+
+  # Fine-tuning the chat model. desktop/finetuning/README.md gives the steps.
+  # Every task but ft:setup:gpu, ft:train and ft:export runs in the
+  # environment of desktop/.
+
+  ft:prompts:
+    desc: "Write the prompts that ask for training examples: task ft:prompts -- <job> --count 100 --seed 1"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.prompts {{.CLI_ARGS}}
+
+  ft:check:
+    desc: Check every example, and count the coverage and the warnings
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.examples check finetuning/data
+
+  ft:review:
+    desc: Open the page that reviews the examples, on 127.0.0.1
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.review review finetuning/data {{.CLI_ARGS}}
+
+  ft:build:
+    desc: Write finetuning/out/train.jsonl from the accepted training examples
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.build finetuning/data finetuning/out
+
+  ft:setup:gpu:
+    desc: Install the training tools, on a machine with a CUDA GPU
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv sync --project finetuning --extra gpu
+
+  ft:train:
+    desc: Train the LoRA adapter, on a machine with a CUDA GPU
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run --project finetuning --extra gpu python -m finetuning.train finetuning/out/train.jsonl finetuning/out/adapter {{.CLI_ARGS}}
+
+  ft:export:
+    desc: "Merge and quantise to chat.gguf: task ft:export -- <LICENSE of the base model> --base-date YYYY-MM-DD"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run --project finetuning --extra gpu python -m finetuning.export finetuning/out/adapter finetuning/out/merged {{.CLI_ARGS}}
+
+  ft:eval:
+    desc: "Measure a model on the test examples: task ft:eval -- <model.gguf> <name> [--lengths]"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.evaluate run {{.CLI_ARGS}}
+
+  ft:rate:
+    desc: "Rate the replies of two measured models, blind: task ft:rate -- <name> <name>"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.review rate {{.CLI_ARGS}}
+
+  ft:report:
+    desc: "Compare a tuned model with the base model: task ft:report -- <tuned> <base>"
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run python -m finetuning.evaluate report {{.CLI_ARGS}}
+
+  ft:test:
+    desc: Run the tests of the fine-tuning tools
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run pytest -c finetuning/pyproject.toml finetuning/tests
+
+  ft:lint:
+    desc: Check the fine-tuning tools with Ruff
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run ruff check finetuning

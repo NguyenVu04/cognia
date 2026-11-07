@@ -1,7 +1,7 @@
 """Desk awareness, and turning it on.
 
 Off until switched on, and the two lists are the point of the screen: exactly
-the three facts that may be read on the left, and the things that are never read on
+the four facts that may be read on the left, and the things that are never read on
 the right.
 """
 
@@ -132,8 +132,8 @@ class DeskView(QWidget):
         text.addWidget(self.state_label)
         text.addWidget(
             label(
-                "It knows only whether you are at the machine — never what you "
-                "are doing.",
+                "It knows if you are at the machine and which application is "
+                "in front — never what is inside it.",
                 font=theme.font(12.5), colour=theme.muted(0.5),
             )
         )

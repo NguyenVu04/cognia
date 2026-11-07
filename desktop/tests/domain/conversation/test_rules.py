@@ -61,7 +61,7 @@ def test_turn_text_holds_all_parts_in_order() -> None:
     )
 
     assert text == (
-        "Your mood: pleased. Let some warmth show.\n"
+        f"Your mood: pleased. Let some warmth show. {rules.MOOD_HOW}\n"
         "You remember:\n"
         "- Has a cat\n"
         "- Writes a thesis\n"
@@ -79,7 +79,7 @@ def test_turn_text_newer_wins() -> None:
 def test_turn_text_omits_empty_parts() -> None:
     mood = rules.mood_line("calm")
 
-    assert rules.turn_text(mood, [], ["", ""]) == "Your mood: calm."
+    assert rules.turn_text(mood, [], ["", ""]) == mood
 
 
 def test_turn_text_is_empty_with_no_parts() -> None:
@@ -108,12 +108,29 @@ def test_turn_text_two_instructions_in_order() -> None:
     ],
 )
 def test_mood_lines_verbatim(feeling: str, line: str) -> None:
-    assert rules.mood_line(feeling) == line
+    assert rules.mood_line(feeling) == f"{line} {rules.MOOD_HOW}"
+
+
+def test_mood_line_says_how_not_what() -> None:
+    assert rules.mood_line("calm") == (
+        "Your mood: calm. Let it show in how you speak; do not talk about your "
+        "mood unless asked."
+    )
 
 
 def test_mood_line_unknown() -> None:
     with pytest.raises(ValueError):
         rules.mood_line("joyful")
+
+
+def test_layer_1_allows_anime_interjections() -> None:
+    assert "interjections" in rules.LAYER_1
+    assert "*blushes*" in rules.LAYER_1
+    assert "Avoid anime cliches" not in rules.LAYER_1
+
+
+def test_layer_1_says_it_has_feelings() -> None:
+    assert "never say that you do not" in rules.LAYER_1
 
 
 def test_layer_1_has_no_behalf_sentence() -> None:
@@ -371,6 +388,30 @@ def test_tidy_summary_cuts_at_sentence() -> None:
 
     assert len(text) <= rules.SUMMARY_MAX_CHARS
     assert text.endswith(".")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "**Summary:** The user walked.",
+        "**Summary**: The user walked.",
+        "summary: The user walked.",
+        "# Summary\nThe user walked.",
+    ],
+)
+def test_tidy_summary_drops_heading(text: str) -> None:
+    assert rules.tidy_summary(text) == "The user walked."
+
+
+def test_tidy_summary_keeps_other_lead() -> None:
+    assert rules.tidy_summary("Note: the user walked.") == "Note: the user walked."
+    assert rules.tidy_summary("Summary of Sunday: a walk.") == (
+        "Summary of Sunday: a walk."
+    )
+
+
+def test_tidy_summary_heading_only() -> None:
+    assert rules.tidy_summary("**Summary:**") == ""
 
 
 def test_tidy_summary_short_and_blank() -> None:

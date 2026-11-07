@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Architecture design for Cognia, a desktop companion for one person on one Windows machine |
-| **Status** | Proposed, with ADR 0002 to ADR 0010. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-79 are the author's decisions, D-66 withdraws D-27, and D-73 removes the journal. D-15 to D-25 are proposals that the author can change |
+| **Status** | Proposed, with ADR 0002 to ADR 0010. The design becomes binding when those ADRs are accepted. D-01 to D-14 and D-26 to D-80 are the author's decisions, D-66 withdraws D-27, D-80 replaces D-66, and D-73 removes the journal. D-15 to D-25 are proposals that the author can change |
 | **Date** | 2026-11-06 |
 | **Author** | Nguyễn Duy Vũ |
 | **Source of requirements** | COG-UCS-001 version 6.1 ([`USECASE_SPECIFICATION.html`](../USECASE_SPECIFICATION.html)) |
@@ -86,7 +86,7 @@ that closes the difference.
 | LoRA | A fine-tuning method. It trains a small set of added weights and keeps the base weights fixed during training |
 | Merged model | A base model with the LoRA weights added into one file, so the server needs no separate adapter file |
 | Quantisation | Storage of weights at a lower precision, so that the model file is smaller |
-| Tuned model | The merged and quantised chat model that D-27 planned to build. D-66 withdraws it |
+| Tuned model | The merged and quantised chat model that `desktop/finetuning/` builds (D-80). It ships only if it passes the gates of section 8.6 |
 | Embedding | A list of numbers that represents the meaning of a text. Two similar texts have similar embeddings |
 | VRM | A file format for a 3D humanoid character, built on glTF. It adds facial expressions, a humanoid skeleton and licence data |
 | MToon | The cartoon shader that VRM models use |
@@ -369,7 +369,7 @@ src/
 └── utils/               logging, paths
 ```
 
-D-66 removed `desktop/training/`, so no module of the application stays outside this tree.
+One module stays outside this tree. `desktop/finetuning/` builds and measures the tuned chat model (D-80). It runs at build time, and the installer holds none of its code.
 
 Each feature package follows one pattern. `models/` holds frozen dataclasses.
 `rules.py` holds pure functions. `<feature>_service.py` holds the service. The current
@@ -394,8 +394,10 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
    the limit of C-05 (section 6.12).
 10. Only `infrastructure/ai/` and `infrastructure/voice/` hold HTTP code, LangChain, LangGraph and
     the MCP client. They appear nowhere else (NFR-01, D-58).
-11. (Removed by D-66.)
-12. (Removed by D-66.)
+11. From this source tree, `finetuning` imports `domain/`, `infrastructure/ai/`, the readers of
+    shipped files in `infrastructure/storage` (the characters and the dictionary), and the
+    configuration of `app/`. It never imports `ui/`, and it never reads `cognia.sqlite3` (NFR-03).
+12. Nothing in `desktop/src/` imports `finetuning`.
 13. No code loads a module from outside the install folder. A tool server runs as its own process,
     and Cognia reaches it only through the MCP client (ADR 0009).
 
@@ -804,6 +806,7 @@ flowchart LR
 | Name | Line in layer 4 | Speed of the voice | Face (section 6.5.3) |
 |---|---|---|---|
 | calm | "Your mood: calm." | 1.0 | `neutral` |
+| (every mood) | Then "Let it show in how you speak; do not talk about your mood unless asked." (D-80) | — | — |
 | pleased | "Your mood: pleased. Let some warmth show." | 1.0 + 0.15 × arousal | `relaxed` |
 | lively | "Your mood: lively. You may be quicker and more playful than usual." | 1.0 + 0.15 × arousal | `happy` |
 | restless | "Your mood: restless. You may be a little short or distracted, never rude." | 1.0 + 0.15 × arousal | `surprised`, low weight |
@@ -2003,10 +2006,46 @@ disk. The capture of NFR-01 must include the Chromium processes.
 beside it, as the fonts do. The rules for accepting a file are in D-26. Motion clips are `.vrma` files that the author makes
 in Blender, under the same rules (D-64).
 
-### 6.16 `training` (removed)
+### 6.16 `finetuning`
 
-D-66 removes fine-tuning, so this module and its tools are deleted. The number stays, so that
-sections 6.17 and 6.18 keep their numbers.
+**Purpose.** This module builds the tuned chat model and measures it (D-80, A-02, G-03). It runs
+at build time only. The installer holds its output and none of its code. The steps are in
+`desktop/finetuning/README.md`.
+
+```mermaid
+flowchart LR
+    examples["examples.py: Example"] --> render["render.py: request, answer"]
+    render --> rules["domain/conversation/rules.py, domain/safety/rules.py, domain/tools"]
+    examples --> checks["checks.py: warnings"]
+    review["review.py: the review page"] --> examples
+    review --> checks
+    build["build.py: out/train.jsonl"] --> render
+    train["train.py, export.py: GPU only"] --> build
+    evaluate["evaluate.py"] --> client["ModelSupervisor, LlamaClient"]
+    evaluate --> checks
+```
+
+**Key types.**
+
+| Type | Kind | File | Note |
+|---|---|---|---|
+| `Example` | Frozen dataclass | `examples.py` | The parts of one turn of one job: `voice`, `interpretation`, `tools` or `summary`. It holds no prompt text |
+| `request`, `answer` | Functions | `render.py` | Build the prompt with the rules of `domain/`, as `core_host` and `chat_worker` do. A tool result comes from the rule that the application uses |
+| `warnings` | Function | `checks.py` | The faults of the base model: mood talk, "no feelings", the day of a line read aloud, parroting, stage directions, false facts, a summary heading. The review page and the measurement use the same rules |
+| `Review`, `Rating` | Classes | `review.py` | A page on `127.0.0.1`. Decisions go to `data/review.jsonl`; the example files never change |
+| `build` | Function | `build.py` | Writes the accepted training examples as chat messages and tool lists. The GPU machine needs only this file |
+| `train_lora` | Function | `train.py` | Trains on the GPU of the training environment (section 8.6). The loss counts the answers only |
+| `merge_and_quantise`, `write_licences` | Functions | `export.py` | One GGUF, the licence text, and a notice that the weights are modified |
+| `run`, `gates` | Functions | `evaluate.py` | `run` measures a GGUF through `ModelSupervisor` and `LlamaClient`, the same path as run time. `gates` applies the thresholds that the author set before training |
+
+**No user data.** Rule 11 of section 6.2 stops this module from reaching the data file. Cognia
+has no route that sends user data to this module (NFR-01). If a user's words trained the weights,
+UC-14 could not erase them (NFR-03).
+
+**The prompts must stay the same.** The examples hold no prompt text, so a change of wording needs
+a new build, not new examples. But the tuned model learns from the text of the prompt layers. A
+change to layer 1, to the mood lines, or to the order of the layers needs a new measurement, and
+it can need new training.
 
 ### 6.17 `domain/character`
 
@@ -2855,7 +2894,7 @@ adds `.bin` files beside the installer, which breaks "one installer and nothing 
 sum of the models, Qt, QtWebEngine and the VRM files must stay below that limit.
 
 The size of the chat model decides this. The published GGUF of Ministral 3 3B Reasoning is 2.15 GB
-at Q4_K_M (D-28, D-66). The speech models add about 57 MiB for whisper and about 115 MB for Kokoro
+at Q4_K_M (D-28). A tuned file of D-80 has the same size at the same quantisation. The speech models add about 57 MiB for whisper and about 115 MB for Kokoro
 (D-65). Model files often compress little. Nobody has measured the installer (section 12).
 
 ### 8.4 Artifact allocation
@@ -2866,8 +2905,8 @@ at Q4_K_M (D-28, D-66). The speech models add about 57 MiB for whisper and about
 | `QtWebEngineProcess.exe` | PySide6 | User session | Fixed in code | None |
 | `resources/companion/` | Vendored JavaScript and VRM files, each with its licence | Render process | Fixed | None |
 | `llama-server.exe`, two builds | llama.cpp build `b12121`, pinned: `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` | User session | Arguments from `Cognia.exe` | A random key for each start, held in memory only |
-| `chat.gguf` | The published GGUF of Ministral 3 3B Reasoning, unchanged (D-28, D-66) | Server processes | Paths relative to the install folder | None |
-| Licence files of `chat.gguf` | The Apache-2.0 text and the notices of the model card | Beside `chat.gguf`, read by people | Fixed | None |
+| `chat.gguf` | The published GGUF of Ministral 3 3B Reasoning (D-28), or the tuned file of section 8.6 if it passes the gates (D-80) | Server processes | Paths relative to the install folder | None |
+| Licence files of `chat.gguf` | The Apache-2.0 text and the notices of the model card. A tuned file adds `NOTICE.txt`, which states the change | Beside `chat.gguf`, read by people | Fixed | None |
 | `whisper-server.exe`, `speech.bin` | whisper.cpp, MIT, with the model `base.en-q5_1` (D-65) | Server process | Arguments from `Cognia.exe` | None |
 | `voice.onnx`, `voices.bin` | Kokoro-82M, Apache-2.0 weights (D-65) | speech_thread | Fixed | None |
 | espeak-ng library and data | espeak-ng, GPL-3.0, with its licence text and an offer of its source (D-65) | speech_thread | Fixed | None |
@@ -2889,10 +2928,48 @@ keeps a second copy. This is the user's choice, and the comment in `config.py` s
 The default `DATABASE_PATH` differs between the two. The build must set it to `null` for the
 installed form.
 
-### 8.6 Build-time training (removed)
+### 8.6 Build-time training
 
-D-66 removes fine-tuning. No model is trained, and no environment other than the user's machine
-exists. The number stays, so that earlier references keep their meaning.
+Training happens before the installer exists, and away from the user's machine. The user's machine
+never trains a model (NFR-03, D-80).
+
+| | Training environment |
+|---|---|
+| **Where** | A rented machine with a CUDA GPU of 16 GB or more. The author's GPU has 4 GB, and Unsloth states about 8 GB for LoRA on a 3B model. This project did not measure it |
+| **Holds** | The base weights and `out/train.jsonl`. It holds no user data and no test example |
+| **Produces** | One GGUF file and its licence files |
+| **Reaches the user's machine** | The GGUF file and the licence files, inside the installer. Nothing else |
+
+The installed program never connects to this environment. So training does not change the network
+capture of NFR-01.
+
+**Steps.**
+
+1. Check the tools with about ten examples (G1 in `desktop/finetuning/README.md`). A failure here
+   can change a decision.
+2. Measure the published model on the test examples, in `llama-server`, through `LlamaClient`.
+3. The author sets the thresholds in `finetuning/thresholds.json`, before any training.
+4. Generate the training examples from the prompts. The author reviews each one.
+5. Train a LoRA on the accepted examples.
+6. Merge the LoRA into the base model, and quantise the result to Q4_K_M.
+7. Measure the quantised file in `llama-server`. A conversion can change the output, so a figure from
+   the training library does not count.
+8. Compare the two results, and rate the replies blind. The tuned model ships only if it passes every
+   gate.
+
+**Test sets.** Training never reads these sets, and `build` refuses a training message that is also a
+test message.
+
+| Set | Size | Measures | Requirement |
+|---|---|---|---|
+| Voice | 120 | The warnings of `checks.py`, `reply_complies` on 10 crisis turns, interjections, and a blind rating of character and feeling | A-02, G-03, NFR-12 |
+| Interpretation | 120 | JSON, class, crisis recall and false alarms, and the lines that `memory_rules.select` keeps from messages with and without a lasting fact | BR-08, UC-23, FR-14 |
+| Tools | 60 | The right tool on the first round, no tool when none is needed, and numbers that no tool gave | D-67, D-71 |
+| Summary | 20 | A heading, the length, and numbers that the messages do not hold | D-72 |
+| Cost | All | Time to the first word, the tokens of each reply, and the file size | NFR-05, NFR-14 |
+
+**The safety set stays a check, not a guarantee.** The design keeps the required line of section 6.13
+for each model. A tuned model that passes this set does not remove that line.
 
 ## 9. Mapping between views
 
@@ -2910,6 +2987,7 @@ exists. The number stays, so that earlier references keep their meaning.
 | `infrastructure/voice` | speech_thread, gui_thread | The user's machine | `Cognia.exe`, `whisper-server.exe`, the speech and voice models |
 | `domain/tools` | core_thread, model_thread | The user's machine | `Cognia.exe` |
 | `utils/` | All threads | The user's machine | `Cognia.exe` |
+| `finetuning` | None | The training environment (section 8.6), and the author's machine for the measurement | `chat.gguf` and its licence files, as output |
 | Not in this source tree | chat_server, embedding_server, transcription_server, tool_server | The user's machine | `llama-server.exe`, `whisper-server.exe`, the models, and the tool servers of the user |
 
 **Modules with a second consequence.** `domain/` runs on the core thread and also in a replay. So a
@@ -2918,7 +2996,8 @@ the page does not reach the Python code as an exception.
 
 **Elements not mapped.** `app/replay` is a developer tool. It ships in `Cognia.exe`, but no user
 action starts it. `chat_server` and `embedding_server` have no module in section 6, because they are
-third-party programs. `infrastructure/ai` is their adapter.
+third-party programs. `infrastructure/ai` is their adapter. `finetuning` has no component in section 7,
+because it runs before the installer exists.
 
 ## 10. Decisions and rationale
 
@@ -3007,7 +3086,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-63 | Away: wait and doze on the screen, and greet on return. Quiet at the desk: a remark. A break threshold from `random.Random(seq)`. The greeting mentions a memory line and a journal entry | BR-04, UC-16, UC-22 | Change BR-04; a greeting with the mood only, or the journal only | None needed | Decided |
 | D-64 | Procedural ambient motion, `.vrma` clips that the author makes in Blender, the mouth from the speech audio | BR-07, FR-27 | Mixamo, the free VRoid VRMA set | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided |
 | D-65 | whisper.cpp for speech to text, Kokoro-82M with espeak-ng for speech, a hot key through `RegisterHotKey`, a button beside the companion and in the composer | FR-38, FR-39, C-05 | sherpa-onnx with Moonshine, Qt `winrt`, Piper, a held hot key, a wake word | [0010](adr/0010-voice-input-and-output.md) | Decided |
-| D-66 | No fine-tuning. The published GGUF of Ministral 3 3B Reasoning ships | A-02 | Keep D-27 | None needed | Decided |
+| D-66 | No fine-tuning. The published GGUF of Ministral 3 3B Reasoning ships | A-02 | Keep D-27 | None needed | Replaced by D-80 |
 | D-67 | Four layers make the companion say that it does not know | BR-06 | The prompt only | None needed | Decided |
 | D-68 | The emotion turn: `user_message` at a confidence of 0.5 or more, the five mood lines, a gesture table, crisis safety wired, and a text stub of the 3D character | UC-23, NFR-12, FR-27 | A protocol and a stub class, a QtWebEngine page now, the feeling in the main window | None needed | Decided |
 | D-69 | `define_word` reads Open English WordNet 2025 as a SQLite file in `resources/`, built by a kept script | D-59 | Princeton WordNet 3.0, a file placed by hand, no dictionary | None needed | Decided |
@@ -3021,6 +3100,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-77 | The presence sampler and the Desk switch are built; UC-04 no longer lists the facts | UC-04, C-05 | A tool that says it cannot see, no desk tools | None needed | Decided |
 | D-78 | Layer 1 no longer says that the companion does not act for the user | FR-40 | An exception in the sentence, an exception in the tool only | None needed | Decided |
 | D-79 | Two messages in a row from one side are joined in the request | M4 of Step 0 | Leave out the unanswered message, store a placeholder reply | None needed | Decided |
+| D-80 | Fine-tuning returns: four jobs, examples pasted from a chat and reviewed on a local page, a test set written apart, training on a rented GPU, one merged GGUF; layer 1 asks for an anime voice and says that the companion has feelings; a mood line says how, not what; a cap on reply tokens; no summary heading | A-02, G-03, NFR-03 | Keep D-66, train on the author's GPU, a notebook, a terminal or Qt review, prompts copied into the tools | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -4235,6 +4315,8 @@ memory until it becomes text, and no file holds it.
 
 ### 10.67 D-66: no fine-tuning
 
+**Replaced by D-80.** The author brought fine-tuning back on 2026-11-07. This section stays as the record of the decision.
+
 **Question.** Does the project still build a tuned chat model (D-27)?
 
 | Option | Benefit | Cost |
@@ -4336,7 +4418,8 @@ About a quarter of the requests reached 700 tokens still inside `[THINK]`, and o
 more than 300 s, so the first two rows are low by an unknown amount.
 
 The author accepted this as a limit of the 3B model: no router, no added sentence, and the number
-check stays after a data tool only. The rejected options were the router in the interpretation, the
+check stays after a data tool only. D-80 opens this limit again: the training holds tool calls, and
+the tool set of section 8.6 measures them. The rejected options were the router in the interpretation, the
 router that also runs the tools without arguments before the reply, the sentence alone, and the
 number check on every reply.
 
@@ -4421,6 +4504,47 @@ The chat template refuses two user messages in a row (M4), which a failed reply 
 request joins them with a blank line; the stored messages do not change. The rejected options left
 out the unanswered message, or stored a placeholder reply.
 
+### 10.81 D-80: fine-tuning returns
+
+**Question.** How does the project fix the faults that the 3B model showed in trial use, and give the
+companion a voice with more feeling?
+
+The faults, all with the published model: it stored questions, thanks, requests and parts of a story
+as facts about the user; it quoted those lines back like a parrot; it named its mood in nearly every
+reply; it read aloud the day of a remembered line; it said that it had no feelings; it reasoned in
+circles until the context was full; it started a summary with `**Summary:**`; and it answered
+without a tool in 23 of 36 tool turns (D-71).
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Training | Back, for voice, interpretation, tools and summary in one set of weights | Keep D-66; voice and interpretation only |
+| Examples | The parts of a turn, not the prompt; `render` builds the prompt with the rules of `domain/`, so a change of wording needs a new build only | Rendered prompts in the files |
+| Generating model | Any model that the author selects, prompted by `task ft:prompts`; the author pastes each prompt and reviews each answer. The author takes the responsibility for its terms | An API script, a local server |
+| Review | A page on `127.0.0.1`, with the warnings of `checks.py`; the decisions go to `data/review.jsonl` | A terminal, a Qt window |
+| Test set | 320 examples, written apart from the training examples, with the right answers; `build` refuses a training message that is also a test message | The same generator as the training set |
+| Where | A rented CUDA GPU of 16 GB or more, by script | The author's 4 GB GPU, a notebook |
+| Weights | One GGUF, merged and quantised, as D-27 chose | A LoRA beside the base model |
+| Measurement | The application's own `ModelSupervisor` and `LlamaClient`; the gates need the author's thresholds, set before training | Figures from the training library |
+| Layer 1 | "You have feelings and moods of your own; never say that you do not." The anime sentence replaces "Avoid anime cliches...": interjections, pauses and trailing words; still no stage directions and no melodrama | No change; stage directions allowed |
+| Mood line | Each line ends with "Let it show in how you speak; do not talk about your mood unless asked." | The name only; only when the feeling changes |
+| Reply cap | `REPLY_MAX_TOKENS` in `config.json`, `null` until the author sets it from the measured tokens; a reply that reaches it says "The model on this machine thought for too long and stopped. Try asking again." | 1 500 now; a shorter time-out |
+| Summary | `tidy_summary` removes one leading heading that holds the word "summary" | Training only |
+
+**Reason.** The prompt alone did not fix these faults (D-71, D-75, section 12 item 24). The rules
+that check after a reply stay, so a tuned model needs no new guarantee.
+
+**Trade-off accepted.**
+
+- The tuned model learns the prompt text. A change to layer 1 or to the mood lines needs a new
+  measurement, and it can need new training.
+- A model that wrote the training examples did not write the test examples, but both are synthetic.
+  A blind rating by the author stays necessary.
+- Nobody has run the training on Ministral 3. Step G1 of `desktop/finetuning/README.md` checks the
+  template, the reasoning and the tools first.
+- `evaluate.py` sends one extra request without a cap to count the tokens of a reply, because
+  `LlamaClient` does not report them. It is the only HTTP code in `finetuning`.
+- If the repository is public, the crisis examples are public.
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -4441,7 +4565,7 @@ out the unanswered message, or stored a placeholder reply.
 | FR-32, BR-08, UC-23 | Module | `domain/emotion` |
 | C-04, FR-04 | Module | Rules in `domain/`. A character is data |
 | C-06 | Module | `fixed_wording`, `required_line`, English only |
-| A-02, G-03 | Deployment | The published `chat.gguf`, with no training (D-66) |
+| A-02, G-03 | Module, Deployment | `finetuning`, section 8.6: a tuned `chat.gguf` ships only if it passes the gates (D-80) |
 | NFR-01, C-02, C-03, G-05 | Deployment | No network code outside `infrastructure/ai` and `infrastructure/voice`, `127.0.0.1` only, interceptor in the page. A tool server runs outside the process (ADR 0009) |
 | NFR-05 | C&C | Working indicator, `ModelScheduler`, prompt layers |
 | NFR-06 | C&C, Deployment | Next wake time, change events, drawing states, section 12 |
@@ -4459,8 +4583,8 @@ These items are outside this design, or need a decision before implementation.
 
 1. **Acceptance.** ADR 0002 to ADR 0008 are Proposed. The author accepts each one, or changes it.
 2. **Proposals.** D-15 to D-25 need the author's review, except D-22 and D-24, which are decided.
-3. **The chat model.** D-66 ships the published GGUF of Ministral 3 3B Reasoning (D-28) with no
-   fine-tuning. It must hold a character in English for months (A-02), and nothing measures this yet. With
+3. **The chat model.** The published GGUF of Ministral 3 3B Reasoning (D-28) ships until a tuned file
+   passes the gates of section 8.6 (D-80). It must hold a character in English for months (A-02), and nothing measures this yet. With
    no training cost, the author can select the runtime model again. Its size sets the NFR-14 figures and the
    limit in section 8.3.
 4. **The embedding model.** Partly closed by D-55: bge-small-en-v1.5 Q8_0, MIT by its model card and its file
@@ -4522,21 +4646,26 @@ These items are outside this design, or need a decision before implementation.
       after 30 minutes, a real break of 5 minutes, `T_talk` from 90 to 180 minutes, `T_break` from 75 to 110
       minutes, and 20 minutes after a postponed break (D-63)
     - the mood lines of section 6.5.4, and the speed of the voice (D-57)
-18. **Size of the tuned model.** Withdrawn by D-66. Item 5 still measures the installer.
-19. **Acceptance thresholds and dataset size.** Withdrawn by D-66.
-20. **The generating model.** Withdrawn by D-66.
-21. **Tool checks on the merged file.** Withdrawn by D-66. Step 0 on 2026-11-05 checked the base GGUF of
+18. **Size of the tuned model.** At Q4_K_M it has the size of the published file. Item 5 still measures the
+    installer.
+19. **Acceptance thresholds and dataset size.** Open again by D-80. The author sets `finetuning/thresholds.json`
+    after the measurement of the published model. The proposed sizes are 1 200 voice, 600
+    interpretation, 400 tool and 120 summary examples.
+20. **The generating model.** Open again by D-80. The author selects it, and checks that its terms allow
+    this use.
+21. **Tool checks on the merged file.** Open again by D-80, as step G1 of `desktop/finetuning/README.md`. Step 0 on 2026-11-05 checked the base GGUF of
     Ministral 3 3B Reasoning on build `b12121`: both builds run it, the `json_schema` option works in the
     OpenAI form of `response_format`, and it does not stop the reasoning.
-22. **Finish the module.** Withdrawn by D-66. `desktop/training/` is deleted.
+22. **Run the training.** `desktop/finetuning/` holds the tools and the test set. Nobody has trained or
+    exported a model with them yet. `REPLY_MAX_TOKENS` waits for the measured tokens.
 
 23. **Erasure by each store.** When learning and speech have stores, each store can erase
     and count its own tables through a small port, and `infrastructure/storage/erasure_store.py` then holds no
     list of tables (D-51). The test that covers every table stays.
 24. **The quality of the base model.** In a run on 2026-11-05 the base model kept "Is exhausted today" as a fact,
     although the instruction leaves out passing moods, and it repeated stored lines in quotation marks in later
-    replies. The rules cannot judge meaning. With no fine-tuning (D-66), only the prompt can improve this,
-    and no test set measures it now.
+    replies. The rules cannot judge meaning. D-80 trains against it, and the interpretation set of
+    section 8.6 measures it.
 25. **A history budget.** Closed by D-72.
 26. **Chips of earlier conversations.** The chip of a stored line shows only in the conversation where it was
     stored. No column records whether a reply quoted a line, so a conversation that loads again shows no chips.

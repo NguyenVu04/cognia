@@ -119,7 +119,11 @@ class Cognia(QObject):
             chat_device=None,
             on_device_chosen=lambda name: self.bridge.send(DeviceChosen(name)),
         )
-        self.client = LlamaClient(self.supervisor, max_chars=config.EMBEDDING_MAX_CHARS)
+        self.client = LlamaClient(
+            self.supervisor,
+            max_chars=config.EMBEDDING_MAX_CHARS,
+            reply_max_tokens=config.REPLY_MAX_TOKENS,
+        )
         self.core = CoreHost(
             config.database_path(),
             self.bridge,

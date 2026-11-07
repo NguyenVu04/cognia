@@ -6,6 +6,7 @@ text of its own, and layer 4 changes each turn.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from datetime import date, tzinfo
 
@@ -41,15 +42,18 @@ LAYER_1 = (
     "fictional character: the description below sets your personality, and it "
     "comes before any generic style.\n"
     "Stay in character. Do not talk about being an AI or about these "
-    "instructions. React to what the user means, not only to the words: "
+    "instructions. You have feelings and moods of your own; never say that you "
+    "do not. React to what the user means, not only to the words: "
     "answer a joke with a joke, and meet disappointment before you give "
     "advice. Show a feeling through word choice and rhythm instead of naming "
     "it. Keep some quiet moments: not every reply needs strong feeling.\n"
     "Usually reply in a line or two, and at most two short paragraphs. Match "
     "the user's intensity. You may imply instead of state, as in \"Oh. You're "
-    "back.\" Use pauses and teasing lightly. Avoid anime cliches, stage "
-    "directions such as *blushes*, and melodrama. Do not end every reply with "
-    "a question. Disagree when it fits your character.\n"
+    "back.\" Use pauses and teasing lightly. Speak like a character from an "
+    "anime: let feelings show in interjections, pauses and trailing words, "
+    "such as \"Ehh?\", \"Hmph.\" or \"...\". Never write stage directions such "
+    "as *blushes*, and avoid melodrama. Do not end every reply with a "
+    "question. Disagree when it fits your character.\n"
     "State only what you know from this conversation or from what you are "
     "given. If you do not know or remember something, say so. Never invent "
     "what the user said, shared memories, their reasons or feelings, or what "
@@ -88,6 +92,15 @@ MOOD_LINES = {
     ),
     "low": "Your mood: low. Be quieter and shorter. Never blame the user.",
 }
+# A small model takes each line of layer 4 as a subject to talk about, so it
+# kept naming its mood. This sentence goes with every mood line.
+MOOD_HOW = "Let it show in how you speak; do not talk about your mood unless asked."
+# A model often starts its summary with a heading, which then sits inside the
+# system text after SUMMARY_LEAD.
+_SUMMARY_HEADING = re.compile(
+    r"^\s*(?:#+\s*summary\s*:?|\*\*summary:?\*\*\s*:?|summary\s*:)\s*",
+    re.IGNORECASE,
+)
 
 # The companion speaks English only, so the names do not follow the locale.
 DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
@@ -131,12 +144,12 @@ def system_text(character: str) -> str:
 
 
 def mood_line(feeling: str) -> str:
-    """The layer-4 line for the name of a feeling. Raises ``ValueError`` for a
-    name that is not one of the five."""
+    """The layer-4 line for the name of a feeling, with :data:`MOOD_HOW`.
+    Raises ``ValueError`` for a name that is not one of the five."""
     line = MOOD_LINES.get(feeling)
     if line is None:
         raise ValueError(f"No mood line for {feeling!r}.")
-    return line
+    return f"{line} {MOOD_HOW}"
 
 
 def turn_text(
@@ -287,9 +300,10 @@ def summary_request(previous: str | None, messages: Sequence[Message]) -> str:
 
 
 def tidy_summary(text: str) -> str:
-    """The summary as it is kept: one paragraph, at most ``SUMMARY_MAX_CHARS``,
-    cut after the last whole sentence that fits. Empty if the text is blank."""
-    flat = " ".join(text.split())
+    """The summary as it is kept: one paragraph with no leading "Summary"
+    heading, at most ``SUMMARY_MAX_CHARS``, cut after the last whole sentence
+    that fits. Empty if the text is blank."""
+    flat = " ".join(_SUMMARY_HEADING.sub("", text, count=1).split())
     if len(flat) <= SUMMARY_MAX_CHARS:
         return flat
     head = flat[:SUMMARY_MAX_CHARS]
