@@ -286,8 +286,10 @@ uv run python -m src
 them.
 
 `task build` makes `desktop/dist/Cognia/` with PyInstaller: `Cognia.exe`, `_internal/`,
-and a copy of `desktop/models/` beside the exe. The build keeps the database in
-`LOCALAPPDATA/Cognia`. After it, `task installer` packs that folder into one file,
+and a copy of `desktop/models/` beside the exe. Each model server gets only the files it
+loads, and the four Visual C++ runtime files from Visual Studio 2022 Build Tools
+(`VC\Redist\MSVC\14.44.35112`), which the build machine must have. The build keeps the
+database in `LOCALAPPDATA/Cognia`. After it, `task installer` packs that folder into one file,
 `desktop/dist/Cognia-0.1.0-alpha-setup.exe`, with Inno Setup 7. `iscc` must be on the
 PATH. The installer is not signed, and it does not check the machine yet.
 

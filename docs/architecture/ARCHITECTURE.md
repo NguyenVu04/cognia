@@ -2949,6 +2949,7 @@ the int8 file was ten times slower on the author's machine (D-84). Model files o
 | `chat.gguf` | The published GGUF of Ministral 3 3B Reasoning (D-28), or the tuned file of section 8.6 if it passes the gates (D-80) | Server processes | Paths relative to the install folder | None |
 | Licence files of `chat.gguf` | The Apache-2.0 text and the notices of the model card. A tuned file adds `NOTICE.txt`, which states the change | Beside `chat.gguf`, read by people | Fixed | None |
 | `whisper-server.exe`, `speech.bin` | whisper.cpp, MIT, with the model `base.en-q5_1` (D-65) | Server process | Arguments from `Cognia.exe` | None |
+| `msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, `vcomp140.dll` beside each server | The Visual C++ redistributable files 14.44.35211 of Visual Studio 2022 Build Tools, chosen by the author on 2026-11-08. A clean Windows lacks them, and the system package needs administrator rights. `whisper-server.exe` was linked with 14.51, so this runtime is older than its build tools, which Microsoft does not support. It ran on the author's machine | Server processes | Fixed | None |
 | `voice.onnx`, `voices.bin` | Kokoro-82M v1.0, fp32, Apache-2.0 weights (D-65, D-84) | speech_thread | Fixed | None |
 | espeak-ng library and data | The `espeakng-loader` wheel, which holds espeak-ng, GPL-3.0. The installer adds its licence text and an offer of its source (D-65, D-84) | speech_thread | Fixed | None |
 | `embedding.gguf` | bge-small-en-v1.5 Q8_0 from `ggml-org/bge-small-en-v1.5-Q8_0-GGUF` (D-55). Its MIT licence file ships beside it | Server processes | Paths relative to the install folder | None |
@@ -4807,6 +4808,9 @@ These items are outside this design, or need a decision before implementation.
    silent uninstall removed the program, the start entry, the shortcuts and the data folder. The
    installer does not check the machine yet (step 1 of section 8.3), because NFR-14 has no
    figures. Nobody has tried it on a clean machine with no network.
+   With only the files each server loads and the C++ runtime beside it, `models/runtime/` fell
+   from 187 MB to 145 MB, and the installer to 2 787 236 191 bytes in 690 s. This is still above
+   the 2 GiB that GitHub allows for one release file.
 7. **If VRM fails NFR-06.** The author chooses one of these: a lower frame limit, a changed figure in the
    specification, or frames rendered in advance from the same VRM files (D-08, second table, option D).
 8. **VRoid Studio terms.** A person must read the full terms. The question is whether a VRM file with pixiv
