@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QObject, QTimer, Signal
-from PySide6.QtMultimedia import QAudio, QAudioFormat, QAudioSink
+from PySide6.QtMultimedia import QAudioFormat, QAudioSink, QtAudio
 
 from src.infrastructure.voice import mouth
 
@@ -94,11 +94,10 @@ class Speaker(QObject):
         self._clips: list[Clip] = []
         self._pending = 0
         self._sink: QAudioSink | None = None
-        self._buffer: QBuffer | None = None
         self._track: tuple[mouth.Span, ...] = ()
         self._timer = QTimer(self)
         self._timer.setInterval(_FRAME_MS)
-        self._timer.timeout.connect(self._move_mouth)
+        self._timer.timeout.connect(self._tick)
         self._made.connect(self._on_made)
         self._not_made.connect(self._on_not_made)
         self._worker = threading.Thread(
@@ -173,38 +172,35 @@ class Speaker(QObject):
         audio.setSampleRate(clip.rate)
         audio.setChannelCount(1)
         audio.setSampleFormat(QAudioFormat.SampleFormat.Int16)
-        self._buffer = QBuffer(self)
-        self._buffer.setData(QByteArray(pcm16(clip.samples)))
-        self._buffer.open(QIODevice.OpenModeFlag.ReadOnly)
         self._track = clip.track
         self._sink = self._sink_factory(audio)
-        self._sink.stateChanged.connect(self._state_changed)
-        self._sink.start(self._buffer)
+        # The sink may still read after stop(), so the buffer stays open and
+        # is deleted with the sink.
+        buffer = QBuffer(self._sink)
+        buffer.setData(QByteArray(pcm16(clip.samples)))
+        buffer.open(QIODevice.OpenModeFlag.ReadOnly)
+        self._sink.start(buffer)
         self._timer.start()
 
-    def _state_changed(self, state) -> None:
-        if state == QAudio.State.IdleState:
-            self._end_clip()
-            self._play_next()
-        elif state == QAudio.State.StoppedState and self._sink is not None:
-            if self._sink.error() != QAudio.Error.NoError:
-                self.stop()
-                self.failed.emit(NOT_SPOKEN)
-
-    def _move_mouth(self) -> None:
+    def _tick(self) -> None:
+        # The state is read here: PySide cannot convert the argument of the
+        # sink's stateChanged signal, so a connected slot is never called.
         if self._sink is None:
             return
+        if self._sink.error() != QtAudio.Error.NoError:
+            self.stop()
+            self.failed.emit(NOT_SPOKEN)
+            return
         seconds = self._sink.processedUSecs() / 1_000_000
+        if self._sink.state() == QtAudio.State.IdleState and seconds > 0:
+            self._end_clip()
+            self._play_next()
+            return
         self.mouth.emit(mouth.weights_at(self._track, seconds))
 
     def _end_clip(self) -> None:
         self._timer.stop()
         sink, self._sink = self._sink, None
         if sink is not None:
-            sink.stateChanged.disconnect(self._state_changed)
             sink.stop()
             sink.deleteLater()
-        if self._buffer is not None:
-            self._buffer.close()
-            self._buffer.deleteLater()
-            self._buffer = None

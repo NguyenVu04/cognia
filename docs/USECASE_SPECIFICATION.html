@@ -299,7 +299,7 @@
   <h1>Use Case Specification &mdash; Cognia</h1>
   <p class="subtitle">
     COG-UCS-001 &middot;
-    version 6.1 &middot;
+    version 6.2 &middot;
     Approved
   </p>
 </header>
@@ -312,7 +312,7 @@
     <tr><th>Document title</th><td>Use Case Specification &mdash; Cognia</td></tr>
     <tr><th>Document ID</th><td>COG-UCS-001</td></tr>
     <tr><th>Project</th><td>Cognia (COGNIA)</td></tr>
-    <tr><th>Version</th><td>6.1</td></tr>
+    <tr><th>Version</th><td>6.2</td></tr>
     <tr><th>Status</th><td>Approved</td></tr>
     <tr><th>Author</th><td>Nguy&#7877;n Duy V&#361;, author and developer &middot; nguyenvu04.work@gmail.com</td></tr>
     <tr><th>Document owner</th><td>Nguy&#7877;n Duy V&#361; &mdash; keeps this document current</td></tr>
@@ -417,6 +417,13 @@
       <td>2026-11-06</td>
       <td>Nguy&#7877;n Duy V&#361;</td>
       <td>The companion&rsquo;s journal is removed: UC-25 and FR-35 are retired, and their numbers stay reserved. The greeting mentions only the latest thing the user told the companion (UC-16, FR-20). A reply no longer has a tool to read the journal (UC-27, FR-40). UC-04 no longer requires the screen to list what it reads and what it never reads; C-05 still limits what may be read.</td>
+      <td>Pending</td>
+    </tr>
+    <tr>
+      <td>6.2</td>
+      <td>2026-11-08</td>
+      <td>Nguy&#7877;n Duy V&#361;</td>
+      <td>Spoken words are sent as a message as soon as listening stops, so the user can talk while the window is hidden; the key combination no longer opens the window (UC-26, FR-38). Speaking aloud is on by default, and the key combination is Ctrl+Alt+K by default (FR-39, UC-26). A message the companion starts appears in a speech bubble beside the character; while the character is hidden it is held and appears at the bottom of the main window when that window opens (UC-20-A1, UC-22). The bubble never takes the keyboard focus (FR-25), so its buttons have no keyboard route: a known gap against NFR-11. All motion of the character is made by the application, and no motion file ships. The settings are grouped as Speaking up, Desk awareness, Voice, Add-ons, Startup and Erase. Reason: these are the decisions taken while the use cases were built.</td>
       <td>Pending</td>
     </tr>
   </tbody>
@@ -1176,7 +1183,7 @@ G-02 to G-05 keep their numbers so that earlier references still hold.</p>
     <tr><td colspan="5"><b>Voice and tools</b></td></tr>
     <tr>
       <td>FR-38</td>
-      <td>The system must let the user speak a message instead of typing it &mdash; with a key combination, with a button beside the companion, or with a button in the message box. The words appear in the message box to be checked before they are sent, and no sound is kept.</td>
+      <td>The system must let the user speak a message instead of typing it &mdash; with a key combination, with a button beside the companion, or with a button in the message box. The words are sent as a message when listening stops, and no sound is kept.</td>
       <td>Should</td>
       <td>User</td>
       <td>UC-26</td>
@@ -1353,7 +1360,7 @@ that nags. A character cannot override them (FR-04).</p>
       <td>Accessibility</td>
       <td>The application is fully usable without a mouse, and comfortably readable. The companion on the desktop never takes the keyboard focus and is never the only route to a function</td>
       <td>Every function reachable from the keyboard, and reachable with the companion hidden; text contrast meeting WCAG 2.2 level AA</td>
-      <td>Keyboard-only walkthrough of every use case, run once with the companion hidden, plus a contrast audit</td>
+      <td>Keyboard-only walkthrough of every use case, run once with the companion hidden, plus a contrast audit. Known gap in version 6.2: the buttons of the speech bubble beside the companion have no keyboard route, because the companion never takes the focus; the same message can be answered in the main window when the companion is hidden</td>
     </tr>
     <tr>
       <td>NFR-12</td>
@@ -3193,7 +3200,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <p class="cond"><b>Branches from step 5.</b> The user has taken the companion off the screen (UC-20-A1).</p>
     <ol>
       <li>The message is held, and is not sent any other way &mdash; no tray notification (BR-04).</li>
-      <li>When the companion is shown again or the main window is opened, the message is said if it still fits; otherwise it is dropped.</li>
+      <li>When the companion is shown again or the main window is opened, the message is said if it still fits &mdash; in the speech bubble beside the companion, or in the same bubble at the bottom of the main window; otherwise it is dropped.</li>
     </ol>
   </div>
 
@@ -3541,9 +3548,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <p>The user can talk to the companion instead of typing, and hear it answer. Speaking
   is something the user starts, every time: a key combination, a button beside the
   companion, or a button in the message box opens the microphone, and it closes again
-  when the user presses once more or stops speaking. What was heard becomes text in the
-  message box, where the user can correct it before sending; nothing is sent on its own,
-  and no sound is kept. With speaking aloud switched on, the companion says its reply in
+  when the user presses once more or stops speaking. What was heard becomes text on the
+  user&rsquo;s machine and is sent at once, so the user can talk while the window is
+  hidden in the tray; no sound is kept. With speaking aloud switched on, the companion says its reply in
   a voice that belongs to its character and carries its mood, and its mouth moves as it
   speaks. Everything runs on the user&rsquo;s machine (NFR-01).</p>
 
@@ -3563,7 +3570,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Postconditions</h4>
   <ul>
     <li><b>On success:</b> the spoken words are a message in the conversation, exactly as if typed (UC-09), and no sound is stored anywhere. With speaking aloud on, the reply has been heard.</li>
-    <li><b>On failure:</b> nothing is sent, the message box keeps whatever was recognised, and the user can type instead.</li>
+    <li><b>On failure:</b> nothing is sent, and the user can type instead.</li>
   </ul>
 
   <pre class="mermaid">
@@ -3572,12 +3579,12 @@ only moment at which the companion speaks first; the others join it in phase 2.<
       M1(["User: presses the key combination or a talk button"]):::user --> M2["System: opens the microphone and shows that it is listening"]:::sys
       M2 --> M3["User: speaks"]:::user
       M3 --> M4["System: stops at a second press or after a short silence"]:::sys
-      M4 --> M5["System: puts the words in the message box"]:::sys
-      M5 --> M6["User: corrects them if needed, and sends"]:::user
+      M4 --> M5["System: turns the words into text"]:::sys
+      M5 --> M6["System: sends them as a message"]:::sys
       M6 --> M7["System: replies as in UC-09; with speaking aloud on, says it in the character's voice"]:::sys
     end
     subgraph A1["UC-26-A1 — Holding the button beside the companion"]
-      A1a["Microphone open while the button is held"]:::alt --> A1b["Released: the words go to the message box"]:::alt
+      A1a["Microphone open while the button is held"]:::alt --> A1b["Released: the words are sent"]:::alt
     end
     subgraph A2["UC-26-A2 — The user interrupts the voice"]
       A2a["Speech stops at once"]:::alt --> A2b["The reply stays written in full"]:::alt
@@ -3607,11 +3614,11 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <h4>Main flow</h4>
   <ol class="flow">
     <li><span class="who">User</span>Presses the key combination for talking, from any application, or clicks the talk button in the message box.</li>
-    <li><span class="who">System</span>Opens the microphone and shows, beside the companion and in the window, that it is listening. It does not take the keyboard focus (FR-25).</li>
+    <li><span class="who">System</span>Opens the microphone and, when the window is open, shows that it is listening. It does not open the window and does not take the keyboard focus (FR-25).</li>
     <li><span class="who">User</span>Speaks.</li>
     <li><span class="who">System</span>Stops listening at a second press of the key combination or after a short silence, and closes the microphone.</li>
-    <li><span class="who">System</span>Turns what it heard into text on the user&rsquo;s machine and puts it in the message box. The sound is discarded.</li>
-    <li><span class="who">User</span>Corrects the words if needed, and sends them. The limits on a message apply as for typing.</li>
+    <li><span class="who">System</span>Turns what it heard into text on the user&rsquo;s machine. The sound is discarded.</li>
+    <li><span class="who">System</span>Sends the text as a message, after anything already typed in the message box. The limits on a message apply as for typing. While a reply is still coming, the text waits in the message box.</li>
     <li><span class="who">System</span>Replies as in UC-09. With speaking aloud on (FR-39), it says the reply in the voice of the character, at a pace set by its mood, with its mouth moving in time.</li>
   </ol>
 
@@ -3667,7 +3674,9 @@ only moment at which the companion speaks first; the others join it in phase 2.<
   <ul>
     <li><b>Constraint.</b> C-05 &mdash; the microphone is open only between the user&rsquo;s start and stop, and the key combination is received as one signal; no other key is read. Neither is a fact read about the user.</li>
     <li><b>Never.</b> Listening for a wake word, or opening the microphone on the companion&rsquo;s own initiative.</li>
-    <li><b>Never.</b> Keeping a recording. Only the text the user sends is kept, as any message is (NFR-03).</li>
+    <li><b>Never.</b> Keeping a recording. Only the text that is sent is kept, as any message is (NFR-03).</li>
+    <li><b>Defaults.</b> Speaking aloud is on, and the key combination is Ctrl+Alt+K. Both change in Settings &rsaquo; Voice. If another application holds the combination, the system says so and names that setting.</li>
+    <li><b>Changed in version 6.2.</b> The words are sent at once instead of waiting in the message box, and the key combination does not open the window.</li>
     <li><b>Language.</b> English only (C-06), for what is heard and for what is said.</li>
     <li><b>New in version 6.0.</b></li>
   </ul>
@@ -3902,7 +3911,7 @@ only moment at which the companion speaks first; the others join it in phase 2.<
     <tr><td>FR-35</td><td>&mdash;</td><td>Removed in version 6.1</td><td>&mdash;</td></tr>
     <tr><td>FR-36</td><td>UC-16</td><td>The installer offers starting with Windows, ticked; the application shows the same state and changes it; a start with Windows opens no window</td><td>Not started</td></tr>
     <tr><td>FR-37</td><td>UC-16</td><td>The close button leaves Cognia running and the tray icon present; the explanation appears at the first close only; the tray command ends every process of Cognia</td><td>Not started</td></tr>
-    <tr><td>FR-38</td><td>UC-26</td><td>A message spoken through the key combination, the button beside the companion and the button in the message box each appears in the message box before it is sent; no sound is on the disk afterwards; no key other than the combination is received</td><td>Not started</td></tr>
+    <tr><td>FR-38</td><td>UC-26</td><td>A message spoken through the key combination, the button beside the companion and the button in the message box is sent when listening stops, also with the window hidden; no sound is on the disk afterwards; no key other than the combination is received</td><td>Not started</td></tr>
     <tr><td>FR-39</td><td>UC-26</td><td>With speaking aloud on, each reply is spoken in the character&rsquo;s voice with the mouth moving; with it off, nothing is spoken</td><td>Not started</td></tr>
     <tr><td>FR-40</td><td>UC-27</td><td>Each tool, asked what it can answer, gives the real figure; asked what it cannot, the reply says it does not know and gives no figure; a page opens in the browser only at the user&rsquo;s request</td><td>Not started</td></tr>
     <tr><td>FR-41</td><td>UC-27</td><td>A fresh installation has no tool server; adding one shows the statement before its first use; a removed server is no longer called</td><td>Not started</td></tr>

@@ -49,7 +49,8 @@ class VoiceWiring(QObject):
         chat, companion, worker = cognia.window.chat, cognia.companion, cognia.worker
 
         cognia.app.installNativeEventFilter(self.keys.filter)
-        self.keys.pressed.connect(self._key_pressed)
+        # The window stays as it is, so the user can talk from the tray.
+        self.keys.pressed.connect(self.toggle_listening)
         chat.micToggled.connect(self.toggle_listening)
         chat.typingStarted.connect(self.speaker.stop)
         chat.stopSpeakingRequested.connect(self.speaker.stop)
@@ -88,10 +89,6 @@ class VoiceWiring(QObject):
 
     # ── listening ─────────────────────────────────────────────────────────
 
-    def _key_pressed(self) -> None:
-        self.c.show_window()
-        self.toggle_listening()
-
     def toggle_listening(self) -> None:
         if self.mic.isListening():
             self.mic.stop()
@@ -114,7 +111,7 @@ class VoiceWiring(QObject):
         if not text:
             self._notice(NOT_CAUGHT)
             return
-        self.c.window.chat.setTranscript(text)
+        self.c.window.chat.sendSpoken(text)
 
     @Slot(str)
     def _mic_failed(self, text: str) -> None:

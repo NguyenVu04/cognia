@@ -110,7 +110,7 @@ class MainWindow(FramelessWindow):
                 lambda i=item.id: self._shortcut_go(i)
             )
         QShortcut(QKeySequence("Ctrl+N"), self).activated.connect(
-            self.chat.newConversationRequested
+            self.chat.requestNewConversation
         )
         QShortcut(QKeySequence("Ctrl+F"), self).activated.connect(self._find)
 

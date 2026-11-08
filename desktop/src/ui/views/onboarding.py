@@ -115,7 +115,7 @@ class TipsStep(QWidget):
             _point("desktop", "Your companion sits at the bottom right of the "
                    "screen. Drag it anywhere; it stays where you put it.")[0]
         )
-        talk_row, self.talk = _point("microphone", _talk_text("Ctrl+Alt+Space"))
+        talk_row, self.talk = _point("microphone", _talk_text("Ctrl+Alt+K"))
         panel.body().addWidget(talk_row)
         panel.body().addWidget(
             _point("pause", "Pause everything from the tray icon or the sidebar. "

@@ -14,7 +14,7 @@ your own disk, where you can read it and delete it.
 
 | | |
 |---|---|
-| **Maturity** | Pre-alpha. Version 5.4 of the specification is approved. The interface from the design document runs, and conversation with a local model works: each message moves the companion's feeling, a reply can use twelve tools, a long conversation is summarized for the model, and the crisis rules apply. Desk awareness reads its four facts when switched on. The companion window is a placeholder that writes its face, gesture and exercise as text. The base rules, learning, the decision to speak, speech and the 3D companion are not built |
+| **Maturity** | Pre-alpha. Version 5.4 of the specification is approved. Every use case of phases 1 and 2 runs with stored data: conversation with a local model, feelings, twelve tools and add-ons, memory, desk awareness, the 3D companion on the desktop, talking by voice and hearing replies, the decision to speak through the SpeechGate, and learning with Undo. No model is tuned yet, and the figures of NFR-04 to NFR-06 are not met or not measured (section 12 of `ARCHITECTURE.md`) |
 | **Owning team** | Single author — Nguyễn Duy Vũ |
 | **Contact** | nguyenvu04.work@gmail.com |
 | **On-call** | None. Cognia runs on one user's own machine; there is no hosted service to be on call for |
@@ -27,7 +27,8 @@ your own disk, where you can read it and delete it.
 > Version 5.3 removes UC-02, which leaves twenty, and version 5.4 removes the option to
 > use another AI service. Version 5.5 awaits approval and only removes UC-02 from
 > the delivery order. Versions 6.0 and 6.1 also await approval: 6.0 removes commitments
-> and work sessions, and 6.1 removes the companion's journal (UC-25). Anything below that describes
+> and work sessions, 6.1 removes the companion's journal (UC-25), and 6.2 records the defaults and
+> the interface as built. Anything below that describes
 > behaviour describes *specified* behaviour unless it says it is built. The figures in NFR-04 to NFR-06 and NFR-14 are still
 > unmeasured, and are to be measured before the first release.
 
@@ -229,19 +230,20 @@ flowchart TB
 
 | Component | Responsibility | Status |
 |---|---|---|
-| Presentation (`desktop/src/ui/`) | Main window, tray icon and popup, and the companion window, built from the design document. Never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built as the design made runnable. The Companion conversation, Memory, Character and first-run screens show real data, and the erase dialog is new. The other screens still show mockup copy from `ui/views/sample_data.py` |
-| Application wiring (`desktop/src/app/`) | Creates the `QApplication` and the three surfaces. A core thread (`CoreHost`) holds the database and every decision; a model thread (`ChatWorker`) prepares each turn and streams replies; a `Bridge` carries commands in and data out | Built for conversation, memory, character and erasure |
+| Presentation (`desktop/src/ui/`) | Main window, tray menu, and the companion window with the 3D character. The companion never takes the keyboard focus, and is never the only route to a function (FR-25, FR-28) | Built. Four destinations (Companion, Memory, Character, Settings), a first run of three steps, and a warm dark theme with Nunito (D-81). Every screen shows stored data |
+| Application wiring (`desktop/src/app/`) | Creates the `QApplication` and the three surfaces. A core thread (`CoreHost`, with a handler for each subject in `app/core/`) holds the database and every decision; a model thread (`ChatWorker`) prepares each turn, streams replies, words proactive messages and transcribes speech; a `Bridge` carries commands in and data out | Built (D-88) |
 | Conversation and memory | Replies in character through the `Replier` port, history kept through the `ConversationStore` port (FR-13). The `Interpreter` port finds lines to keep, `domain/memory` chooses them and what a reply draws on, and the `Embedder` port gives their vectors (FR-14) | Built on two `llama-server` processes that Cognia starts and supervises (`infrastructure/ai/`). Every reply goes through the tool loop on LangGraph, with twelve tools (D-71). A conversation longer than the model's budget is summarized for the model (D-72). The user can start, open and delete conversations (D-74) |
-| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations with their summaries, messages and their search index, memory items, reply sources, character versions, events, application totals and two settings (`chat_device`, desk awareness), and erases by groups (UC-14) |
-| Domain | The seven base rules, the emotion state, learning, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Partly built. The application uses `conversation/`, `memory/`, `character/`, `companion/` (which folds the event log), `emotion/` (a `user_message` event moves the feeling), `awareness/`, `tools/`, `erasure/` and the crisis rules of `safety/`. `speech/`, `initiative/` and `learning/` are empty |
-| `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Not created |
+| Storage (`desktop/src/infrastructure/storage/`) | One SQLite file. SQLAlchemy ORM classes state the schema, and Alembic revisions apply it (ADR 0003). See [docs/ERD.md](docs/ERD.md). It also reads the four ready-made characters from `resources/characters.toml` | Every table of `docs/ERD.md` exists. The application writes conversations with their summaries, messages and their search index, memory items, reply sources, character versions, events, application totals and two settings (`chat_device`, desk awareness), speech decisions, patterns, tool servers and every setting, and erases by groups (UC-14) |
+| Domain | The seven base rules, the emotion state, learning, and every decision to speak. No I/O, no ambient clock — the same journal gives the same decisions (NFR-13) | Built: `conversation/`, `memory/`, `character/`, `companion/`, `emotion/`, `awareness/`, `tools/`, `erasure/`, `safety/`, `speech/`, `initiative/` and `learning/` |
+| `SpeechGate` | The single exit for every proactive message, including addressed motion. Assembles the explanation NFR-09 requires and refuses to emit without one | Built as `domain/speech/speech_service.py` (D-85). Messages show in a speech bubble beside the companion |
+| Voice (`desktop/src/infrastructure/voice/`) | Speech to text with `whisper-server`, the companion's voice with Kokoro, the microphone, and the talk key | Built (D-84). The talk key is `Ctrl+Alt+K` by default |
 | Event journal | Append-only record of every event and decision, which UC-17 explains from and NFR-13 replays | The application writes `character_changed`, the memory events, `user_message`, `setting_changed`, `activity_started` and `activity_ended`, and with desk awareness on `presence`, `foreground_app`, `clock_gap` and `app_hour_closed`. No other kind is written yet |
 
 ### External dependencies
 
 | Dependency | Purpose | Criticality | Owner |
 |---|---|---|---|
-| QtWebEngine | Draws the companion as a 3D VRM character (ADR 0008). Not built yet | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
+| QtWebEngine | Draws the companion as a 3D VRM character with three.js and three-vrm (ADR 0008, D-83) | Degraded — every function stays reachable without the companion (FR-28) | The Qt Company |
 | Windows 10 / 11 | Supplies exactly four facts about the user, plus the screen layout needed to draw the companion. Nothing else may be read (C-05) | Degraded — desk awareness is off until switched on, and conversation, memory and the character work without it | Microsoft |
 | AI models, running locally | A chat model words the companion's replies, interprets what the user said as events for the emotion model, and calls tools. An embedding model finds related memories. Neither sets a feeling directly | Degraded — with the model stopped, time at the machine, break suggestions, the memory list, pausing and the emotion state keep working (NFR-08) | The published GGUF of Ministral 3 3B Reasoning (D-28), replaced only by a tuned file that passes the gates of `desktop/finetuning/` (D-80), and bge-small-en-v1.5 for embeddings (D-55) |
 
@@ -256,6 +258,7 @@ flowchart TB
 | [uv](https://docs.astral.sh/uv/) | Any recent | Installs dependencies into `desktop/.venv` |
 | [Task](https://taskfile.dev/) | 3 | Optional; runs the commands in `Taskfile.yml`. The `uv` commands below do the same |
 | `llama-server` build `b12121` and two GGUF files | Pinned | Placed by hand in `desktop/models/`, which Git ignores: `runtime/vulkan/` and `runtime/cpu/` from `llama-b12121-bin-win-vulkan-x64.zip` and `llama-b12121-bin-win-cpu-x64.zip` (github.com/ggml-org/llama.cpp/releases/tag/b12121), `chat.gguf` from `Ministral-3-3B-Reasoning-2512-Q4_K_M.gguf` (`mistralai/Ministral-3-3B-Reasoning-2512-GGUF`), and `embedding.gguf` from `bge-small-en-v1.5-q8_0.gguf` (`ggml-org/bge-small-en-v1.5-Q8_0-GGUF`). Without them the conversation says plainly that a file is missing (UC-09-E1) |
+| Speech files | whisper.cpp `b5454`, Kokoro v1.0 | Also in `desktop/models/`: `runtime/whisper/` from `whisper-bin-x64.zip`, `speech.bin` from `ggml-base.en-q5_1.bin`, `voice.onnx` from `kokoro-v1.0.onnx` (the fp32 file) and `voices.bin` from `voices-v1.0.bin`. espeak-ng comes with the `espeakng-loader` package. Without them Cognia says that it cannot hear or speak, and typing works (UC-26-E3) |
 
 ### Run it
 
@@ -305,7 +308,12 @@ created for them.
 | `CHAT_MODEL`, `EMBEDDING_MODEL` | `models/chat.gguf`, `models/embedding.gguf` | The two model files |
 | `EMBEDDING_BASELINE`, `NEAR_DUPLICATE`, `EMBEDDING_MAX_CHARS` | `0.45`, `0.95`, `1200` | Figures of the embedding model: the cosine of unrelated lines, the cosine of a duplicate line, the longest text it reads |
 | `CHAT_CONTEXT` | `8192` | The context of the chat server, in tokens |
-| `MODEL_IDLE_SECONDS` | `null` | Seconds before an idle server frees its model; `null` keeps it loaded |
+| `MODEL_IDLE_SECONDS` | `300` | Seconds before an idle server frees its model; `null` keeps it loaded |
+| `CHAT_CACHE_RAM_MIB` | `1024` | RAM for the chat server's old prompts, in MiB |
+| `REPLY_MAX_TOKENS`, `INTERPRET_MAX_TOKENS`, `SUMMARY_MAX_TOKENS` | `768`, `256`, `1024` | The most tokens the model may write for a reply, an interpretation and a summary (D-80) |
+| `WHISPER_SERVER`, `SPEECH_MODEL` | `models/runtime/whisper/whisper-server.exe`, `models/speech.bin` | Speech to text |
+| `VOICE_MODEL`, `VOICES` | `models/voice.onnx`, `models/voices.bin` | The companion's voice |
+| `TALK_SILENCE_SECONDS`, `TALK_MAX_SECONDS` | `1.5`, `30` | Listening stops after this much silence that follows speech, or at the limit |
 | `MODEL_START_SECONDS`, `MODEL_RESTARTS` | `120`, `3` | How long a server may take to start, and how often it starts again in one run |
 | `HISTORY_MAX_CHARS` | `9700` | The characters of past messages that go to the model. From three quarters of it, a summary of the oldest messages is written after the reply |
 | `MESSAGE_MAX_CHARS` | `1200` | The longest message the user can send |
@@ -326,21 +334,28 @@ All set by the user in the application and stored on their own disk:
 | Moods | On. Off holds the feeling at the temperament's resting mood | BR-08, UC-18-A2 |
 | Break threshold | Optional. Without one, the companion uses what it has learned | FR-09, UC-22-A1 |
 | Start with Windows | On: the box in the installer is ticked. A switch in the application changes it | FR-36, D-22 |
+| Speak replies aloud | On | FR-39, UC-26 |
+| Talk key | `Ctrl+Alt+K`. Another combination with Ctrl, Alt or Win can be chosen | FR-38, UC-26 |
+| Add-ons (tool servers) | None. Each one needs the user's consent that it can send data off the computer | FR-41, UC-27 |
 
 ## Usage
 
-Today the application shows every screen of the design and holds a real conversation
-on the Companion screen, with feelings, tools and desk awareness. The rest is specified,
-not built. In outline:
+In outline:
 
 **First run** (UC-01). The user picks one of the four characters and hears it answer
-before confirming. In its first greeting, the companion asks what to call the user.
+before confirming, decides about desk awareness, and reads a page of tips. In its first
+greeting, the companion asks what to call the user.
 
 **Changing the character** (UC-03). The user changes to another of the four at any
 time. Each change adds a version and keeps every earlier one, so the user can go back.
 
 **Closing the window** (FR-37). The close button hides the main window, and Cognia
 keeps running. The tray menu holds the command that quits.
+
+**Talking by voice** (UC-26). Press `Ctrl+Alt+K`, the microphone button, or hold the
+button beside the companion, then speak. The words are sent when you stop, so this
+works while Cognia is hidden in the tray. The companion reads its reply aloud, with its
+mouth moving.
 
 **Talking** (UC-09). Replies come in character and in the companion's current mood.
 When the user says something about themselves, the exact stored line is shown back for
@@ -372,19 +387,21 @@ cognia/
 │   ├── src/
 │   │   ├── __main__.py              entry point: python -m src
 │   │   ├── config.json              shipped defaults
-│   │   ├── app/                     wiring: QApplication, surfaces, worker thread, config
+│   │   ├── app/                     wiring: QApplication, surfaces, core thread and its handlers, model thread, config
 │   │   ├── ui/                      windows, dialogs, widgets, views, theme
-│   │   ├── domain/                  ports, conversation, character, emotion, events, safety; stubs or empty packages for the rest
-│   │   ├── infrastructure/          SQLite storage, the model adapter and the tool loop, the Win32 presence source
-│   │   ├── resources/               vendored fonts, the QSS style sheet, characters.toml, the dictionary; companion/ is empty
+│   │   ├── domain/                  ports and one package for each subject: rules, models, services
+│   │   ├── infrastructure/          SQLite storage, the models and the tool loop, MCP, Win32 presence, the window frame, voice
+│   │   ├── resources/               vendored fonts, the QSS style sheet, characters.toml, the dictionary, companion/ (page, vendored three.js, four VRM files)
 │   │   └── utils/                   paths
 │   ├── scripts/                     build_dictionary.py, through task dictionary
 │   ├── finetuning/                  examples, prompts, review page, training and measurement of the chat model (task ft:*)
 │   ├── tests/                       pytest suite, one folder for each module of src/
+│   ├── models/                      model servers and model files, not in git
 │   └── data/                        the development database, not in git
 ├── docs/
-│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v6.1
+│   ├── USECASE_SPECIFICATION.html   the specification, COG-UCS-001 v6.2
 │   ├── ERD.md                       the database design
+│   ├── usability/                   reports of user tests
 │   └── architecture/                the system design, its diagrams, and adr/
 ├── CONTRIBUTING.md                  how to work on this repository
 ├── SECURITY.md                      how to report a vulnerability
@@ -409,7 +426,7 @@ cognia/
 
 `task test` runs the pytest suite in `desktop/tests/`, and `task lint` runs Ruff. The other
 checks are running the application (`task run`) and comparing every interface change
-against the design document, screen by screen.
+against the specification, screen by screen.
 
 CI runs the same lint and tests, with coverage, on `windows-latest` for each push to
 `main` and each pull request that changes `desktop/` or the CI files. Then it applies
@@ -503,7 +520,7 @@ own account boundary and nothing further. This follows from C-02.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **No version has been released.** The first release will be 0.1.0, at the end of
-phase 1. The specification carries its own version, 6.1, recorded in its section 1.1.
+phase 1. The specification carries its own version, 6.2, recorded in its section 1.1.
 
 **When there is a release, the version contract will cover** the on-disk data format,
 because it is the user's own data and an upgrade must not lose it. Schema changes
@@ -526,7 +543,7 @@ of each message recorded as the event itself, so a replay never calls the model.
 |---|---|
 | **Code owners** | Nguyễn Duy Vũ. No `CODEOWNERS` file exists; there is one author |
 | **Specification approval** | COG-UCS-001 version 5.4, approved by Nguyễn Duy Vũ |
-| **Decision records** | [`docs/architecture/adr/`](docs/architecture/adr/) — ADR 0000 and 0001 accepted; ADR 0002 to 0008 proposed |
+| **Decision records** | [`docs/architecture/adr/`](docs/architecture/adr/) — ADR 0000 and 0001 accepted; ADR 0002 to 0010 proposed |
 
 Architecturally significant changes need an ADR before implementation. See
 [docs/architecture/adr/README.md](docs/architecture/adr/README.md).
@@ -538,8 +555,8 @@ demonstrated ends at phase 2.
 
 | Phase | Use cases | What exists at the end of it | Status |
 |---|---|---|---|
-| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 23, 25, 27 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions the latest thing they told it, can explain how it feels, uses tools in a reply, and keeps its own journal. No presence on the desktop yet | Started. Conversation (part of UC-09) works. The domain code for character versions (UC-01, UC-03) and feelings (UC-23) exists, and the application does not call it yet |
-| **2** | UC-04, 15, 20, 22, 24, 26 | Desk awareness, the companion on the screen, its voice, its own initiative, and learning how the user works | Not started |
+| **1** | UC-01, 03, 09, 10, 12, 13, 14, 16, 17, 18, 23, 25, 27 | A character with a temperament, a memory and feelings, usable every day. It greets the user at the first opening of the day in its mood, mentions the latest thing they told it, can explain how it feels, uses tools in a reply, and keeps its own journal. No presence on the desktop yet | Built. UC-25 was removed in 6.1. No questions to get to know the user are written yet |
+| **2** | UC-04, 15, 20, 22, 24, 26 | Desk awareness, the companion on the screen, its voice, its own initiative, and learning how the user works | Built. Measured against NFR-06 in [docs/usability/2026-11-08-user-test.md](docs/usability/2026-11-08-user-test.md): not met |
 
 Open question recorded against UC-01, owned by the author: the author makes the
 appearances in VRoid Studio, and whether its terms allow redistribution from a public
@@ -547,8 +564,8 @@ MIT-licensed repository is not yet confirmed (D-26 in
 `docs/architecture/ARCHITECTURE.md`).
 
 Decisions D-57 to D-67 of `docs/architecture/ARCHITECTURE.md` design the turn with tools, speech,
-motion and the waiting companion. Each gets its own plan before code. Section 12 of that document
-lists what is open.
+motion and the waiting companion, and D-81 to D-89 record what was built of them. Section 12 of
+that document lists what is open.
 
 ## Contributing
 

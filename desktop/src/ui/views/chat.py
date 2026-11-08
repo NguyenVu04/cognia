@@ -86,6 +86,9 @@ class ChatView(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._busy = False
+        self._locked = False
+        # An empty conversation is already new, so another is not started.
+        self._empty = True
         self._reply_row: MessageRow | None = None
         self._reply_text = ""
         self._max_chars: int | None = None
@@ -127,15 +130,16 @@ class ChatView(QWidget):
 
         self.menu = ConversationMenu(self)
         self.menu.chosen.connect(self.conversationChosen)
-        self.menu.newRequested.connect(self.newConversationRequested)
+        self.menu.newRequested.connect(self.requestNewConversation)
         self.menu.deleteRequested.connect(self.deleteConversationRequested)
         self.picker = Button("New conversation", size="small", icon_name="chat-circle")
         self.picker.setToolTip("Earlier conversations")
         self.picker.clicked.connect(self._open_menu)
         row.addWidget(self.picker, 0, Qt.AlignmentFlag.AlignVCenter)
         self.new_button = IconButton("plus", "New conversation (Ctrl+N)", px=16, box=34)
-        self.new_button.clicked.connect(self.newConversationRequested)
+        self.new_button.clicked.connect(self.requestNewConversation)
         row.addWidget(self.new_button, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._update_new()
         return header
 
     def _messages(self) -> QWidget:
@@ -275,10 +279,28 @@ class ChatView(QWidget):
         for message in messages:
             self._add(self._row(message))
         self._settle()
+        self._empty = not messages
+        self._update_new()
 
     def appendMessage(self, message: Message) -> None:
         self._add(self._row(message))
         self._settle()
+        self._empty = False
+        self._update_new()
+
+    def requestNewConversation(self) -> None:
+        """Ask for a new conversation, unless this one is empty or a reply is
+        still coming."""
+        if self._can_start_new():
+            self.newConversationRequested.emit()
+
+    def _can_start_new(self) -> bool:
+        return not self._locked and not self._empty
+
+    def _update_new(self) -> None:
+        allowed = self._can_start_new()
+        self.new_button.setEnabled(allowed)
+        self.menu.setStartEnabled(allowed)
 
     def beginReply(self) -> None:
         """Say that the companion is working. Never a blank pause."""
@@ -380,12 +402,13 @@ class ChatView(QWidget):
         """The loudness of the microphone, 0 to 1."""
         self.level.setValue(round(max(0.0, min(1.0, level)) * 100))
 
-    def setTranscript(self, text: str) -> None:
-        """Put recognised words in the composer for checking. Never sent here."""
+    def sendSpoken(self, text: str) -> None:
+        """Send recognised words at once, after anything already typed, so the
+        user can talk while the window is hidden. Words that cannot be sent
+        now, for example while a reply is still coming, stay in the composer."""
         current = self.draft.text().strip()
-        self.draft.setText(f"{current} {text}".strip() if current else text)
-        self.draft.setFocus()
-        self.draft.end(False)
+        self.draft.setText(f"{current} {text}" if current else text)
+        self._send()
 
     def setSpeaking(self, speaking: bool) -> None:
         self.stop_voice.setVisible(speaking)
@@ -404,7 +427,8 @@ class ChatView(QWidget):
         if locked:
             self.menu.hide()
         self.picker.setEnabled(not locked)
-        self.new_button.setEnabled(not locked)
+        self._locked = locked
+        self._update_new()
 
     # ── the column ────────────────────────────────────────────────────────
 

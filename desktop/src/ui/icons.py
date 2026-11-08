@@ -52,6 +52,7 @@ GLYPHS: dict[str, str] = {
     "rocket-launch": "\ue3fe",
     "desktop": "\ue560",
     "stop": "\ue46c",
+    "caret-down": "\ue136",
 }
 
 

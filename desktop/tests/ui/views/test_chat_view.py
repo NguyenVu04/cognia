@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
+from src.domain.conversation.models import Message
 from src.ui.views.chat import NO_EMOJI, NO_INVISIBLE, ChatView, refusal
 
 
@@ -121,7 +122,12 @@ def test_removing_the_emoji_allows_send(view: ChatView) -> None:
     assert view.send.isEnabled()
 
 
+def said(text: str = "I have a cat.") -> Message:
+    return Message.new("c1", "user", text, datetime(2026, 11, 8, tzinfo=timezone.utc))
+
+
 def test_header_locked_while_replying(view) -> None:
+    view.appendMessage(said())
     view.beginReply()
     assert not view.picker.isEnabled()
     assert not view.new_button.isEnabled()
@@ -141,10 +147,32 @@ def test_header_unlocked_after_error(view) -> None:
 def test_plus_requests_new(view) -> None:
     caught: list[bool] = []
     view.newConversationRequested.connect(lambda: caught.append(True))
+    view.loadConversation([said()])
 
     view.new_button.click()
 
     assert caught == [True]
+
+
+def test_no_new_conversation_from_an_empty_one(view) -> None:
+    caught: list[bool] = []
+    view.newConversationRequested.connect(lambda: caught.append(True))
+    view.loadConversation([])
+
+    view.requestNewConversation()
+
+    assert caught == []
+    assert not view.new_button.isEnabled()
+    assert not view.menu.start.isEnabled()
+
+
+def test_first_message_allows_a_new_conversation(view) -> None:
+    view.loadConversation([])
+
+    view.appendMessage(said())
+
+    assert view.new_button.isEnabled()
+    assert view.menu.start.isEnabled()
 
 
 def test_working_label(view) -> None:
@@ -171,3 +199,34 @@ def test_check_chip_shown(view) -> None:
     view.endReply("It's 85.", "", "Not from what I checked: 85 · I found: 12*7 = 84")
 
     assert row.checkText() == "Not from what I checked: 85 · I found: 12*7 = 84"
+
+
+def test_spoken_words_are_sent_at_once(view: ChatView) -> None:
+    sent: list[str] = []
+    view.messageSent.connect(sent.append)
+
+    view.sendSpoken("How was your day?")
+
+    assert sent == ["How was your day?"]
+    assert view.draft.text() == ""
+
+
+def test_spoken_words_follow_the_typed_draft(view: ChatView) -> None:
+    sent: list[str] = []
+    view.messageSent.connect(sent.append)
+    view.draft.setText("Hi.")
+
+    view.sendSpoken("How was your day?")
+
+    assert sent == ["Hi. How was your day?"]
+
+
+def test_spoken_words_wait_while_a_reply_comes(view: ChatView) -> None:
+    sent: list[str] = []
+    view.messageSent.connect(sent.append)
+    view.beginReply()
+
+    view.sendSpoken("And then?")
+
+    assert sent == []
+    assert view.draft.text() == "And then?"

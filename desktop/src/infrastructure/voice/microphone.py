@@ -11,7 +11,7 @@ import struct
 from collections.abc import Sequence
 
 from PySide6.QtCore import QObject, QTimer, Signal
-from PySide6.QtMultimedia import QAudio, QAudioFormat, QAudioSource, QMediaDevices
+from PySide6.QtMultimedia import QAudioFormat, QAudioSource, QMediaDevices, QtAudio
 
 RATE = 16_000
 _FRAME_S = 0.05
@@ -98,7 +98,7 @@ class Microphone(QObject):
         self._levels.clear()
         self._source = QAudioSource(device, audio, self)
         self._device = self._source.start()
-        if self._source.error() != QAudio.Error.NoError or self._device is None:
+        if self._source.error() != QtAudio.Error.NoError or self._device is None:
             self._discard()
             self.failed.emit(REFUSED)
             return
@@ -108,7 +108,7 @@ class Microphone(QObject):
         """Stop and hand over what was heard."""
         if self._source is None:
             return
-        self._read()
+        self._take()
         pcm = bytes(self._pcm)
         self._discard()
         self.finished.emit(wav(pcm))
@@ -117,7 +117,8 @@ class Microphone(QObject):
         """Stop and forget what was heard."""
         self._discard()
 
-    def _read(self) -> None:
+    def _take(self) -> None:
+        """Keep what the device holds now."""
         if self._device is None:
             return
         chunk = bytes(self._device.readAll().data())
@@ -126,7 +127,12 @@ class Microphone(QObject):
             loudness = level(chunk)
             self._levels.append(loudness)
             self.level.emit(min(1.0, loudness * 8))
-        if self._source is not None and self._source.error() != QAudio.Error.NoError:
+
+    def _read(self) -> None:
+        if self._source is None:
+            return
+        self._take()
+        if self._source.error() != QtAudio.Error.NoError:
             self._discard()
             self.failed.emit(REFUSED)
             return

@@ -64,6 +64,41 @@ def test_no_limit_reads_as_none(view: SettingsView) -> None:
     assert page.edited().ceiling is None
 
 
+def test_quiet_hours_chosen_from_hour_and_minute_lists(view: SettingsView) -> None:
+    page = view.speaking_up
+    page.setSettings(SpeechSettings.defaults())
+    assert not page.quiet_start.hour.isEnabled()
+
+    page.quiet_on.setChecked(True)
+    page.quiet_start.hour.setCurrentText("23")
+    page.quiet_start.minute.setCurrentText("15")
+    page.quiet_end.hour.setCurrentText("06")
+    page.quiet_end.minute.setCurrentText("45")
+
+    assert page.quiet_start.hour.isEnabled()
+    assert page.edited().quiet == (time(23, 15), time(6, 45))
+
+
+def test_break_threshold_list(view: SettingsView) -> None:
+    page = view.speaking_up
+    page.setSettings(SpeechSettings.defaults())
+    assert page.threshold.currentText() == "I choose"
+    assert page.edited().break_threshold_min is None
+
+    page.threshold.setCurrentText("90 min")
+
+    assert page.edited().break_threshold_min == 90
+
+
+def test_stored_threshold_off_the_list_is_kept(view: SettingsView) -> None:
+    page = view.speaking_up
+    stored = SpeechSettings(None, None, frozenset(MessageKind), True, 37)
+
+    page.setSettings(stored)
+
+    assert page.edited().break_threshold_min == 37
+
+
 def test_save_failure_shows_the_sentence(view: SettingsView) -> None:
     view.speaking_up.showError("The setting could not be saved.")
 

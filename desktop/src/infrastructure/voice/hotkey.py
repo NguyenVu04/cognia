@@ -64,7 +64,9 @@ class _Filter(QAbstractNativeEventFilter):
         self._owner = owner
 
     def nativeEventFilter(self, event_type, message):
-        if bytes(event_type) != b"windows_generic_MSG" or not message:
+        # The pointer is tested as a number: PySide's pointer type has a length
+        # of zero, so it always reads as false.
+        if bytes(event_type) != b"windows_generic_MSG" or not int(message):
             return False, 0
         msg = wintypes.MSG.from_address(int(message))
         if msg.message == WM_HOTKEY and msg.wParam == _ID:

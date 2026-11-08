@@ -21,7 +21,7 @@ settings = orm.Settings.__table__
 kinds = orm.MessageKind.__table__
 
 NOT_SAVED = "The setting could not be saved. Nothing was changed."
-DEFAULT_HOTKEY = "Ctrl+Alt+Space"
+DEFAULT_HOTKEY = "Ctrl+Alt+K"
 
 
 class SettingNotSaved(Exception):

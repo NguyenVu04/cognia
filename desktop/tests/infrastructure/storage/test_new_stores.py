@@ -171,7 +171,7 @@ def test_voice_defaults(db: Database) -> None:
     settings = SqliteSettings(db)
 
     assert settings.speak_aloud() is True
-    assert settings.talk_hotkey() == DEFAULT_HOTKEY == "Ctrl+Alt+Space"
+    assert settings.talk_hotkey() == DEFAULT_HOTKEY == "Ctrl+Alt+K"
 
 
 def test_speech_settings_round_trip(db: Database) -> None:

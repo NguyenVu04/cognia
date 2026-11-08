@@ -23,6 +23,9 @@ const SHAPES = ['aa', 'ih', 'ou', 'ee', 'oh'];
 const FACE_CHANGE_S = 0.3;
 const MOUTH_FOLLOW_S = 0.06;
 const MOUTH_GAIN = 1.3;
+// The face stays neutral this long after the last open mouth, so gaps between
+// words do not bring the expression back.
+const SPEAKING_HOLD_S = 0.5;
 const STOP_S = 0.5;
 const BONES = [
   'hips', 'spine', 'chest', 'neck', 'head',
@@ -380,6 +383,7 @@ let frameLimit = 30;
 let lastFrame = 0;
 let motion = null;
 let stopping = null;
+let speakingUntil = -1;
 const faceNow = Object.fromEntries(FACES.map((name) => [name, name === 'neutral' ? 1 : 0]));
 const faceTarget = { ...faceNow };
 const mouthNow = Object.fromEntries(SHAPES.map((name) => [name, 0]));
@@ -453,9 +457,13 @@ function applyPose(pose, dt) {
   }
   const manager = vrm.expressionManager;
   if (!manager) return;
+  // An expression changes the mouth shape, so speech is shown on a neutral face.
+  const speaking = clock < speakingUntil;
   for (const name of FACES) {
-    faceNow[name] = toward(faceNow[name], faceTarget[name], dt, FACE_CHANGE_S);
-    manager.setValue(name, Math.max(faceNow[name], pose.faces.get(name) || 0));
+    const target = speaking ? 0 : faceTarget[name];
+    faceNow[name] = toward(faceNow[name], target, dt, FACE_CHANGE_S);
+    const gesture = speaking ? 0 : pose.faces.get(name) || 0;
+    manager.setValue(name, Math.max(faceNow[name], gesture));
   }
   for (const name of SHAPES) {
     mouthNow[name] = follow(mouthNow[name], mouthTarget[name], dt, MOUTH_FOLLOW_S);
@@ -536,6 +544,7 @@ window.cognia = {
   setMouth(weights) {
     // Opened wider than the weights, so speech shows at the size of the window.
     for (const name of SHAPES) mouthTarget[name] = clamp01((weights[name] || 0) * MOUTH_GAIN);
+    if (SHAPES.some((name) => mouthTarget[name] > 0)) speakingUntil = clock + SPEAKING_HOLD_S;
   },
   lookAt(x, y) { ambient.pointer = x === null ? null : [x, y]; },
   setFrameLimit(frames) { frameLimit = Math.max(1, frames); },

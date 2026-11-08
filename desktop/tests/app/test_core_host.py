@@ -537,11 +537,30 @@ def test_new_conversation_loads_empty(core: Core, path: Path) -> None:
     assert rows(path, "SELECT count(*) FROM conversations") == [(2,)]
 
 
+def test_new_conversation_waves(core: Core) -> None:
+    send_turn(core)
+    reply(core)
+
+    core.bridge.send(NewConversation())
+
+    assert core.recorder.wait("gestureShown") == ("wave",)
+
+
+def test_new_while_replying_does_not_wave(core: Core) -> None:
+    send_turn(core)
+
+    core.bridge.send(NewConversation())
+    barrier(core)
+
+    assert ("wave",) not in core.recorder.all("gestureShown")
+
+
 def test_new_in_empty_conversation_keeps_it(core: Core, path: Path) -> None:
     core.bridge.send(NewConversation())
     barrier(core)
 
     assert rows(path, "SELECT count(*) FROM conversations") == [(1,)]
+    assert core.recorder.all("gestureShown") == []
 
 
 def test_open_conversation_loads_history(core: Core) -> None:

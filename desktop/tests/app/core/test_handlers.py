@@ -4,7 +4,7 @@ the test moves."""
 import sqlite3
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -216,6 +216,20 @@ def test_save_speech_settings(core: Core) -> None:
         == [(4, 60)]
 
 
+def test_save_quiet_hours_past_midnight(core: Core) -> None:
+    chosen = SpeechSettings(
+        None, (time(22, 30), time(7, 0)), frozenset(MessageKind), True, None
+    )
+
+    core.send(SaveSpeechSettings(chosen))
+
+    assert core.recorder.wait("speechSettingsSaved") == ("",)
+    assert core.rows("SELECT quiet_start, quiet_end FROM settings") \
+        == [("22:30", "07:00")]
+    (shown,) = core.recorder.wait("speechSettingsShown", 2)
+    assert shown.quiet == (time(22, 30), time(7, 0))
+
+
 def test_switching_moods_off_is_an_event(core: Core) -> None:
     choose(core)
     chosen = SpeechSettings(None, None, frozenset(MessageKind), False, None)
@@ -255,7 +269,7 @@ def test_explain_feeling(core: Core) -> None:
 
 
 def test_voice_settings(core: Core) -> None:
-    assert core.recorder.wait("voiceSettingsShown") == (True, "Ctrl+Alt+Space")
+    assert core.recorder.wait("voiceSettingsShown") == (True, "Ctrl+Alt+K")
 
     core.send(SetSpeakAloud(False))
     core.send(SetHotkey("Ctrl+Shift+K"))

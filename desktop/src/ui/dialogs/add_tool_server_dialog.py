@@ -6,12 +6,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QCheckBox, QComboBox, QLineEdit, QWidget
+from PySide6.QtWidgets import QCheckBox, QLineEdit, QWidget
 
 from src.domain.tools.models.tool_server import HTTP, STDIO
 from src.ui import theme
 from src.ui.dialogs.base import DialogWindow
 from src.ui.widgets.buttons import Button
+from src.ui.widgets.dropdown import Dropdown
 from src.ui.widgets.typography import caption
 
 CONSENT = (
@@ -42,10 +43,9 @@ class AddToolServerDialog(DialogWindow):
             "add one you trust."
         )
         self.name = self._field("Name, such as notes")
-        self.transport = QComboBox()
+        self.transport = Dropdown()
         self.transport.addItem("A command on this computer", STDIO)
         self.transport.addItem("An address on the network", HTTP)
-        self.transport.setFont(theme.font(13.5))
         self.transport.currentIndexChanged.connect(self._update)
         self.content.addWidget(self.transport)
         self.content.addSpacing(8)

@@ -52,7 +52,7 @@ QScrollArea {
     border: 0;
 }
 
-QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QTimeEdit, QKeySequenceEdit QLineEdit {
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QKeySequenceEdit QLineEdit {
     background: $BG_INSET;
     border: 1px solid $BORDER;
     border-radius: 10px;
@@ -62,13 +62,46 @@ QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QTimeEdit, QKeySequenceEdit QLin
     selection-color: $TEXT;
 }
 
-QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus,
-QTimeEdit:focus {
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus {
     border-color: $ACCENT;
 }
 
-QLineEdit:disabled, QSpinBox:disabled, QTimeEdit:disabled {
+QLineEdit:disabled, QSpinBox:disabled {
     color: $TEXT_FAINT;
+}
+
+QComboBox {
+    background: $BG_INSET;
+    border: 1px solid $BORDER;
+    border-radius: 10px;
+    color: $TEXT;
+    padding: 8px 30px 8px 12px;
+}
+
+QComboBox:focus, QComboBox:on {
+    border-color: $ACCENT;
+}
+
+QComboBox:disabled {
+    color: $TEXT_FAINT;
+}
+
+/* The arrow is painted by the widget itself. */
+QComboBox::drop-down {
+    border: 0;
+    width: 0;
+}
+
+QComboBox::down-arrow {
+    image: none;
+}
+
+QComboBox QAbstractItemView {
+    background: $BG_CARD;
+    border: 1px solid $BORDER;
+    selection-background-color: $WASH_30;
+    selection-color: $TEXT;
+    outline: 0;
 }
 
 QMenu {

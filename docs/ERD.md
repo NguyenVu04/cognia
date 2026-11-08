@@ -341,8 +341,9 @@ version on every new companion message. A companion message from migration `0001
 has no version, because the mockup character has no row (ADR 0003).
 
 **Rating.** `rating` holds the up or down mark of UC-09-A2, as 1 or -1. `NULL` means
-no rating. The learning rules use a rating as evidence only (UC-24). The application
-also writes a `message_rated` event, so the evidence has a seq and a time.
+no rating. The learning rules may use a rating as evidence only (UC-24); no rule reads it
+yet (D-86 in `ARCHITECTURE.md`). The application also writes a `message_rated` event,
+so the evidence has a seq and a time.
 
 **Proactive messages.** A proactive message that the companion said is also a
 companion message. Its decision is in `speech_decisions` (section 12).
@@ -810,8 +811,21 @@ erDiagram
         INTEGER close_hint_shown "0 or 1, default 0"
         TEXT embedding_model "model that made the stored embeddings"
         TEXT chat_device "GPU chosen for the chat model, or NULL"
+        INTEGER speak_aloud "0 or 1, default 1"
+        TEXT talk_hotkey "default 'Ctrl+Alt+K'"
     }
     settings }o--|| character_versions : "current"
+
+    tool_servers {
+        TEXT id PK
+        TEXT name UK "the user's name for it"
+        TEXT transport "'stdio' or 'http'"
+        TEXT command "for stdio, else empty"
+        TEXT args "JSON list of strings"
+        TEXT url "for http, else empty"
+        TEXT added_at
+        TEXT consented_at "never NULL"
+    }
 ```
 
 ### 13.1 `settings`
@@ -849,6 +863,27 @@ chat model, so the measurement runs once (D-53 in `ARCHITECTURE.md`). `NULL` mea
 measured". It is not user data and holds no user text. "Erase everything" sets it to
 `NULL` with the other settings, and the next run measures again. Revision `0002` adds it.
 
+**Voice.** `speak_aloud` is 1 by default, so the companion reads its replies aloud until
+the user turns this off (FR-39, UC-26). `talk_hotkey` holds the key combination for
+talking in the text form of Qt, for example `Ctrl+Alt+K`. The application refuses a
+combination with no Ctrl, Alt or Win key. Revision `0008` adds both columns with plain
+`ADD COLUMN` statements, so the unnamed `CHECK` constraints of the table stay.
+
+### 13.2 `tool_servers`
+
+**Purpose.** One row holds one tool server that the user added (FR-41, UC-27, D-60 in
+`ARCHITECTURE.md`). The user sees it as an add-on.
+
+**Consent.** A row exists only after the user ticked the box that says the server can
+send data off the computer. `consented_at` records when, and it is never `NULL`.
+
+**Transport.** `CHECK` constraints require a command for `stdio` and an address for
+`http`. `args` is a JSON list, which a `CHECK` validates. `name` is unique, because the
+tools of a server take its name as a prefix.
+
+**Erasure.** "Erase everything" deletes every row with the other settings (section
+14.2). Revision `0008` creates the table.
+
 ## 14. Deletion and erasure
 
 ### 14.1 One item (UC-13)
@@ -874,7 +909,7 @@ If any step fails, the transaction rolls back. The item stays exactly as it was
 | `events`, `emotion_changes` | Deleted | Deleted |
 | `patterns`, `self_adjustments` | Deleted | Deleted |
 | `speech_decisions`, `decision_factors` | Deleted | Deleted |
-| `app_exclusions`, `message_kinds`, `settings` | Kept, because they are settings | Reset to defaults |
+| `app_exclusions`, `message_kinds`, `settings`, `tool_servers` | Kept, because they are settings | Reset to defaults; `app_exclusions` and `tool_servers` lose every row |
 
 **Order.** UC-14 step 2 counts the rows to delete before the user confirms. After the
 deletes, the application runs a WAL checkpoint and `VACUUM`, so no deleted page stays
@@ -910,8 +945,8 @@ erases each table group in its own transaction and reports each result.
 | FR-24 | No table holds a task, a time of day for a reminder, a list order or a completion status |
 | FR-25 to FR-28, UC-20 | `settings` companion columns |
 | FR-31, UC-22 | `speech_decisions`, `decision_factors`, `events` |
-| FR-38, FR-39, UC-26 | No table. The audio is never stored, and the text becomes a row of `messages` |
-| FR-40, FR-41, UC-27 | `events` of kind `activity_started` and `activity_ended`. The list of tool servers has no table yet (section 16) |
+| FR-38, FR-39, UC-26 | `settings.speak_aloud`, `settings.talk_hotkey`. The audio is never stored, and the text becomes a row of `messages` |
+| FR-40, FR-41, UC-27 | `events` of kind `activity_started` and `activity_ended`, `tool_servers` |
 | FR-32, BR-08, UC-23 | `events`, `emotion_changes`, temperament columns |
 | NFR-07 | WAL mode, `synchronous=FULL`, one transaction per use-case step |
 | NFR-13 | `events` with stored model classes, stored importance and `utc_offset_min` |
@@ -929,6 +964,5 @@ These items are outside this design, or need a decision before implementation.
 4. **Payload shapes.** Section 6.4 of [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md)
    gives the closed set of event kinds. The exact fields of each payload belong to the
    domain code.
-5. **Tool servers.** D-60 in `ARCHITECTURE.md` needs a list of the tool servers that the user added. Its
-   table comes with the code that uses it, through a new revision. The shorter history has its columns
+5. **Tool servers.** Closed by revision `0008` (section 13.2). The shorter history has its columns
    (revision `0004`, D-72).

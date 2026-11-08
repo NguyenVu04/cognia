@@ -3,7 +3,7 @@
 Revision ID: 0008
 Revises: 0007
 
-Speaking aloud is on by default, and the talk key is Ctrl+Alt+Space. A tool
+Speaking aloud is on by default, and the talk key is Ctrl+Alt+K. A tool
 server row exists only after the user agreed that it may send data off the
 machine.
 """
@@ -39,7 +39,7 @@ def upgrade() -> None:
     # A plain ADD COLUMN keeps the unnamed CHECKs of the table, which a batch
     # rebuild would drop.
     op.execute("ALTER TABLE settings ADD COLUMN speak_aloud INTEGER NOT NULL DEFAULT 1 CHECK (speak_aloud IN (0, 1))")
-    op.execute("ALTER TABLE settings ADD COLUMN talk_hotkey TEXT NOT NULL DEFAULT 'Ctrl+Alt+Space'")
+    op.execute("ALTER TABLE settings ADD COLUMN talk_hotkey TEXT NOT NULL DEFAULT 'Ctrl+Alt+K'")
 
 
 def downgrade() -> None:

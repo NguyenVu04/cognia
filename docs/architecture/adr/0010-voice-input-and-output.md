@@ -1,7 +1,7 @@
 # 10. Voice input and output on the machine
 
 - **Status:** Proposed
-- **Date:** 2026-11-06
+- **Date:** 2026-11-06, changed on 2026-11-08 to match what was built (D-84)
 - **Deciders:** Nguyễn Duy Vũ
 - **Supersedes:** —
 - **Superseded by:** —
@@ -20,23 +20,28 @@ can read keystrokes.
 ## Decision
 
 **whisper.cpp turns speech into text.** `whisper-server.exe` runs as a child process on `127.0.0.1`,
-with the model `base.en-q5_1` (57 MiB, MIT). The model supervisor of D-49 starts it at the first need,
-and the job object of D-48 ends it with Cognia.
+with the model `base.en-q5_1` (57 MiB, MIT). `TranscriptionServer` starts it at the first need, on a
+free port, and the job object of D-48 ends it with Cognia.
 
-**Kokoro-82M with espeak-ng gives the companion its voice.** Kokoro runs with `onnxruntime` on a
-`speech_thread`, and Qt plays the audio. espeak-ng turns words into phonemes, so each name is said
-correctly. Each character has its own Kokoro voice. The speed follows the mood (section 6.5.4).
+**Kokoro-82M with espeak-ng gives the companion its voice.** `kokoro-onnx` runs the fp32 Kokoro v1.0
+file with `onnxruntime` on a speech thread. espeak-ng, from the `espeakng-loader` wheel, turns words
+into phonemes, so each name is said correctly. `QAudioSink` plays each sentence on the GUI thread.
+Each character has its own Kokoro voice. The speed follows the mood (section 6.5.4). Speaking aloud is
+on by default, and the user turns it off in Settings › Voice.
 
-**The loudness of the audio moves the mouth.** The speech thread sends a weight for the VRM presets
-`aa`, `ih`, `ou`, `ee` and `oh` to the page.
+**The phoneme times move the mouth.** Kokoro reports when each phoneme starts and ends. While a
+sentence plays, the speaker sends a weight for the VRM presets `aa`, `ih`, `ou`, `ee` and `oh` for the
+moment of the audio to the page.
 
-**The user starts each use.** A key combination through `RegisterHotKey` starts listening, and a second
+**The user starts each use.** A key combination through `RegisterHotKey`, `Ctrl+Alt+K` by default,
+starts listening, and a second
 press or 1.5 s of silence stops it. A button beside the companion listens while the user holds it. A
 button in the composer does the same, because the companion is never the only route (FR-28).
 `infrastructure/voice` declares `RegisterHotKey` and `UnregisterHotKey`.
 
-**The audio stays in memory.** The audio goes to `whisper-server` and then is dropped. The text goes
-into the composer, and the user sends it.
+**The audio stays in memory.** The audio goes to `whisper-server` and then is dropped. The text is
+sent at once when listening stops, so the user can talk while the window is hidden. The key does
+not open the window.
 
 ## Consequences
 
@@ -49,12 +54,13 @@ into the composer, and the user sends it.
 
 - espeak-ng is GPL-3.0. The installer distributes it under GPL-3.0, with its licence text and an offer
   of its source. The author checks what this asks of the distribution as a whole before a release.
-- The installer grows by about 57 MiB for whisper and about 115 MB for Kokoro.
+- The installer grows by about 57 MiB for whisper and about 340 MB for Kokoro. The int8 file is
+  smaller, but one sentence of 3 s took 8.1 s with it on the author's machine, against 0.76 s for fp32.
+- The Cognia process holds about 1.5 GB after the first sentence, mostly the fp32 model.
 - Kokoro runs on the CPU. On a machine with no usable GPU, speech and the chat model compete for it.
 - Kokoro and `onnxruntime` run inside the Cognia process, so a native fault there stops Cognia.
   `onnxruntime` enters `desktop/uv.lock`.
-- Nobody has checked that the Windows release of whisper.cpp holds `whisper-server.exe` (section 12 of
-  `ARCHITECTURE.md`).
+- Another application can hold the key combination. Cognia then says so and names Settings › Voice.
 
 **Neutral:**
 

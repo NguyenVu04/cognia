@@ -61,6 +61,8 @@ if TYPE_CHECKING:
 
 NOT_SAVED = "The reply could not be saved, so nothing from it was kept. Try again."
 SHORT_REPLIES = "Keep your reply short: the user likes short messages."
+# The user opened the conversation, so the wave answers them and needs no gate.
+WAVE = "wave"
 
 
 @dataclass(frozen=True)
@@ -573,6 +575,7 @@ class ChatHandler:
         if not store.history(self.conversation.id, 1):
             return  # already sitting in an empty one; don't pile up more
         self.conversation = store.create(self.core.clock())
+        self.core.bridge.gestureShown.emit(WAVE)
         self.core.bridge.conversationLoaded.emit([])
         self.refresh_picker()
 

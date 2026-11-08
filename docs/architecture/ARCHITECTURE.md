@@ -269,7 +269,7 @@ The structure has three parts that a reader must keep apart:
 | llama-server, embedding model | Turn text into embeddings | Shipped third-party program |
 | QtWebEngine with three-vrm | Draw the character in 3D | Shipped third-party libraries |
 | whisper-server, speech model | Turn speech into text | Shipped third-party program |
-| Kokoro and espeak-ng | Turn the companion's words into its voice | Shipped third-party libraries |
+| Kokoro and espeak-ng | Turn the companion's words into its voice | Shipped third-party libraries (`kokoro-onnx`, `espeakng-loader`) |
 | Tool servers | Give more tools, when the user adds them | The user |
 | `cognia.sqlite3` | Hold all user data | The user's disk |
 
@@ -343,7 +343,8 @@ The tree under `desktop/src/` is:
 ```text
 src/
 ├── __main__.py
-├── app/                 core_host, bridge, replay, single_instance, config
+├── app/                 core_host and its handlers in core/, bridge, chat_worker, wiring, tray,
+│                        single_instance, config
 ├── domain/
 │   ├── ports/           every interface the domain needs
 │   ├── events/          event kinds, payloads
@@ -357,16 +358,17 @@ src/
 │   ├── emotion/         PAD, appraisal, decay
 │   ├── speech/          SpeechGate, decisions, explanations
 │   ├── initiative/      reasons to speak, the next wake time
-│   ├── learning/        patterns, self-adjustments, proposals
+│   ├── learning/        patterns and self-adjustments
 │   └── safety/          crisis detection, the required line
 ├── infrastructure/
 │   ├── ai/              llama client, supervisor, job object, GPU memory, tool loop, MCP client
 │   ├── storage/         SQLite stores and migrations
-│   ├── presence/        the Win32 calls
-│   └── voice/           whisper supervisor, Kokoro, microphone, hot key (D-65)
+│   ├── presence/        the Win32 calls of the four facts
+│   ├── desktop/         the native window frame, the start entry (D-82, D-89)
+│   └── voice/           whisper supervisor, Kokoro, microphone, hot key (D-65, D-84)
 ├── ui/                  windows, views, dialogs, widgets
-├── resources/           fonts, QSS, companion page, VRM and VRMA files, questions
-└── utils/               logging, paths
+├── resources/           fonts, QSS, companion page, VRM files, dictionary, questions
+└── utils/               paths
 ```
 
 One module stays outside this tree. `desktop/finetuning/` builds and measures the tuned chat model (D-80). It runs at build time, and the installer holds none of its code.
@@ -389,8 +391,9 @@ stubs in `src/domain/` already use the `models/` and `_service.py` names (D-02).
 6. Nothing imports `app/`. It wires the layers together.
 7. `utils/` imports the standard library only.
 8. Only `domain/speech/speech_service.py` references the `SpeechOutput` port (NFR-09).
-9. (Removed by D-48.) `infrastructure/presence/` and `infrastructure/ai/` call `ctypes`. Each
-   module states its Win32 functions in its docstring. The data type of `PresenceSample` keeps
+9. (Removed by D-48.) `infrastructure/presence/`, `infrastructure/ai/`, `infrastructure/desktop/`
+   and `infrastructure/voice/hotkey.py` call `ctypes` (D-82, D-84). Each module states its Win32
+   functions in its docstring. The data type of `PresenceSample` keeps
    the limit of C-05 (section 6.12).
 10. Only `infrastructure/ai/` and `infrastructure/voice/` hold HTTP code, LangChain, LangGraph and
     the MCP client. They appear nowhere else (NFR-01, D-58).
@@ -420,18 +423,19 @@ exist, a reviewer checks these rules by hand.
 | `domain/awareness` | Hold presence, time at the machine, the 04:00 day and application totals (UC-04, UC-16) | [`desktop/src/domain/awareness`](../../desktop/src/domain/awareness) (rules and service: time at the machine and minutes per application, D-77) |
 | `domain/tools` | Hold the closed set of tools and their pure rules (UC-27, D-59) | [`desktop/src/domain/tools`](../../desktop/src/domain/tools) (catalog and pure rules, D-71) |
 | `domain/emotion` | Compute feelings (UC-23) | [`desktop/src/domain/emotion`](../../desktop/src/domain/emotion) (models, rules and service, wired through `domain/companion`) |
-| `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (empty) |
-| `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (empty) |
-| `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (empty) |
+| `domain/speech` | Hold the SpeechGate, decisions and explanations (UC-17, UC-22) | [`desktop/src/domain/speech`](../../desktop/src/domain/speech) (models, rules and service, wired in `app/core/proactive.py`, D-85) |
+| `domain/initiative` | Find reasons to speak and the next wake time (UC-22) | [`desktop/src/domain/initiative`](../../desktop/src/domain/initiative) (models and rules, wired in `app/core/proactive.py`, D-85) |
+| `domain/learning` | Find patterns and adjustments (UC-24) | [`desktop/src/domain/learning`](../../desktop/src/domain/learning) (models and rules, wired in `app/core/learning.py`, D-86) |
 | `domain/reflection` | Removed by D-73 | — |
 | `domain/safety` | Detect a crisis and check the reply (NFR-12) | [`desktop/src/domain/safety`](../../desktop/src/domain/safety) (rules, wired in `app/`, D-68) |
-| `infrastructure/ai` | Implement the model ports over HTTP, run the tool loop with LangGraph, and reach tool servers (D-58, D-60) | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `tool_loop`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
+| `infrastructure/ai` | Implement the model ports over HTTP, run the tool loop with LangGraph, and reach tool servers (D-58, D-60) | [`desktop/src/infrastructure/ai`](../../desktop/src/infrastructure/ai) (`LlamaClient`, `tool_loop`, `McpTools`, `ModelSupervisor`, `JobObject`, GPU memory; no `ModelScheduler` yet) |
 | `infrastructure/storage` | Implement the store ports over SQLite, and read the ready-made characters from `characters.toml` | [`desktop/src/infrastructure/storage`](../../desktop/src/infrastructure/storage) |
 | `infrastructure/presence` | Implement the presence port over Win32 | [`desktop/src/infrastructure/presence`](../../desktop/src/infrastructure/presence) (Win32 source and sampler, D-77) |
-| `infrastructure/voice` | Supervise `whisper-server`, run Kokoro, open the microphone, and receive the hot key (UC-26, D-65) | Not built yet |
+| `infrastructure/voice` | Supervise `whisper-server`, run Kokoro, open the microphone, and receive the hot key (UC-26, D-65) | [`desktop/src/infrastructure/voice`](../../desktop/src/infrastructure/voice) (D-84) |
+| `infrastructure/desktop` | Give frameless windows the Windows shadow, and write the start entry (D-82, D-89) | [`desktop/src/infrastructure/desktop`](../../desktop/src/infrastructure/desktop) |
 | `app` | Start the program, own the threads, and connect the layers | [`desktop/src/app`](../../desktop/src/app) |
 | `ui` | Show data and report input | [`desktop/src/ui`](../../desktop/src/ui) |
-| `utils` | Logging and paths | [`desktop/src/utils`](../../desktop/src/utils) |
+| `utils` | Paths. Logging does not exist yet | [`desktop/src/utils`](../../desktop/src/utils) |
 
 The application log holds identifiers and event kinds only. It never holds the user's
 words, an application name or a memory line, because that would be a second copy of the
@@ -1956,45 +1960,58 @@ D-25, D-26, D-64, D-65).
 ```mermaid
 classDiagram
     class CompanionWindow {
-        -view: QWebEngineView
-        -handle: DragHandle
+        -stage: CompanionStage
+        -surface: _DragSurface
         +setExpression(preset, weight) None
-        +showBubble(text) None
+        +playGesture(name) None
+        +setMouth(weights) None
+        +showBubble(message) None
         +setDrawingState(state) None
+        +place(position) bool
     }
 
-    class DragHandle {
-        +moved Signal
+    class _DragSurface {
+        +dropped Signal
     }
 
-    class TalkButton {
+    class _TalkButton {
         +pressed Signal
         +released Signal
     }
 
-    class companion_page {
-        <<module>>
-        +load(vrm_path) None
-        +setExpression(preset, weight) None
-        +playAddressed(motion) None
-        +setAmbient(state) None
-        +setMouth(weight) None
-        +setFrameLimit(frames) None
+    class CompanionStage {
+        <<QWebEngineView>>
+        +call(function, args) None
+        +failed Signal
     }
 
-    CompanionWindow --> DragHandle
-    CompanionWindow --> TalkButton
-    CompanionWindow ..> companion_page : runJavaScript
+    class companion_page {
+        <<module>>
+        +setExpression(preset, weight)
+        +setAmbient(state)
+        +playGesture(name)
+        +startThink() / endThink()
+        +activityStep(name, label) / stopActivity()
+        +setMouth(weights)
+        +lookAt(x, y)
+        +setFrameLimit(frames)
+    }
+
+    CompanionWindow --> _DragSurface
+    CompanionWindow --> _TalkButton
+    CompanionWindow --> CompanionStage
+    CompanionStage ..> companion_page : runJavaScript
 ```
 
 **Key types.**
 
 | Type | Kind | Note |
 |---|---|---|
-| `CompanionWindow` | `QWidget` | Exists today with a placeholder sprite. Needs `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` for FR-25 |
-| `DragHandle` | `QWidget` | Takes mouse events, because a web view would keep them. Only this code can move the window |
-| `TalkButton` | `QWidget` | Takes mouse events only, as `DragHandle` does. Held down, it keeps the microphone open (UC-26-A1) |
-| `companion_page` | HTML and JavaScript in `resources/companion/` | three.js and `three-vrm`, stored in the repository at fixed versions |
+| `CompanionWindow` | `QWidget` | 300 × 460 pixels, frameless, always on top, `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` (FR-25). It also shows the count of an exercise and the speech bubble |
+| `_DragSurface` | `QWidget` | Covers the whole window and takes the mouse events, because a web view would keep them. The user drags the character from any point. A double click stops an exercise. The pointer position inside the window goes to `lookAt` |
+| `_TalkButton` | `IconButton` | Shows while the pointer is over the window. Held down, it keeps the microphone open (UC-26-A1) |
+| `CompanionStage` | `QWebEngineView` | An off-the-record profile, a transparent page, `LocalOnlyInterceptor`, and a `QWebChannel` that reports ready or failed |
+| `companion_page` | `resources/companion/page/` | three.js 0.180.0 and `@pixiv/three-vrm` 3.5.5, stored in `resources/companion/vendor/` at fixed versions. All motion is code (D-83) |
 
 **Two paths for motion (BR-07).** Ambient motion runs inside the page: breathing, blinking, gaze,
 and the expression from `expressionChanged`. The page has no function that moves the window, and
@@ -2007,19 +2024,20 @@ not pass the gate (D-64).
 every other URL. The profile is off the record, so Chromium writes no cache and no cookies to
 disk. The capture of NFR-01 must include the Chromium processes.
 
-**Drawing states (D-25).** Hidden and paused both end the render process, to return its memory
-(NFR-06). Showing the companion loads the page again.
+**Drawing states (D-25).** Hidden and paused both delete the `CompanionStage`, to return its memory
+(NFR-06). Showing the companion loads the page again. A measurement on 2026-11-08 found the Chromium
+processes still near 480 MB while the companion was hidden (section 12, item 37).
 
 | State | Render process | Frame rate |
 |---|---|---|
-| On screen | Running | Limited, set by measurement |
+| On screen | Running | 30 frames a second |
 | Hidden (UC-20-A1) | Ended | None |
 | Paused (UC-15) | Ended | None |
 
 **Assets (D-26).** The author makes four characters in VRoid Studio and exports them as VRM.
 `character_versions.appearance_id` names a set in `resources/`. Each file keeps its licence
-beside it, as the fonts do. The rules for accepting a file are in D-26. Motion clips are `.vrma` files that the author makes
-in Blender, under the same rules (D-64).
+beside it, as the fonts do. The rules for accepting a file are in D-26. No motion file ships: the
+page makes every motion in code (D-83).
 
 ### 6.16 `finetuning`
 
@@ -2814,11 +2832,12 @@ sequenceDiagram
     gui-)model: transcribe
     model->>stt: C14, the audio
     stt-->>model: text
-    model-)gui: text into the composer
-    user->>gui: corrects and sends
+    model-)gui: text
+    gui->>gui: send it as a message
     Note over gui: section 7.4 runs
-    gui-)speech: C16, sentences of the reply, the mood
-    speech-)gui: C17, mouth weights
+    gui-)speech: C16, sentences of the reply, the voice, the speed
+    speech-)gui: C17, audio and phoneme times
+    gui->>gui: play the audio, send mouth weights to the page
 ```
 
 **What happens to the audio.** The audio stays in memory. The model thread sends it to
@@ -2828,8 +2847,12 @@ sequenceDiagram
 applications. The window says what to change in the Windows settings, and typing continues
 (UC-26-E1).
 
-**What happens when the user types during speech.** The speech thread stops at once. The reply stays
+**What happens when the user types during speech.** The speech stops at once. The reply stays
 written in the conversation (UC-26-A2).
+
+**As built (D-84).** The key is `Ctrl+Alt+K` by default, and it does not open the window. The
+text is sent at once, even while the window is hidden in the tray. The speech thread only makes the audio; `Speaker` plays it on the GUI thread with
+`QAudioSink` and sends the mouth weights from the phoneme times that Kokoro reports.
 
 **What this costs.** Kokoro runs on the CPU while the chat model can run on the GPU. On a machine with
 no usable GPU, speech and the next reply compete for the CPU. This needs a measurement (section 12).
@@ -2849,14 +2872,14 @@ flowchart TB
             subgraph program["«executionEnvironment» install folder, LOCALAPPDATA/Programs/Cognia"]
                 app_exe["«artifact» Cognia.exe and _internal, PyInstaller one-dir, Python 3.12 or later, PySide6"]
                 web_exe["«artifact» QtWebEngineProcess.exe"]
-                page["«artifact» resources/companion, three.js, three-vrm, four VRM files, VRMA clips"]
+                page["«artifact» resources/companion, three.js, three-vrm, four VRM files"]
                 vulkan["«artifact» runtime/vulkan/llama-server.exe"]
                 cpu["«artifact» runtime/cpu/llama-server.exe"]
                 whisper["«artifact» runtime/whisper/whisper-server.exe"]
                 chat_model[("«artifact» models/chat.gguf")]
                 embed_model[("«artifact» models/embedding.gguf")]
                 speech_model[("«artifact» models/speech.bin")]
-                voice_model[("«artifact» models/voice.onnx, voices.bin, espeak-ng data")]
+                voice_model[("«artifact» models/voice.onnx, voices.bin; espeak-ng from espeakng-loader")]
             end
 
             subgraph data["«executionEnvironment» data folder, LOCALAPPDATA/Cognia"]
@@ -2909,8 +2932,8 @@ adds `.bin` files beside the installer, which breaks "one installer and nothing 
 sum of the models, Qt, QtWebEngine and the VRM files must stay below that limit.
 
 The size of the chat model decides this. The published GGUF of Ministral 3 3B Reasoning is 2.15 GB
-at Q4_K_M (D-28). A tuned file of D-80 has the same size at the same quantisation. The speech models add about 57 MiB for whisper and about 115 MB for Kokoro
-(D-65). Model files often compress little. Nobody has measured the installer (section 12).
+at Q4_K_M (D-28). A tuned file of D-80 has the same size at the same quantisation. The speech models add about 57 MiB for whisper and about 340 MB for Kokoro: the fp32 file, because
+the int8 file was ten times slower on the author's machine (D-84). Model files often compress little. Nobody has measured the installer (section 12).
 
 ### 8.4 Artifact allocation
 
@@ -2923,8 +2946,8 @@ at Q4_K_M (D-28). A tuned file of D-80 has the same size at the same quantisatio
 | `chat.gguf` | The published GGUF of Ministral 3 3B Reasoning (D-28), or the tuned file of section 8.6 if it passes the gates (D-80) | Server processes | Paths relative to the install folder | None |
 | Licence files of `chat.gguf` | The Apache-2.0 text and the notices of the model card. A tuned file adds `NOTICE.txt`, which states the change | Beside `chat.gguf`, read by people | Fixed | None |
 | `whisper-server.exe`, `speech.bin` | whisper.cpp, MIT, with the model `base.en-q5_1` (D-65) | Server process | Arguments from `Cognia.exe` | None |
-| `voice.onnx`, `voices.bin` | Kokoro-82M, Apache-2.0 weights (D-65) | speech_thread | Fixed | None |
-| espeak-ng library and data | espeak-ng, GPL-3.0, with its licence text and an offer of its source (D-65) | speech_thread | Fixed | None |
+| `voice.onnx`, `voices.bin` | Kokoro-82M v1.0, fp32, Apache-2.0 weights (D-65, D-84) | speech_thread | Fixed | None |
+| espeak-ng library and data | The `espeakng-loader` wheel, which holds espeak-ng, GPL-3.0. The installer adds its licence text and an offer of its source (D-65, D-84) | speech_thread | Fixed | None |
 | `embedding.gguf` | bge-small-en-v1.5 Q8_0 from `ggml-org/bge-small-en-v1.5-Q8_0-GGUF` (D-55). Its MIT licence file ships beside it | Server processes | Paths relative to the install folder | None |
 | `cognia.sqlite3` | Created at first run | User session | `DATABASE_PATH`, default in the data folder | None. Windows account rights protect it (D-20) |
 
@@ -3099,7 +3122,7 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-61 | Commitments are removed | Specification 6.0 | Keep UC-21 | None needed | Decided |
 | D-62 | Work sessions are removed. The erasure group `SESSIONS` becomes `DESK` | Specification 6.0 | Keep UC-05 and UC-07 | None needed | Decided |
 | D-63 | Away: wait and doze on the screen, and greet on return. Quiet at the desk: a remark. A break threshold from `random.Random(seq)`. The greeting mentions a memory line and a journal entry | BR-04, UC-16, UC-22 | Change BR-04; a greeting with the mood only, or the journal only | None needed | Decided |
-| D-64 | Procedural ambient motion, `.vrma` clips that the author makes in Blender, the mouth from the speech audio | BR-07, FR-27 | Mixamo, the free VRoid VRMA set | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided |
+| D-64 | Procedural ambient motion, `.vrma` clips that the author makes in Blender, the mouth from the speech audio | BR-07, FR-27 | Mixamo, the free VRoid VRMA set | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided. D-83 replaces the clips with code |
 | D-65 | whisper.cpp for speech to text, Kokoro-82M with espeak-ng for speech, a hot key through `RegisterHotKey`, a button beside the companion and in the composer | FR-38, FR-39, C-05 | sherpa-onnx with Moonshine, Qt `winrt`, Piper, a held hot key, a wake word | [0010](adr/0010-voice-input-and-output.md) | Decided |
 | D-66 | No fine-tuning. The published GGUF of Ministral 3 3B Reasoning ships | A-02 | Keep D-27 | None needed | Replaced by D-80 |
 | D-67 | Four layers make the companion say that it does not know | BR-06 | The prompt only | None needed | Decided |
@@ -3116,6 +3139,15 @@ option. The author can change any proposal cheaply. Decisions with an ADR link a
 | D-78 | Layer 1 no longer says that the companion does not act for the user | FR-40 | An exception in the sentence, an exception in the tool only | None needed | Decided |
 | D-79 | Two messages in a row from one side are joined in the request | M4 of Step 0 | Leave out the unanswered message, store a placeholder reply | None needed | Decided |
 | D-80 | Fine-tuning returns: four jobs, examples pasted from a chat and reviewed on a local page, a test set written apart, training on a rented GPU, one merged GGUF; layer 1 asks for an anime voice and says that the companion has feelings; a mood line says how, not what; a cap on reply tokens; no summary heading | A-02, G-03, NFR-03 | Keep D-66, train on the author's GPU, a notebook, a terminal or Qt review, prompts copied into the tools | None needed | Decided |
+| D-81 | A new interface: a warm dark palette, Nunito, four destinations (Companion, Memory, Character, Settings), six Settings sections, plain words in the companion's voice, and no mockup copy | NFR-10, NFR-11, UC-12, UC-18 | Keep the navy palette and Inter; keep the six screens of the mockup | None needed | Decided |
+| D-82 | The Windows shadow for frameless windows through DWM, in `infrastructure/desktop/` | NFR-06, D-48 | A `QGraphicsDropShadowEffect`, no shadow | None needed | Decided |
+| D-83 | The 3D page as built: every motion in code, no `.vrma` file, arms 75 degrees down from the T-pose, a motion that arrives during another is dropped, the mouth from phoneme times, a neutral face while the mouth moves, 30 frames a second | BR-07, FR-25 to FR-27 | `.vrma` clips for each character; a queue of motions; the mouth from loudness | [0008](adr/0008-vrm-companion-in-qtwebengine.md) | Decided |
+| D-84 | Speech as built: `kokoro-onnx` with the fp32 Kokoro file, espeak-ng from `espeakng-loader`, playback on the GUI thread, speaking aloud on by default, the key `Ctrl+Alt+K`, the text sent at once | FR-38, FR-39, UC-26 | The int8 file; espeak-ng files in `models/`; `Ctrl+Alt+Space`; the text into the composer | [0010](adr/0010-voice-input-and-output.md) | Decided |
+| D-85 | The SpeechGate and the initiative as built: messages in a speech bubble only, held while the companion is hidden; the greeting of the day in the conversation; fixed wording where the figures allow it | NFR-09, NFR-11, UC-16, UC-17, UC-22 | Messages as cards in the conversation; model wording for every kind | None needed | Decided |
+| D-86 | Learning as built: three rules with fixed statements, Undo and Mark wrong; the rating of a reply is recorded, and no rule reads it yet | UC-24, UC-09-A2 | Model-written statements; proposals to change the character | None needed | Decided |
+| D-87 | Tool servers as built: `langchain-mcp-adapters`, stdio and HTTP, the table `tool_servers`, a required consent box, "Add-ons" in the interface | FR-41, UC-27 | A plug-in folder, consent at the first call | [0009](adr/0009-runtime-tools-through-mcp-servers.md) | Decided |
+| D-88 | `CoreHost` keeps the queue, the transaction and the wake time; each subject has a handler class in `app/core/` | ADR 0001, QA-08 | One class for every command | None needed | Decided |
+| D-89 | Pause with a time limit, the close button hides, one running copy, the start entry, a `QMenu` for the tray | FR-12, FR-36, FR-37, UC-15 | A tray popup drawn by hand; quit on close | None needed | Decided |
 
 ### 10.3 D-01: process structure
 
@@ -4295,6 +4327,8 @@ rest pose.
 **Trade-off accepted.** Continuous motion needs continuous drawing, so NFR-06 must be measured
 (section 12, item 6).
 
+**Changed by D-83.** No `.vrma` clip ships. Waiting, dozing, the gestures and the mouth are code.
+
 ### 10.66 D-65: speech in and out
 
 **First part: speech to text.**
@@ -4327,6 +4361,8 @@ rest pose.
 an offer of its source. The author checks the legal terms before a release (section 12). Kokoro and
 `onnxruntime` run inside the process, and `onnxruntime` enters `desktop/uv.lock`. The audio stays in
 memory until it becomes text, and no file holds it.
+
+**As built.** D-84 records the libraries, the key and the defaults.
 
 ### 10.67 D-66: no fine-tuning
 
@@ -4560,6 +4596,145 @@ that check after a reply stay, so a tuned model needs no new guarantee.
   `LlamaClient` does not report them. It is the only HTTP code in `finetuning`.
 - If the repository is public, the crisis examples are public.
 
+### 10.82 D-81: the interface
+
+**Question.** How does the main window show the use cases of specification 6.2, with no mockup copy?
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Colours | A warm dark palette: window `#1E1A24`, accent `#F2A7B8`, second accent `#B9A6F0`, all in `ui/theme.py` | The navy palette of the mockup |
+| Font | Nunito, one variable file, OFL-1.1, with its licence; Phosphor icons stay | Inter |
+| Destinations | Companion, Memory, Character, Settings, with `Ctrl+1` to `Ctrl+4`; `Ctrl+N` starts a conversation and `Ctrl+F` searches the memory | The six screens of the mockup, with Desk and Proactivity apart |
+| Settings | Speaking up, Desk awareness, Voice, Add-ons, Startup, Erase. Speaking up changes nothing until Save, and Cancel puts back what is in force (UC-18) | A switch for each setting that saves at once |
+| Memory | Three groups: "You told me", "I noticed" (patterns, with Undo and Mark wrong, and time in applications), "About me" (the feeling and "Why do you feel this way?"). A search box and filters | One list |
+| First run | The character, then desk awareness, then a page of tips | Two screens only (D-29) |
+| Words | The companion speaks in the first person and avoids technical words. The model status is "Waking up…", "Ready to talk" or "Can't think right now", with "Try again"; the details are in the tooltip | Technical status text |
+| Time fields | A list for the hour and a list for the minute; a list for the break threshold | A time box with no visible arrows |
+
+**Reason.** The author chose each part on 2026-11-08. `sample_data.py` is deleted, so every screen
+shows stored data.
+
+**Trade-off accepted.** The Daily limit is still a number box, which the user changes with the keys
+or the wheel.
+
+### 10.83 D-82: the window shadow
+
+**Question.** How does a frameless window get a shadow without a cost on each repaint?
+
+| Option | Benefit | Cost |
+|---|---|---|
+| **A. The DWM frame of Windows** (chosen) | Windows draws the shadow and the round corners. A repaint costs nothing more | Five more Win32 functions, in `infrastructure/desktop/native_frame.py` |
+| B. `QGraphicsDropShadowEffect` | No Win32 | A blur of the whole window at each repaint, for example at each chunk of a reply |
+
+**Reason.** The author chose A. `NativeFrame` gives a window back its frame styles, extends the frame
+one pixel into the client area, and answers `WM_NCCALCSIZE` and `WM_NCHITTEST` so the whole window
+stays client area. `app/application.py` attaches it to each window that sets the `nativeFrame`
+property.
+
+**Trade-off accepted.** D-48 listed the Win32 code outside `infrastructure/presence`. This adds
+`infrastructure/desktop/`.
+
+### 10.84 D-83: the 3D page as built
+
+**Question.** How does the character move with no `.vrma` file?
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Clips | None. Breathing, blinking, gaze, sway, waiting, dozing, thinking, the gestures (nod, bow, sheepish, comfort, cheer, wave) and the exercise steps are curves on the normalized bones | `.vrma` files for each character (D-64) |
+| Rest pose | The upper arms turn 75 degrees down from the T-pose | About 70 degrees |
+| Wave | The right arm, with the palm turned forward. It plays when the user opens a new conversation, also with moods off. While the conversation in force is empty, the "+" button, the menu entry and `Ctrl+N` are off, so no conversation is made and no wave plays; the user started it, so it does not pass the gate. No other event plays it yet | The left arm; a wave with the greeting of the day |
+| Overlap | A gesture that arrives while another motion plays is dropped | A queue |
+| Mouth | The weights of `aa`, `ih`, `ou`, `ee`, `oh` follow the phoneme times of Kokoro, opened 1.3 times wider for the size of the window | The loudness of the audio |
+| Face while speaking | The expression and the gesture faces go to zero while the mouth moves, and come back 0.5 s after the last open mouth. Blinking stays | Both at once, because an expression changes the mouth shape and the speech looks wrong |
+| Frame rate | 30 frames a second | No limit |
+
+**Reason.** The author removed the clips on 2026-11-08. Code motion has no licence question and
+needs no file for each character.
+
+**Trade-off accepted.** Each new motion is code in `companion.js`. WebGL does not run in the
+headless tests, so a person checks the motion by eye.
+
+### 10.85 D-84: speech as built
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Speech library | `kokoro-onnx`, with `create_timed` for the phoneme times | Code that calls `onnxruntime` directly |
+| Model file | Kokoro v1.0 fp32 as `models/voice.onnx` | The int8 file: on the author's machine one sentence of 3 s took 8.1 s, against 0.76 s for fp32 |
+| espeak-ng | The copy in the `espeakng-loader` wheel | Files in `desktop/models/espeak-ng/` |
+| Threads | Kokoro runs on the `cognia-speech` thread. `Speaker` plays each sentence with `QAudioSink` on the GUI thread. The audio buffer belongs to the sink, so the sink can still read it after `stop()`. A timer of 33 ms reads the state of the sink, because PySide 6.11 cannot convert the argument of `stateChanged` | Playback on the speech thread; the `stateChanged` signal |
+| Voices | Yuna `af_heart`, Rin `af_bella`, Mira `af_nova`, Shiori `bf_emma`, in `characters.toml`. The speed follows the arousal (section 6.5.4) | One voice |
+| Defaults | Speaking aloud is on. The key is `Ctrl+Alt+K`, changed in Settings › Voice | `Ctrl+Alt+Space`, which another application held on the author's machine |
+| The text | It is sent at once when listening stops, after anything already typed, so the user can talk while the window is hidden in the tray. The key does not open the window. While a reply is still coming, the words wait in the composer | Into the composer for the user to check and send: the author changed this on 2026-11-08 |
+| The key message | The filter reads the pointer that Qt gives as a number, because PySide's pointer type has a length of zero and reads as false | — |
+| Qt enums | `QtAudio`, because `QAudio` is deprecated and its values do not compare equal to what Qt 6.11 returns | `QAudio` |
+
+**Reason.** The author chose each part. `RegisterHotKey` reports only the combination, so C-05 holds.
+If the key is taken, the conversation says so and names Settings › Voice.
+
+### 10.86 D-85: the SpeechGate and the initiative as built
+
+`SpeechService` records each decision with its factors before anything shows (NFR-09). `admit`
+checks in this order: locked, presenting, quiet hours, the kind is off, the daily limit (the
+greeting does not count), away, a missing factor, and hidden. A verdict that passes waits for a
+pause of 3 s in typing (BR-03).
+
+| Part | Chosen | Rejected |
+|---|---|---|
+| Where a message shows | A speech bubble beside the character. While the character is hidden the message is held, and it shows in a bubble at the bottom of the main window when that window opens (UC-20-A1) | A card in the conversation |
+| Bubble actions | Why?, Change this setting, Don't send this kind again; for a break, Take a break, Later and Not today; for an adjustment, Undo; the close button records `dismissed` | — |
+| Passed over | A bubble with no answer after 2 minutes at the desk is `passed_over` | — |
+| Greeting of the day (UC-16) | A message of the companion in the conversation, with a Why chip. The greeting on return is a bubble | A bubble |
+| Wording | Break, greeting and return have fixed wording from the figures. Remark and question need the model; with no model they are not made. Each number in a model wording must come from a factor, and words that blame or press the user are refused | Model wording for each kind |
+| Questions | `resources/questions.toml`, at most one a day, never twice. The file is not written yet, so no question is asked (section 12, item 33) | — |
+
+**Trade-off accepted.** The bubble takes no keyboard focus (FR-25), so its buttons have no keyboard
+route. NFR-11 is not met for the bubble; specification 6.2 states this.
+
+### 10.87 D-86: learning as built
+
+| Rule | Evidence | Change |
+|---|---|---|
+| `passed_over_kind` | Three messages of one kind passed over in a row at the desk | That kind waits 1.5 times as long |
+| `regular_absence` | An absence of 20 minutes or more that began in the same hour on three of the last seven days | Nothing is planned in the 30 minutes before that hour |
+| `short_messages` | The median of the user's last twenty messages is 40 characters or fewer | One line in the turn asks for short replies |
+
+Each found pattern shows as an adjustment, with fixed wording, through the gate. Undo puts the value
+back. Mark wrong also writes a `pattern_rejected` tombstone (D-37), so the same evidence does not find
+the pattern again. The rating of a reply (UC-09-A2) writes `messages.rating` and `message_rated`; no
+rule reads it yet.
+
+**Rejected.** Statements that the model writes: three fixed rules give fixed facts, so a fixed
+sentence is true and costs no model call. Proposals to change the character (UC-24-A2) are left out.
+
+### 10.88 D-87: tool servers as built
+
+The user adds a server in Settings › Add-ons, by a command (stdio) or an address (HTTP). The box
+"This add-on can send what I tell it off this computer" must be ticked, and `consented_at` records
+it; this is the "before its first use" of D-60. `McpTools` reads the tools of each server through
+`langchain-mcp-adapters`, names each one `<server>__<tool>`, and gives the call 20 s. A server that
+does not answer gives no tools; a tool that fails gives a plain sentence. The tool loop still allows
+three tools a turn.
+
+### 10.89 D-88: handlers of the core thread
+
+`CoreHost` was one class of more than 800 lines. It keeps the thread, the queue, the transaction, the
+fold and the next wake time. Each subject has a handler in `app/core/` (`chat`, `memory`,
+`character`, `desk`, `proactive`, `learning`, `settings`, `erasure`) with a `handles` tuple of
+command types. `application.py` keeps start and shutdown; `screens.py`, `companion_wiring.py`,
+`voice_wiring.py` and `tray.py` connect the parts.
+
+**Rejected.** A handler for each command: too many small files.
+
+### 10.90 D-89: pause, close, one copy, start entry
+
+| Part | As built |
+|---|---|
+| Pause (UC-15) | For one hour, until tomorrow, or until the user resumes. `paused` and `resumed` go to the event log, and `settings.paused_until` ends the pause at the next wake time. The tray icon changes only when the core confirms |
+| Close (FR-37) | The close button hides the main window. The first time, a notice says where Cognia went (D-30) |
+| One copy (D-23) | `SingleInstance` with `QLockFile` and `QLocalServer`. A second start shows the first copy and ends |
+| Start entry (D-22) | `StartupEntry` writes the `Run` key of the user. The command starts Cognia with `--background`, which shows no window |
+| Tray menu | A `QMenu`: Open Cognia, Pause or Resume, Show or Hide the companion, Quit. It has a keyboard route |
+
 ## 11. Traceability
 
 | Requirement | View | Elements |
@@ -4596,7 +4771,7 @@ that check after a reply stay, so a tuned model needs no new guarantee.
 
 These items are outside this design, or need a decision before implementation.
 
-1. **Acceptance.** ADR 0002 to ADR 0008 are Proposed. The author accepts each one, or changes it.
+1. **Acceptance.** ADR 0002 to ADR 0010 are Proposed. The author accepts each one, or changes it.
 2. **Proposals.** D-15 to D-25 need the author's review, except D-22 and D-24, which are decided.
 3. **The chat model.** The published GGUF of Ministral 3 3B Reasoning (D-28) ships until a tuned file
    passes the gates of section 8.6 (D-80). It must hold a character in English for months (A-02), and nothing measures this yet. With
@@ -4616,6 +4791,11 @@ These items are outside this design, or need a decision before implementation.
    - mouse clicks that pass through the transparent parts of the window, or a decision to accept the rectangle
    - zero outbound connections from the Chromium processes (NFR-01)
    - a working PyInstaller build with `QtWebEngineProcess.exe`
+
+   Partly done on 2026-11-08, on the author's machine: the background is transparent, and the companion
+   takes no focus. The author accepted that the transparent parts block clicks. The Chromium processes
+   used 499 MB on screen and 482 MB hidden (item 37). Nobody has captured the connections or tried
+   a PyInstaller build.
 7. **If VRM fails NFR-06.** The author chooses one of these: a lower frame limit, a changed figure in the
    specification, or frames rendered in advance from the same VRM files (D-08, second table, option D).
 8. **VRoid Studio terms.** A person must read the full terms. The question is whether a VRM file with pixiv
@@ -4627,7 +4807,8 @@ These items are outside this design, or need a decision before implementation.
     `langchain-*`, `langgraph` and `local_only.py` are gone (D-58 brings LangGraph back for the tool loop only); `app/` writes `character_changed` with each
     new version; `CharacterService` is wired, and the first-run and character views show its data (D-52); the
     core thread holds the database and every decision (D-03, D-24). The work that remains is:
-    - add `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` to `CompanionWindow` (FR-25)
+    - done on 2026-11-08: `WindowDoesNotAcceptFocus` and `WA_ShowWithoutActivating` on
+      `CompanionWindow` (FR-25)
     - build `ModelJobs` and `ModelScheduler` (D-15). Today `app/chat_worker.py` runs one request at a time
     - done on 2026-11-06: the `user_message` event, the mood line, the safety instruction and the check after
       the reply (D-68)
@@ -4660,7 +4841,12 @@ These items are outside this design, or need a decision before implementation.
     - the desk figures of section 6.7.2: away after 300 s, an absence of 20 minutes for a `return`, dozing
       after 30 minutes, a real break of 5 minutes, `T_talk` from 90 to 180 minutes, `T_break` from 75 to 110
       minutes, and 20 minutes after a postponed break (D-63)
-    - the mood lines of section 6.5.4, and the speed of the voice (D-57)
+    - the mood lines of section 6.5.4, and the speed of the voice: 0.15 for each unit of arousal (D-57, D-84)
+    - a pause in typing of 3 s, 2 minutes before a bubble is passed over (D-85)
+    - the learning figures: three passed over in a row, a factor of 1.5, three absences in seven days,
+      30 minutes before an absence, twenty messages with a median of 40 characters (D-86)
+    - 1.5 s of silence and 30 s at most for talking; the mouth opened 1.3 times; a neutral face for
+      0.5 s after the mouth closes; 30 frames a second (D-83, D-84)
 18. **Size of the tuned model.** At Q4_K_M it has the size of the published file. Item 5 still measures the
     installer.
 19. **Acceptance thresholds and dataset size.** Open again by D-80. The author sets `finetuning/thresholds.json`
@@ -4687,11 +4873,11 @@ These items are outside this design, or need a decision before implementation.
 25. **A history budget.** Closed by D-72.
 26. **Chips of earlier conversations.** The chip of a stored line shows only in the conversation where it was
     stored. No column records whether a reply quoted a line, so a conversation that loads again shows no chips.
-27. **The speech-to-text binary.** The release page of whisper.cpp v1.9.5 did not show its file names. A
-    person must check that a Windows build holds `whisper-server.exe`, and its options for the address and
-    the port (D-65).
-28. **espeak-ng and GPL-3.0.** The installer distributes espeak-ng under GPL-3.0. The author checks what this
-    asks of the distribution as a whole before a release (D-65).
+27. **The speech-to-text binary.** Closed on 2026-11-08: `whisper-server.exe` from `whisper-bin-x64.zip`
+    runs on `127.0.0.1` with `--host` and `--port`, and turned one sentence into text in 1.7 s (D-84).
+28. **espeak-ng and GPL-3.0.** The installer distributes espeak-ng under GPL-3.0, now inside the
+    `espeakng-loader` wheel, and `phonemizer` is GPL-3.0 too. The author checks what this asks of the
+    distribution as a whole before a release (D-65, D-84).
 29. **The dictionary of `define_word`.** Closed by D-69.
 30. **The index of `search_conversations`.** Closed by D-70.
 31. **Wrong tool calls.** Measure how often the model calls a wrong tool with twelve tools, and join tools if
@@ -4700,9 +4886,18 @@ These items are outside this design, or need a decision before implementation.
 32. **Motion and speech against NFR-06.** Continuous ambient motion and Kokoro on the CPU need a measurement
     with the chat model running (D-64, D-65).
 33. **The questions.** The author approved the five mood lines (D-68). The questions of UC-22-A5 remain to be
-    written (D-63).
-34. **Code.** D-57, D-58, D-59 and D-67 have code (D-68 to D-79). Without code: MCP tool servers (D-60),
-    speech (D-65), the 3D page and its clips (D-64; a stub stands in), and the timers and the SpeechGate of
-    D-63.
+    written in `resources/questions.toml` (D-63, D-85). Without the file the companion asks no question.
+34. **Code.** Closed on 2026-11-08. D-60, D-63, D-64 and D-65 have code (D-83 to D-87).
 35. **The release of whisper.cpp.** `v1.9.5` has no files; the build `b5454` of the same day has
-    `whisper-bin-x64.zip`. Item 27 still holds.
+    `whisper-bin-x64.zip`. Item 27 is closed.
+36. **The talk key.** Another application can hold any combination. `Ctrl+Alt+Space` was taken on the
+    author's machine, so the default is `Ctrl+Alt+K` (D-84). A list of defaults tried in order at the
+    first start is an option.
+37. **Chromium memory.** Deleting the `CompanionStage` does not end the Chromium processes: 482 MB stay
+    while the companion is hidden, against 150 MB in NFR-06. Options: end the whole web engine profile,
+    or change the figure (D-25, item 7).
+38. **The bubble and the keyboard.** The bubble takes no focus, so its buttons have no keyboard route
+    (D-85). Specification 6.2 records this against NFR-11.
+39. **The rating.** `messages.rating` is recorded and no rule reads it yet (D-86).
+40. **First words.** In the user test of 2026-11-08 the first words of a reply came after about 12 s,
+    because the interpretation runs first (NFR-05).

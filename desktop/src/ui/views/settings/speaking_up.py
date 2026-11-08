@@ -10,13 +10,14 @@ from __future__ import annotations
 
 from datetime import time
 
-from PySide6.QtCore import QTime, Signal
-from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QSpinBox, QTimeEdit, QWidget
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QSpinBox, QWidget
 
 from src.domain.speech.models import KIND_LABELS, MessageKind, SpeechSettings
 from src.ui import theme
 from src.ui.views.settings.common import Section, setting_row
 from src.ui.widgets.buttons import Button
+from src.ui.widgets.dropdown import Dropdown
 from src.ui.widgets.toggle import PillToggle
 from src.ui.widgets.typography import caption, kicker
 
@@ -32,6 +33,52 @@ def _optional_box(suffix: str, low: int, high: int) -> QSpinBox:
     box.setFont(theme.font(13.5))
     box.setFixedWidth(150)
     return box
+
+
+def _minutes_list(unset: str, values: range) -> Dropdown:
+    """A list of minute counts whose first entry means "not set"."""
+    box = Dropdown()
+    box.addItem(unset, None)
+    for value in values:
+        box.addItem(f"{value} min", value)
+    box.setFixedWidth(150)
+    return box
+
+
+def _choose(box: Dropdown, value: int | None) -> None:
+    """Select ``value``, adding it when a stored value is not on the list."""
+    index = box.findData(value)
+    if index < 0:
+        box.addItem(f"{value} min", value)
+        index = box.count() - 1
+    box.setCurrentIndex(index)
+
+
+class TimePicker(QWidget):
+    """A time of day as an hour list and a minute list."""
+
+    def __init__(self, at: time, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+        self.hour = Dropdown()
+        self.hour.addItems([f"{h:02d}" for h in range(24)])
+        self.minute = Dropdown()
+        self.minute.addItems([f"{m:02d}" for m in range(60)])
+        self.hour.setAccessibleName("Hour")
+        self.minute.setAccessibleName("Minute")
+        row.addWidget(self.hour)
+        row.addWidget(caption(":", px=13))
+        row.addWidget(self.minute)
+        self.setTime(at)
+
+    def time(self) -> time:
+        return time(self.hour.currentIndex(), self.minute.currentIndex())
+
+    def setTime(self, at: time) -> None:
+        self.hour.setCurrentIndex(at.hour)
+        self.minute.setCurrentIndex(at.minute)
 
 
 class SpeakingUpSection(Section):
@@ -56,8 +103,7 @@ class SpeakingUpSection(Section):
             )[0]
         )
         limits.body().addSpacing(12)
-        self.threshold = _optional_box(" min", 30, 240)
-        self.threshold.setSpecialValueText("I choose")
+        self.threshold = _minutes_list("I choose", range(30, 241, 15))
         limits.body().addWidget(
             setting_row(
                 "Break threshold",
@@ -72,11 +118,8 @@ class SpeakingUpSection(Section):
         quiet_row.setContentsMargins(0, 0, 0, 0)
         self.quiet_on = QCheckBox("From")
         self.quiet_on.setFont(theme.font(13.5))
-        self.quiet_start = QTimeEdit(QTime(22, 0))
-        self.quiet_end = QTimeEdit(QTime(7, 0))
-        for edit in (self.quiet_start, self.quiet_end):
-            edit.setDisplayFormat("HH:mm")
-            edit.setFont(theme.font(13.5))
+        self.quiet_start = TimePicker(time(22, 0))
+        self.quiet_end = TimePicker(time(7, 0))
         quiet_row.addWidget(self.quiet_on)
         quiet_row.addWidget(self.quiet_start)
         quiet_row.addWidget(caption("to", px=13))
@@ -124,14 +167,12 @@ class SpeakingUpSection(Section):
         """Show the settings in force, discarding unsaved changes."""
         self._in_force = settings
         self.ceiling.setValue(settings.ceiling or self.ceiling.minimum())
-        self.threshold.setValue(
-            settings.break_threshold_min or self.threshold.minimum()
-        )
+        _choose(self.threshold, settings.break_threshold_min)
         self.quiet_on.setChecked(settings.quiet is not None)
         if settings.quiet is not None:
             start, end = settings.quiet
-            self.quiet_start.setTime(QTime(start.hour, start.minute))
-            self.quiet_end.setTime(QTime(end.hour, end.minute))
+            self.quiet_start.setTime(start)
+            self.quiet_end.setTime(end)
         self._quiet_enabled(settings.quiet is not None)
         for kind, toggle in self.kinds.items():
             toggle.setChecked(kind in settings.enabled)
@@ -146,16 +187,14 @@ class SpeakingUpSection(Section):
         """The settings as they stand on the page."""
         quiet = None
         if self.quiet_on.isChecked():
-            start, end = self.quiet_start.time(), self.quiet_end.time()
-            quiet = (time(start.hour(), start.minute()), time(end.hour(), end.minute()))
+            quiet = (self.quiet_start.time(), self.quiet_end.time())
         ceiling = self.ceiling.value()
-        threshold = self.threshold.value()
         return SpeechSettings(
             ceiling=None if ceiling < 1 else ceiling,
             quiet=quiet,
             enabled=frozenset(k for k, t in self.kinds.items() if t.isChecked()),
             moods_on=self.moods.isChecked(),
-            break_threshold_min=None if threshold < 30 else threshold,
+            break_threshold_min=self.threshold.currentData(),
         )
 
     def _save(self) -> None:

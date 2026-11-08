@@ -502,7 +502,7 @@ class Settings(Base):
     # measurement runs once. NULL until measured.
     chat_device: Mapped[str | None]
     speak_aloud: Mapped[int] = mapped_column(server_default=text("1"))
-    talk_hotkey: Mapped[str] = mapped_column(server_default=text("'Ctrl+Alt+Space'"))
+    talk_hotkey: Mapped[str] = mapped_column(server_default=text("'Ctrl+Alt+K'"))
 
 
 class ToolServer(Base):

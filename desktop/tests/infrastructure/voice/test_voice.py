@@ -1,14 +1,18 @@
+import ctypes
 import struct
 from ctypes import wintypes
 
 import httpx
 import pytest
+from PySide6.QtCore import QByteArray, QObject
+from PySide6.QtMultimedia import QtAudio
+from shiboken6 import VoidPtr
 
-from src.infrastructure.voice import mouth
+from src.infrastructure.voice import microphone, mouth
 from src.infrastructure.voice.hotkey import WM_HOTKEY, TalkHotkey, _Filter, parse
 from src.infrastructure.voice.microphone import level, silence_ended, wav
 from src.infrastructure.voice.sentences import split_ready
-from src.infrastructure.voice.speaker import pcm16
+from src.infrastructure.voice.speaker import Clip, Speaker, pcm16
 from src.infrastructure.voice.transcriber import (
     SpeechUnavailable,
     Transcriber,
@@ -159,10 +163,10 @@ def test_wm_hotkey_emits_pressed(qapp) -> None:
     msg = wintypes.MSG()
     msg.message = WM_HOTKEY
     msg.wParam = 0xC061
-    import ctypes
 
+    # Qt hands over a shiboken pointer, which has a length of zero.
     handled, _ = _Filter(keys).nativeEventFilter(
-        b"windows_generic_MSG", ctypes.addressof(msg)
+        b"windows_generic_MSG", VoidPtr(ctypes.addressof(msg))
     )
 
     assert handled and pressed == [True]
@@ -244,3 +248,94 @@ def test_clean_drops_markers() -> None:
 
 def test_pcm16_clips() -> None:
     assert struct.unpack("<3h", pcm16([0.0, 1.0, -2.0])) == (0, 32767, -32767)
+
+
+class FakeVoice:
+    def synthesize(self, text: str, voice: str, speed: float) -> Clip:
+        return Clip([0.1] * 240, 24_000, ())
+
+
+class FakeSink(QObject):
+    """Plays at once: idle, with audio processed, as soon as it starts."""
+
+    started: list[bytes] = []
+
+    def __init__(self, audio) -> None:
+        super().__init__()
+        self._idle = False
+
+    def start(self, device) -> None:
+        FakeSink.started.append(bytes(device.readAll().data()))
+        self._idle = True
+
+    def stop(self) -> None:
+        pass
+
+    def state(self):
+        return QtAudio.State.IdleState if self._idle else QtAudio.State.ActiveState
+
+    def error(self):
+        return QtAudio.Error.NoError
+
+    def processedUSecs(self) -> int:
+        return 10_000 if self._idle else 0
+
+
+def test_speaker_says_every_sentence(qtbot) -> None:
+    FakeSink.started = []
+    speaker = Speaker(FakeVoice(), sink_factory=FakeSink)
+    ended: list[bool] = []
+    speaker.speaking.connect(ended.append)
+
+    for text in ("One.", "Two.", "Three."):
+        speaker.say(text, "af_heart", 1.0)
+
+    qtbot.waitUntil(lambda: ended[-1:] == [False], timeout=3000)
+    assert len(FakeSink.started) == 3
+    speaker.close()
+
+
+class FakeInput:
+    def isNull(self) -> bool:
+        return False
+
+
+class FakeDevices:
+    @staticmethod
+    def defaultAudioInput() -> FakeInput:
+        return FakeInput()
+
+
+class FakeSource(QObject):
+    """Hands over one second of loud audio at each read."""
+
+    def __init__(self, device, audio, parent=None) -> None:
+        super().__init__(parent)
+
+    def start(self) -> "FakeSource":
+        return self
+
+    def readAll(self) -> QByteArray:
+        return QByteArray(struct.pack("<h", 8000) * 16_000)
+
+    def error(self):
+        return QtAudio.Error.NoError
+
+    def stop(self) -> None:
+        pass
+
+
+def test_microphone_stops_at_the_time_limit(qtbot, monkeypatch) -> None:
+    monkeypatch.setattr(microphone, "QMediaDevices", FakeDevices)
+    monkeypatch.setattr(microphone, "QAudioSource", FakeSource)
+    mic = microphone.Microphone(silence_s=1.5, max_s=2)
+    heard: list[bytes] = []
+    mic.finished.connect(heard.append)
+
+    mic.start()
+    qtbot.waitUntil(lambda: bool(heard), timeout=3000)
+
+    assert not mic.isListening()
+    # Two reads reach the limit; stopping keeps what the device still holds.
+    assert heard == [heard[0]]
+    assert len(heard[0]) == 44 + 3 * 32_000

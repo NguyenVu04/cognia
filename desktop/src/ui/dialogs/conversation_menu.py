@@ -48,10 +48,10 @@ class ConversationMenu(FramelessWindow):
         content.addWidget(rule(theme.BORDER_SUBTLE))
         content.addSpacing(6)
 
-        start = Button("New conversation", variant="ghost", icon_name="plus")
-        start.setToolTip("Ctrl+N")
-        start.clicked.connect(self._start)
-        content.addWidget(start)
+        self.start = Button("New conversation", variant="ghost", icon_name="plus")
+        self.start.setToolTip("Ctrl+N")
+        self.start.clicked.connect(self._start)
+        content.addWidget(self.start)
         self.layout().setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
     def setConversations(
@@ -96,6 +96,9 @@ class ConversationMenu(FramelessWindow):
     def _delete(self, conversation_id: str) -> None:
         self.hide()
         self.deleteRequested.emit(conversation_id)
+
+    def setStartEnabled(self, enabled: bool) -> None:
+        self.start.setEnabled(enabled)
 
     def _start(self) -> None:
         self.hide()
