@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,13 @@ def test_model_paths_resolve_under_desktop_models() -> None:
         config.EMBEDDING_MODEL,
     ):
         assert config.model_path(value).is_relative_to(DESKTOP / "models")
+
+
+def test_model_path_frozen_beside_exe(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "Cognia.exe"))
+
+    assert config.model_path("models/chat.gguf") == tmp_path / "models" / "chat.gguf"
 
 
 def test_model_path_keeps_absolute(tmp_path: Path) -> None:

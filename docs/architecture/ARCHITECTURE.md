@@ -2873,9 +2873,9 @@ flowchart TB
                 app_exe["«artifact» Cognia.exe and _internal, PyInstaller one-dir, Python 3.12 or later, PySide6"]
                 web_exe["«artifact» QtWebEngineProcess.exe"]
                 page["«artifact» resources/companion, three.js, three-vrm, four VRM files"]
-                vulkan["«artifact» runtime/vulkan/llama-server.exe"]
-                cpu["«artifact» runtime/cpu/llama-server.exe"]
-                whisper["«artifact» runtime/whisper/whisper-server.exe"]
+                vulkan["«artifact» models/runtime/vulkan/llama-server.exe"]
+                cpu["«artifact» models/runtime/cpu/llama-server.exe"]
+                whisper["«artifact» models/runtime/whisper/whisper-server.exe"]
                 chat_model[("«artifact» models/chat.gguf")]
                 embed_model[("«artifact» models/embedding.gguf")]
                 speech_model[("«artifact» models/speech.bin")]
@@ -2926,6 +2926,9 @@ The installer is one Inno Setup file (D-12). It does these things:
 5. It adds a Start Menu shortcut. It shows a box for a desktop shortcut, ticked by default.
 6. On its last page it shows a box that starts Cognia, ticked by default, because NFR-10 counts
    from the end of the installer.
+7. Its uninstaller removes the start entry. It asks whether to delete the data folder
+   `LOCALAPPDATA/Cognia`, and the default answer is to delete it. The author decided this on
+   2026-11-08.
 
 An Inno Setup file holds at most 4.2 GB of compressed data without disk spanning. Disk spanning
 adds `.bin` files beside the installer, which breaks "one installer and nothing else". So the
@@ -4794,8 +4797,16 @@ These items are outside this design, or need a decision before implementation.
 
    Partly done on 2026-11-08, on the author's machine: the background is transparent, and the companion
    takes no focus. The author accepted that the transparent parts block clicks. The Chromium processes
-   used 499 MB on screen and 482 MB hidden (item 37). Nobody has captured the connections or tried
-   a PyInstaller build.
+   used 499 MB on screen and 482 MB hidden (item 37). Nobody has captured the connections.
+   On 2026-11-08 `task build` made a PyInstaller one-dir build of 3.4 GB: 765 MB in `_internal/`
+   and 2.6 GB in `models/`. `QtWebEngineProcess.exe` is in the build. `Cognia.exe` started and
+   made the database in `LOCALAPPDATA/Cognia` at the newest revision. A reply, the companion page
+   and the voice are not checked in the build yet.
+   The same day `task installer` made `Cognia-0.1.0-alpha-setup.exe` with Inno Setup 7: 2 667 MB,
+   LZMA2 over all files, in 644 s. A silent install took 267 s with no administrator rights, and a
+   silent uninstall removed the program, the start entry, the shortcuts and the data folder. The
+   installer does not check the machine yet (step 1 of section 8.3), because NFR-14 has no
+   figures. Nobody has tried it on a clean machine with no network.
 7. **If VRM fails NFR-06.** The author chooses one of these: a lower frame limit, a changed figure in the
    specification, or frames rendered in advance from the same VRM files (D-08, second table, option D).
 8. **VRoid Studio terms.** A person must read the full terms. The question is whether a VRM file with pixiv

@@ -14,6 +14,10 @@ desktop/finetuning/.venv/
 # Generated prompts, training files, adapters, model files and measurements
 desktop/finetuning/out/
 
+# PyInstaller output: task build
+desktop/build/
+desktop/dist/
+
 # Model files and llama-server builds, placed by hand (several GB, own licences)
 desktop/models/
 

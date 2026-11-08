@@ -15,7 +15,6 @@ This lives in ``app/`` because it touches both Qt and the model ports, and
 
 from __future__ import annotations
 
-import importlib
 import time
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future
@@ -314,7 +313,7 @@ class ChatWorker(QObject):
     def warm_up(self) -> None:
         """Import the tool loop ahead of the first reply. It takes seconds, so
         it runs on this thread once the window shows."""
-        importlib.import_module("src.infrastructure.ai.tool_loop")
+        import src.infrastructure.ai.tool_loop  # noqa: F401
 
     @Slot(object)
     def request(self, request: ReplyRequest) -> None:

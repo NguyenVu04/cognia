@@ -30,6 +30,17 @@ def resource_dir(*parts: str) -> Path:
     return _RESOURCES.joinpath(*parts)
 
 
+def install_dir() -> Path:
+    """Return the folder that relative paths in the configuration start from.
+
+    This is the folder of ``Cognia.exe`` in a build, and ``desktop/`` when
+    Cognia runs from the source tree.
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parents[2]
+
+
 def data_dir() -> Path:
     """Return the directory Cognia writes to, creating it if need be.
 

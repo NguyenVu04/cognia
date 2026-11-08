@@ -23,12 +23,12 @@ from src.utils import paths
 
 # Shipped with the application, so a missing or broken file is a build fault
 # and fails loudly here, unlike the user's optional override below.
-_APP_DIR = Path(__file__).resolve().parents[2]  # desktop/
+_DEFAULTS_FILE = Path(__file__).resolve().parents[1] / "config.json"
 
-_DEFAULTS = json.loads((_APP_DIR / "src" / "config.json").read_text(encoding="utf-8"))
+_DEFAULTS = json.loads(_DEFAULTS_FILE.read_text(encoding="utf-8"))
 
 #: The two builds of llama-server and the two model files. A relative path is
-#: taken from ``desktop/``.
+#: taken from ``desktop/``, or from the folder of ``Cognia.exe`` in a build.
 LLAMA_SERVER_VULKAN: str = _DEFAULTS["LLAMA_SERVER_VULKAN"]
 LLAMA_SERVER_CPU: str = _DEFAULTS["LLAMA_SERVER_CPU"]
 CHAT_MODEL: str = _DEFAULTS["CHAT_MODEL"]
@@ -92,8 +92,8 @@ MESSAGE_MAX_CHARS: int = _DEFAULTS["MESSAGE_MAX_CHARS"]
 
 #: Where the SQLite file lives. ``null`` means ``cognia.sqlite3`` in the data
 #: directory. ``~`` and ``%VARIABLES%`` are expanded, a relative path is taken
-#: from ``desktop/``, and an existing folder gets ``cognia.sqlite3`` put inside
-#: it. The user's override ``config.json`` always stays in the data directory.
+#: as for the model paths, and an existing folder gets ``cognia.sqlite3`` put
+#: inside it. The user's override ``config.json`` always stays in the data directory.
 #:
 #: Choose a synced folder (OneDrive, Dropbox) and the sync client keeps a second
 #: copy of the user's data off the machine, which Cognia promises never
@@ -139,4 +139,4 @@ def model_path(value: str) -> Path:
 
 def _resolve(value: str) -> Path:
     path = Path(os.path.expandvars(value)).expanduser()
-    return path if path.is_absolute() else _APP_DIR / path
+    return path if path.is_absolute() else paths.install_dir() / path

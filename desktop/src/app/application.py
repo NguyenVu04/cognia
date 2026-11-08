@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, Qt, QThread, QTimer, QUrl, Slot
-from PySide6.QtGui import QDesktopServices, QPalette
+from PySide6.QtGui import QDesktopServices, QIcon, QPalette
 from PySide6.QtWidgets import QApplication, QWidget
 
 from src.app import config
@@ -79,6 +79,8 @@ def _embedding_identity() -> str | None:
 
 def start_command() -> str:
     """The line that starts Cognia quietly when Windows starts."""
+    if getattr(sys, "frozen", False):
+        return f'"{Path(sys.executable)}" --background'
     python = Path(sys.executable)
     windowless = python.with_name("pythonw.exe")
     if windowless.is_file():
@@ -351,6 +353,7 @@ def main(argv: list[str] | None = None) -> int:
 
     app = QApplication([sys.argv[0], *qt_arguments])
     app.setApplicationName("Cognia")
+    app.setWindowIcon(QIcon(str(paths.resource("logo.ico"))))
     app.setQuitOnLastWindowClosed(False)
     instance = SingleInstance(SINGLE_INSTANCE_KEY)
     if not instance.claim():

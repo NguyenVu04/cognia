@@ -46,6 +46,18 @@ tasks:
     cmds:
       - uv run ruff check src tests scripts
 
+  build:
+    desc: Build Cognia.exe with models/ beside it, in desktop/dist/Cognia/
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - uv run --group build pyinstaller cognia.spec --noconfirm --clean
+
+  installer:
+    desc: Pack desktop/dist/Cognia/ into one installer with Inno Setup 7, after task build
+    dir: '{{.APP_DIR}}'
+    cmds:
+      - iscc installer/cognia.iss
+
   dictionary:
     desc: "Build the dictionary from an Open English WordNet release: task dictionary -- <release.xml.gz>"
     dir: '{{.APP_DIR}}'

@@ -7,7 +7,6 @@ the answer and is dropped.
 
 from __future__ import annotations
 
-import importlib
 import json
 from collections.abc import Callable, Iterator, Mapping, Sequence
 
@@ -89,7 +88,8 @@ class LlamaClient:
         run_tool: Callable[[ToolCall], str] | None = None,
     ) -> Iterator[str | ToolStarted]:
         endpoint = self._endpoint(CHAT, ReplyFailed)
-        tool_loop = importlib.import_module("src.infrastructure.ai.tool_loop")
+        from src.infrastructure.ai import tool_loop
+
         yield from tool_loop.stream(
             endpoint,
             messages(system_prompt, history, turn),

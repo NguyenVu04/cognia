@@ -285,6 +285,12 @@ uv run python -m src
 `task setup` installs dependencies only, and `task run:quick` runs without re-checking
 them.
 
+`task build` makes `desktop/dist/Cognia/` with PyInstaller: `Cognia.exe`, `_internal/`,
+and a copy of `desktop/models/` beside the exe. The build keeps the database in
+`LOCALAPPDATA/Cognia`. After it, `task installer` packs that folder into one file,
+`desktop/dist/Cognia-0.1.0-alpha-setup.exe`, with Inno Setup 7. `iscc` must be on the
+PATH. The installer is not signed, and it does not check the machine yet.
+
 ### Read the specification
 
 Open `docs/USECASE_SPECIFICATION.html` in a browser. Start at section 3 for what
