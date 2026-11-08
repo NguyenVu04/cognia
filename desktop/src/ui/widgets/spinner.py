@@ -33,11 +33,11 @@ class Spinner(QWidget):
     def turning(self) -> bool:
         return self._timer.isActive()
 
-    def showEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._timer.start()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 
@@ -45,7 +45,7 @@ class Spinner(QWidget):
         self._angle = (self._angle + _STEP_DEGREES) % 360
         self.update()
 
-    def paintEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         box = QRectF(self.rect()).adjusted(_PEN, _PEN, -_PEN, -_PEN)

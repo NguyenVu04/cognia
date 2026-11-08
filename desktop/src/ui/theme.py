@@ -1,15 +1,12 @@
 """Visual tokens for the Cognia interface.
 
-Single source of truth for every colour, type size and stylesheet in the
-presentation layer. Two rules follow from it:
+The one source of every colour, type size and style sheet in the
+presentation layer. A literal colour anywhere else is a bug: widgets read the
+constants here, and ``.qss`` files carry ``$TOKEN`` placeholders that
+:func:`stylesheet` fills in. Font sizes never appear in QSS, because style
+sheets take whole pixels only; every size goes through :func:`font`.
 
-* **A literal colour anywhere else is a bug.** Widgets read the constants and
-  helpers here; ``.qss`` files carry ``$TOKEN`` placeholders substituted by
-  :func:`stylesheet`.
-* **Font sizes never appear in QSS.** Qt style sheets accept whole pixels only
-  and the design is built on fractional sizes (9.5, 12.5, 13.8, 14.5 …), so
-  every size goes through :func:`font`, which carries the fraction through
-  ``setPointSizeF``.
+Every text colour below reaches WCAG 2.2 AA (4.5:1) on every surface.
 """
 
 from __future__ import annotations
@@ -22,46 +19,45 @@ from src.utils.paths import resource
 
 # ── families ───────────────────────────────────────────────────────────────
 
-SANS = "Inter"
-MONO_FAMILIES = ["Cascadia Mono", "Consolas", "Menlo", "monospace"]
+SANS = "Nunito"
 
 # ── surfaces ───────────────────────────────────────────────────────────────
 
-BG_WINDOW = QColor("#1b1d2b")
-BG_TITLEBAR = QColor("#191b28")
-BG_SIDEBAR = QColor("#171927")
-BG_CARD = QColor("#1f2130")
-BG_INSET = QColor("#141625")
-BG_BUBBLE = QColor("#232532")
+BG_WINDOW = QColor("#1E1A24")
+BG_TITLEBAR = QColor("#1B1721")
+BG_SIDEBAR = QColor("#19151F")
+BG_CARD = QColor("#262130")
+BG_INSET = QColor("#16121B")
+BG_BUBBLE = QColor("#2C2636")
 
 # ── lines ──────────────────────────────────────────────────────────────────
 
-HAIRLINE = QColor("#232634")
-BORDER_SUBTLE = QColor("#2b2e3d")
-BORDER = QColor("#3f424d")
+HAIRLINE = QColor("#2A2433")
+BORDER_SUBTLE = QColor("#322B3C")
+BORDER = QColor("#3A3245")
 
-# ── accent ─────────────────────────────────────────────────────────────────
+# ── accents and states ─────────────────────────────────────────────────────
 
-ACCENT = QColor("#9184d9")
-ACCENT_TEXT = QColor("#d2cefd")
-ACCENT_LINK = QColor("#b5abfc")
+ACCENT = QColor("#F2A7B8")
+ACCENT_2 = QColor("#B9A6F0")
+ACCENT_TEXT = QColor("#FFD6DF")
+ON_ACCENT = QColor("#2A1820")
+DANGER = QColor("#F28B82")
+SUCCESS = QColor("#8FD3B6")
 
-# ── text and parts ─────────────────────────────────────────────────────────
+# ── text ───────────────────────────────────────────────────────────────────
 
-TEXT = QColor("#e9e9ed")
-KNOB_OFF = QColor("#75798c")
-OVERLAY = QColor(16, 18, 32, 235)  # rgba(16,18,32,.92)
-SHADOW = QColor(0, 0, 0, 179)  # rgba(0,0,0,.7)
-
-
-def muted(alpha: float) -> QColor:
-    """Body text at partial opacity — the design's ``rgba(233,233,237,a)``."""
-    return QColor(233, 233, 237, round(alpha * 255))
+TEXT = QColor("#F1ECF4")
+TEXT_SECONDARY = QColor("#B3A8BB")
+TEXT_FAINT = QColor("#A397AB")
+# Not for text: switch knobs and idle icons.
+KNOB_OFF = QColor("#8E8396")
+OVERLAY = QColor(22, 18, 27, 235)
 
 
 def wash(alpha: float) -> QColor:
-    """Accent at partial opacity — the design's ``rgba(145,132,217,a)``."""
-    return QColor(145, 132, 217, round(alpha * 255))
+    """The accent at partial opacity, for selected and hover fills."""
+    return QColor(ACCENT.red(), ACCENT.green(), ACCENT.blue(), round(alpha * 255))
 
 
 def css(colour: QColor) -> str:
@@ -71,82 +67,72 @@ def css(colour: QColor) -> str:
     )
 
 
+def contrast(foreground: QColor, background: QColor) -> float:
+    """The WCAG contrast ratio of two opaque colours, from 1.0 to 21.0."""
+    lighter, darker = sorted(
+        (_luminance(foreground), _luminance(background)), reverse=True
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def blend(foreground: QColor, background: QColor) -> QColor:
+    """The opaque colour that ``foreground`` shows on ``background``."""
+    alpha = foreground.alphaF()
+    return QColor(
+        *(
+            round(f * alpha + b * (1 - alpha))
+            for f, b in (
+                (foreground.red(), background.red()),
+                (foreground.green(), background.green()),
+                (foreground.blue(), background.blue()),
+            )
+        )
+    )
+
+
+def _luminance(colour: QColor) -> float:
+    def channel(value: float) -> float:
+        return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
+
+    return (
+        0.2126 * channel(colour.redF())
+        + 0.7152 * channel(colour.greenF())
+        + 0.0722 * channel(colour.blueF())
+    )
+
+
 # ── type ───────────────────────────────────────────────────────────────────
 
-# Qt sizes type in points; the design is in CSS pixels at 96 dpi.
-_PX_TO_PT = 72 / 96
+# Qt sizes type in points; sizes here are pixels at 96 dpi.
+PX_TO_PT = 72 / 96
 
 
-def font(
-    px: float,
-    weight: int = 400,
-    spacing_em: float = 0.0,
-    tabular: bool = False,
-    mono: bool = False,
-) -> QFont:
-    """Build a font from a CSS pixel size.
-
-    ``spacing_em`` mirrors CSS ``letter-spacing`` and ``tabular`` mirrors
-    ``font-variant-numeric: tabular-nums``, which the design uses for every
-    figure that sits in a column.
-    """
+def font(px: float, weight: int = 400, tabular: bool = False) -> QFont:
+    """Build a font from a pixel size. ``tabular`` lines figures up in
+    columns, for times and counts."""
     f = QFont()
-    f.setFamilies(MONO_FAMILIES if mono else [SANS])
-    f.setPointSizeF(px * _PX_TO_PT)
+    f.setFamilies([SANS])
+    f.setPointSizeF(px * PX_TO_PT)
     f.setWeight(QFont.Weight(weight))
-    if spacing_em:
-        f.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100 + spacing_em * 100)
     if tabular:
-        # OpenType tabular figures, so times and counts line up in their
-        # columns. Qt wants a QFont.Tag, not a str.
         f.setFeature(QFont.Tag("tnum"), 1)
     return f
 
 
 # ── style sheets ───────────────────────────────────────────────────────────
 
-# One resource sheet, holding what is genuinely global. Component looks are
-# built by the factories in ``src/ui/widgets/`` from the tokens above, because
-# the design varies radius and padding per instance and a style sheet cannot
-# parameterise either.
 _SHEETS = ("app",)
 
 
 def _tokens() -> dict[str, str]:
     return {
-        "BG_WINDOW": css(BG_WINDOW),
-        "BG_TITLEBAR": css(BG_TITLEBAR),
-        "BG_SIDEBAR": css(BG_SIDEBAR),
         "BG_CARD": css(BG_CARD),
         "BG_INSET": css(BG_INSET),
-        "BG_BUBBLE": css(BG_BUBBLE),
-        "HAIRLINE": css(HAIRLINE),
-        "BORDER_SUBTLE": css(BORDER_SUBTLE),
         "BORDER": css(BORDER),
         "ACCENT": css(ACCENT),
-        "ACCENT_TEXT": css(ACCENT_TEXT),
-        "ACCENT_LINK": css(ACCENT_LINK),
         "TEXT": css(TEXT),
-        "KNOB_OFF": css(KNOB_OFF),
-        "WASH_06": css(wash(0.06)),
-        "WASH_09": css(wash(0.09)),
-        "WASH_10": css(wash(0.10)),
-        "WASH_12": css(wash(0.12)),
-        "WASH_14": css(wash(0.14)),
-        "WASH_22": css(wash(0.22)),
-        "WASH_28": css(wash(0.28)),
+        "TEXT_FAINT": css(TEXT_FAINT),
         "WASH_30": css(wash(0.30)),
-        "WASH_45": css(wash(0.45)),
-        "MUTED_40": css(muted(0.40)),
-        "MUTED_45": css(muted(0.45)),
-        "MUTED_50": css(muted(0.50)),
-        "MUTED_55": css(muted(0.55)),
-        "MUTED_60": css(muted(0.60)),
-        "MUTED_62": css(muted(0.62)),
-        "MUTED_70": css(muted(0.70)),
-        "MUTED_72": css(muted(0.72)),
-        "MUTED_82": css(muted(0.82)),
-        "TRANSPARENT": "transparent",
     }
 
 

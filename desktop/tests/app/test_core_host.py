@@ -169,7 +169,7 @@ def praise(confidence: float = 0.9, crisis: bool = False) -> Interpretation:
 
 def test_database_lives_on_core_thread(core: Core) -> None:
     with pytest.raises(ProgrammingError):
-        SqliteConversationStore(core.host._db).conversations()
+        SqliteConversationStore(core.host.db).conversations()
 
 
 def test_start_without_character(core: Core) -> None:
@@ -186,7 +186,7 @@ def test_choose_records_character_changed(core: Core, path: Path) -> None:
 
     version, _, since, _ = core.recorder.wait("characterShown", 2)
     assert version.name == "Rin"
-    assert core.recorder.all("screenRequested") == [("chat",)]
+    assert core.recorder.all("screenRequested") == [("onboarding",)]
     assert rows(path, "SELECT kind FROM events") == [("character_changed",)]
 
 
@@ -243,7 +243,7 @@ def test_reply_commits_everything(core: Core, path: Path) -> None:
     send_turn(core)
     core.bridge.send(ReplyArrived(1, "Noted: “Has a cat”."))
 
-    text, note, _ = core.recorder.wait("replyFinished")
+    text, note, _, _ = core.recorder.wait("replyFinished")
     assert text == "Noted: “Has a cat”."
     assert note.startswith("Stored — you told me · ")
     assert rows(path, "SELECT text FROM memory_items") == [("Has a cat",)]
@@ -459,7 +459,7 @@ def test_crisis_reply_gets_required_line(core: Core, path: Path) -> None:
     send_turn(core, found=praise(crisis=True))
     core.bridge.send(ReplyArrived(1, "ok"))
 
-    text, _, _ = core.recorder.wait("replyFinished")
+    text, _, _, _ = core.recorder.wait("replyFinished")
     assert text == f"ok\n\n{safety_rules.required_line()}"
     stored = rows(path, "SELECT text FROM messages WHERE role = 'companion'")
     assert stored == [(text,)]
@@ -473,7 +473,7 @@ def test_complying_crisis_reply_unchanged(core: Core) -> None:
     send_turn(core, found=praise(crisis=True))
     core.bridge.send(ReplyArrived(1, reply))
 
-    text, _, _ = core.recorder.wait("replyFinished")
+    text, _, _, _ = core.recorder.wait("replyFinished")
     assert text == reply
 
 
@@ -649,7 +649,7 @@ def test_delete_failure_keeps_everything(core: Core, path: Path, monkeypatch) ->
     def refuse(conversation_id: str) -> None:
         raise ConversationStoreFailed("Not deleted.")
 
-    monkeypatch.setattr(core.host._store, "delete", refuse)
+    monkeypatch.setattr(core.host.conversations, "delete", refuse)
     core.bridge.send(DeleteConversation(current))
 
     assert core.recorder.wait("conversationFailed") == ("Not deleted.",)
@@ -806,7 +806,7 @@ def test_tool_error_answers_sentence(core: Core, monkeypatch) -> None:
     def broken(*args):
         raise RuntimeError("no log")
 
-    monkeypatch.setattr(core.host._companion, "why", broken)
+    monkeypatch.setattr(core.host.companion, "why", broken)
     answer: Future = Future()
     core.bridge.send(ToolRequested(ToolCall("why_i_feel"), datetime.now().astimezone(),
                                    answer))
@@ -819,7 +819,7 @@ def test_number_check_chip(core: Core) -> None:
     results = (ToolResult("calculate", "12*7 = 84"),)
     core.bridge.send(ReplyArrived(1, "It's 85, I think.", results))
 
-    _, _, check = core.recorder.wait("replyFinished")
+    _, _, check, _ = core.recorder.wait("replyFinished")
     assert check == "Not from what I checked: 85 · I found: 12*7 = 84"
 
 
@@ -827,7 +827,7 @@ def test_no_check_without_a_data_tool(core: Core) -> None:
     send_turn(core, found=praise())
     core.bridge.send(ReplyArrived(1, "It's 85.", ()))
 
-    _, _, check = core.recorder.wait("replyFinished")
+    _, _, check, _ = core.recorder.wait("replyFinished")
     assert check == ""
 
 
@@ -836,7 +836,7 @@ def test_numbers_from_the_user_pass(core: Core) -> None:
     results = (ToolResult("convert_units", "5 km is 3.11 mi."),)
     core.bridge.send(ReplyArrived(1, "5 km in 31 minutes is 3.11 mi!", results))
 
-    _, _, check = core.recorder.wait("replyFinished")
+    _, _, check, _ = core.recorder.wait("replyFinished")
     assert check == ""
 
 

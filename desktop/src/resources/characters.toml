@@ -10,6 +10,7 @@ For example:
 - When the user is tired: "You sound tired. We don't have to talk much."
 - When you do not know what to say: "I'm not sure what to say... but I'm listening."'''
 appearance = "yuna"
+voice = "af_heart"
 reactivity = 0.4
 feeling_half_life_min = 30.0
 mood_half_life_min = 720.0
@@ -40,6 +41,7 @@ For example:
 - When the user is wrong: "No. That's not how it works, and I think you know it."
 - When the user is tired: "Then stop arguing with me and get some rest."'''
 appearance = "rin"
+voice = "af_bella"
 reactivity = 0.4
 feeling_half_life_min = 30.0
 mood_half_life_min = 480.0
@@ -76,6 +78,7 @@ For example:
 - When the user mentions something new: "Ooh, I've never thought about that. How did you get into it?"
 - When the user needs quiet: "...Okay. I'll be quiet for a bit. I'm right here."'''
 appearance = "mira"
+voice = "af_nova"
 reactivity = 0.6
 feeling_half_life_min = 45.0
 mood_half_life_min = 720.0
@@ -114,6 +117,7 @@ For example:
 - When the user is unsure about a choice: "Is that what you want, or what you think you should want?"
 - When the user is quiet: "Mm. Take your time."'''
 appearance = "shiori"
+voice = "bf_emma"
 reactivity = 0.3
 feeling_half_life_min = 60.0
 mood_half_life_min = 1440.0

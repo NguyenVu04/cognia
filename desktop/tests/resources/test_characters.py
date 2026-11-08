@@ -18,6 +18,7 @@ FIELDS = {
     "rest_dominance",
     "card_line",
     "sample_answer",
+    "voice",
 }
 TEMPERAMENT = (
     "reactivity",

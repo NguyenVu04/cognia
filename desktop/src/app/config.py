@@ -34,6 +34,18 @@ LLAMA_SERVER_CPU: str = _DEFAULTS["LLAMA_SERVER_CPU"]
 CHAT_MODEL: str = _DEFAULTS["CHAT_MODEL"]
 EMBEDDING_MODEL: str = _DEFAULTS["EMBEDDING_MODEL"]
 
+#: Speech to text: the whisper.cpp server and its model. Speech: the Kokoro
+#: model and its voices.
+WHISPER_SERVER: str = _DEFAULTS["WHISPER_SERVER"]
+SPEECH_MODEL: str = _DEFAULTS["SPEECH_MODEL"]
+VOICE_MODEL: str = _DEFAULTS["VOICE_MODEL"]
+VOICES: str = _DEFAULTS["VOICES"]
+
+#: Listening stops after this much silence that follows speech, or at the
+#: longest time one turn of talking may take.
+TALK_SILENCE_SECONDS: float = _DEFAULTS["TALK_SILENCE_SECONDS"]
+TALK_MAX_SECONDS: float = _DEFAULTS["TALK_MAX_SECONDS"]
+
 #: These three belong to the embedding model and change with it. Two unrelated
 #: lines still reach a cosine of about the baseline; at the near-duplicate
 #: cosine a new line counts as one already stored; the model reads 512 tokens,

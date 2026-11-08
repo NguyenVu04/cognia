@@ -1,8 +1,4 @@
-"""The pill switch used by desk awareness and the message-kind rows.
-
-Two sizes appear in the design, 52×29 and 46×26, both animating the knob left
-to right over ``.18s ease``.
-"""
+"""The pill switch for every on/off setting, in two sizes."""
 
 from __future__ import annotations
 
@@ -20,7 +16,7 @@ _SIZES = {
 
 
 class PillToggle(QAbstractButton):
-    """A checkable switch. Presentational — nothing is stored."""
+    """A checkable switch. It stores nothing; its owner reports the change."""
 
     def __init__(
         self, size: str = "large", checked: bool = True, parent: QWidget | None = None
@@ -30,6 +26,7 @@ class PillToggle(QAbstractButton):
         self.setCheckable(True)
         self.setFixedSize(self._w, self._h)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self._pos = float(self._travel() if checked else self._inset)
         self._animation = QPropertyAnimation(self, b"knobPos", self)
@@ -48,22 +45,24 @@ class PillToggle(QAbstractButton):
         self._animation.setEndValue(float(self._travel() if on else self._inset))
         self._animation.start()
 
-    def getKnobPos(self) -> float:  # noqa: N802 - Qt property accessor
+    def getKnobPos(self) -> float:
         return self._pos
 
-    def setKnobPos(self, value: float) -> None:  # noqa: N802 - Qt property accessor
+    def setKnobPos(self, value: float) -> None:
         self._pos = value
         self.update()
 
     knobPos = Property(float, getKnobPos, setKnobPos)
 
-    def paintEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def paintEvent(self, event) -> None:
         on = self.isChecked()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        track = theme.wash(0.12) if on else Qt.GlobalColor.transparent
-        ring = theme.ACCENT if on else theme.BORDER
+        track = theme.ACCENT if on else theme.BG_INSET
+        ring = theme.ACCENT_2 if self.hasFocus() else (
+            theme.ACCENT if on else theme.BORDER
+        )
         painter.setBrush(track)
         painter.setPen(QPen(ring, 1))
         painter.drawRoundedRect(
@@ -71,7 +70,7 @@ class PillToggle(QAbstractButton):
         )
 
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(theme.ACCENT_TEXT if on else theme.KNOB_OFF)
+        painter.setBrush(theme.BG_WINDOW if on else theme.KNOB_OFF)
         painter.drawEllipse(
             int(self._pos), self._inset, self._knob, self._knob
         )

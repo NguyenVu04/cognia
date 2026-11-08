@@ -14,6 +14,7 @@ name = "Yuna"
 role = "The Gentle Companion"
 description = "You are Yuna."
 appearance = "yuna"
+voice = "af_heart"
 reactivity = {reactivity}
 feeling_half_life_min = 30.0
 mood_half_life_min = 720.0
@@ -73,3 +74,26 @@ def test_out_of_range_temperament(tmp_path: Path) -> None:
 
     with pytest.raises(CharacterCatalogUnavailable):
         catalog.templates()
+
+
+def test_every_shipped_character_has_a_known_voice(
+    shipped: TomlCharacterCatalog,
+) -> None:
+    import zipfile
+
+    from src.app import config
+
+    voices = zipfile.ZipFile(config.model_path(config.VOICES)).namelist() if (
+        config.model_path(config.VOICES).is_file()
+    ) else None
+    for template in shipped.templates():
+        assert template.voice
+        if voices is not None:
+            assert f"{template.voice}.npy" in voices
+
+
+def test_missing_voice_is_unavailable(tmp_path: Path) -> None:
+    text = ENTRY.format(reactivity=0.4).replace('voice = "af_heart"', "")
+
+    with pytest.raises(CharacterCatalogUnavailable):
+        _written(tmp_path, text).templates()

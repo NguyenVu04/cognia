@@ -3,6 +3,10 @@
   "LLAMA_SERVER_CPU": "models/runtime/cpu/llama-server.exe",
   "CHAT_MODEL": "models/chat.gguf",
   "EMBEDDING_MODEL": "models/embedding.gguf",
+  "WHISPER_SERVER": "models/runtime/whisper/whisper-server.exe",
+  "SPEECH_MODEL": "models/speech.bin",
+  "VOICE_MODEL": "models/voice.onnx",
+  "VOICES": "models/voices.bin",
   "EMBEDDING_BASELINE": 0.45,
   "NEAR_DUPLICATE": 0.95,
   "EMBEDDING_MAX_CHARS": 1200,
@@ -16,5 +20,7 @@
   "MODEL_RESTARTS": 3,
   "HISTORY_MAX_CHARS": 9700,
   "MESSAGE_MAX_CHARS": 1200,
-  "DATABASE_PATH": "data/cognia.sqlite3"
+  "DATABASE_PATH": "data/cognia.sqlite3",
+  "TALK_SILENCE_SECONDS": 1.5,
+  "TALK_MAX_SECONDS": 30
 }

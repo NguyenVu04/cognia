@@ -2,7 +2,8 @@
 
 It reports a change of desk, lock or presentation state, a change of the
 application in front, the end of each hour, and a jump of the clock. Between
-changes it reports nothing, so a day at the desk is a handful of events.
+changes it reports nothing, so a day at the desk is a handful of events. When
+asked, it also reports the next pause in typing, once.
 """
 
 from __future__ import annotations
@@ -17,6 +18,8 @@ from src.domain.events.models import EventKind
 from src.domain.ports import PresenceFailed, PresenceSample, PresenceSource
 
 INTERVAL_SECONDS = 1.0
+# Idle this long counts as a pause in typing.
+TYPING_PAUSE_SECONDS = 3
 
 
 def _now() -> datetime:
@@ -46,6 +49,12 @@ class PresenceSampler(threading.Thread):
         self._stop_flag = stop
         self._clock = clock
         self._interval = interval
+        self._watch = threading.Event()
+
+    def watch_for_pause(self) -> None:
+        """Report the next pause in typing once, as a ``typing_pause`` event.
+        Safe from any thread."""
+        self._watch.set()
 
     def run(self) -> None:
         previous: PresenceSample | None = None
@@ -69,6 +78,10 @@ class PresenceSampler(threading.Thread):
                     previous = None  # what follows is reported afresh
             for kind, payload in rules.presence_events(previous, sample):
                 self._send(kind, payload, now)
+            if self._watch.is_set() and sample.idle_seconds >= TYPING_PAUSE_SECONDS:
+                self._watch.clear()
+                self._send(EventKind.TYPING_PAUSE,
+                           {"idle_seconds": sample.idle_seconds}, now)
             previous, last = sample, now
             self._stop_flag.wait(self._interval)
         if previous is not None:

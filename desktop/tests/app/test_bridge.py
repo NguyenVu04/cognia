@@ -11,8 +11,8 @@ class Receiver(QObject):
         super().__init__()
         self.calls: list[tuple[str, bool]] = []
 
-    @Slot(str, str, str)
-    def finished(self, text: str, note: str, check: str) -> None:
+    @Slot(str, str, str, str)
+    def finished(self, text: str, note: str, check: str, message_id: str) -> None:
         on_gui = QThread.currentThread() is self.thread()
         self.calls.append((text, on_gui))
 
@@ -31,7 +31,9 @@ def test_signal_from_core_thread_arrives_on_gui_thread(qtbot) -> None:
     receiver = Receiver()
     bridge.replyFinished.connect(receiver.finished)
 
-    worker = threading.Thread(target=lambda: bridge.replyFinished.emit("Hello", "", ""))
+    worker = threading.Thread(
+        target=lambda: bridge.replyFinished.emit("Hello", "", "", "")
+    )
     worker.start()
     worker.join()
 

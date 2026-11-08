@@ -1,7 +1,7 @@
 """One ready-made character, as it ships.
 
 ``card_line`` and ``sample_answer`` exist for the picker only; a version keeps
-neither.
+neither. ``voice`` names the Kokoro voice the character speaks with.
 """
 
 from __future__ import annotations
@@ -21,3 +21,4 @@ class Template:
     temperament: Temperament
     card_line: str
     sample_answer: str
+    voice: str = "af_heart"

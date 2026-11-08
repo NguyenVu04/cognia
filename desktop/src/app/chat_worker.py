@@ -21,6 +21,7 @@ from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from typing import Protocol
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -40,7 +41,21 @@ from src.domain.ports import (
 )
 from src.domain.tools import catalog
 from src.domain.tools import rules as tool_rules
-from src.domain.tools.models import ToolCall, ToolResult, ToolStarted
+from src.domain.tools.models import ToolCall, ToolResult, ToolSpec, ToolStarted
+from src.domain.tools.models.tool_server import ToolServer
+from src.infrastructure.voice.transcriber import SpeechUnavailable, Transcriber
+
+NO_SPEECH = "I can't hear right now. Typing still works."
+
+
+class AddOns(Protocol):
+    """The tools of the add-ons, as :class:`~src.infrastructure.ai.mcp_tools.McpTools`
+    gives them."""
+
+    def specs(self) -> list[ToolSpec]: ...
+    def handles(self, name: str) -> bool: ...
+    def call(self, name: str, arguments: dict) -> str: ...
+
 
 # How long a tool that asks the core waits for its answer, and how often it
 # looks whether the reply was abandoned meanwhile.
@@ -48,6 +63,16 @@ TOOL_SECONDS = 10
 _POLL_SECONDS = 0.2
 
 AskCore = Callable[[ToolCall, datetime], "Future[str]"]
+
+
+@dataclass(frozen=True)
+class WordJob:
+    """Word a message the companion starts. ``facts`` are the lines that
+    explain it; the words may state nothing else."""
+
+    job_id: int
+    system_prompt: str
+    instruction: str
 
 
 @dataclass(frozen=True)
@@ -153,6 +178,14 @@ class ChatWorker(QObject):
     toolStarted = Signal(str)
     #: An http or https address the user asked to open in their browser.
     browserRequested = Signal(str)
+    #: A tool finished, so the companion stops looking thoughtful.
+    toolEnded = Signal()
+    #: The job id and the words, or "" when the model could not word it.
+    worded = Signal(int, str)
+    #: The words heard, or "" when nothing was recognised.
+    transcribed = Signal(str)
+    #: Why speech could not be turned into words.
+    transcribeFailed = Signal(str)
 
     def __init__(
         self,
@@ -161,9 +194,14 @@ class ChatWorker(QObject):
         embedder: Embedder,
         ask_core: AskCore | None = None,
         dictionary: Dictionary | None = None,
+        transcriber: Transcriber | None = None,
+        add_ons: Callable[[Sequence[ToolServer]], AddOns] | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
+        self._transcriber = transcriber
+        self._make_add_ons = add_ons
+        self._add_ons: AddOns | None = None
         self._replier = replier
         self._interpreter = interpreter
         self._embedder = embedder
@@ -238,6 +276,40 @@ class ChatWorker(QObject):
                 vectors = {}
         self.prepared.emit(Prepared(request.turn_id, recalled, found, vectors))
 
+    @Slot(object)
+    def setAddOns(self, servers: Sequence[ToolServer]) -> None:
+        """Use the tools of these servers from the next reply on."""
+        if self._make_add_ons is None:
+            return
+        self._add_ons = self._make_add_ons(servers) if servers else None
+
+    @Slot(object)
+    def word(self, job: WordJob) -> None:
+        """Word a message the companion starts. "" if the model cannot."""
+        pieces: list[str] = []
+        stream = self._replier.stream_text(job.system_prompt, job.instruction)
+        try:
+            for piece in stream:
+                pieces.append(piece)
+        except Exception:  # noqa: BLE001 - the gate then uses the plain words
+            pieces = []
+        finally:
+            stream.close()
+        self.worded.emit(job.job_id, conversation_rules.tidy_summary("".join(pieces)))
+
+    @Slot(bytes)
+    def transcribe(self, wav: bytes) -> None:
+        """Turn the user's speech into words. The audio is dropped after."""
+        if self._transcriber is None:
+            self.transcribeFailed.emit(NO_SPEECH)
+            return
+        try:
+            text = self._transcriber.transcribe(wav)
+        except SpeechUnavailable as error:
+            self.transcribeFailed.emit(str(error))
+            return
+        self.transcribed.emit(text)
+
     @Slot()
     def warm_up(self) -> None:
         """Import the tool loop ahead of the first reply. It takes seconds, so
@@ -251,12 +323,20 @@ class ChatWorker(QObject):
         pieces: list[str] = []
         results: list[ToolResult] = []
 
+        add_ons = self._add_ons
+
         def run_tool(call: ToolCall) -> str:
-            text = self._run_tool(call, request) or tool_rules.TOOL_FAILED
+            if add_ons is not None and add_ons.handles(call.name):
+                text = add_ons.call(call.name, dict(call.arguments))
+            else:
+                text = self._run_tool(call, request) or tool_rules.TOOL_FAILED
             results.append(ToolResult(call.name, text))
+            self.toolEnded.emit()
             return text
 
-        tools = catalog.SPECS if request.tools else ()
+        extra = add_ons.specs() if add_ons is not None and request.tools else []
+        tools = (*catalog.SPECS, *extra) if request.tools else ()
+        working = {spec.name: spec.working for spec in extra}
         try:
             for piece in self._replier.stream_reply(
                 request.system_prompt, request.history, request.turn, tools, run_tool
@@ -265,7 +345,8 @@ class ChatWorker(QObject):
                     return
                 if isinstance(piece, ToolStarted):
                     spec = catalog.spec(piece.name)
-                    self.toolStarted.emit(spec.working if spec else "")
+                    label = spec.working if spec else working.get(piece.name, "")
+                    self.toolStarted.emit(label)
                     continue
                 pieces.append(piece)
                 self.chunk.emit(piece)

@@ -46,9 +46,9 @@ class Bridge(QObject):
     conversationFailed = Signal(str)
     #: The user's message is recorded; a reply is on its way.
     messageAppended = Signal(object)
-    #: The reply text, the chip of what was stored, and the chip of numbers no
-    #: tool gave; each chip may be "".
-    replyFinished = Signal(str, str, str)
+    #: The reply text, the chip of what was stored, the chip of numbers no
+    #: tool gave (each chip may be ""), and the id of the stored reply.
+    replyFinished = Signal(str, str, str, str)
     #: The reply text, and why it could not be kept.
     replyNotSaved = Signal(str, str)
     replyFailed = Signal(str)
@@ -71,6 +71,41 @@ class Bridge(QObject):
     #: or went off by itself, or "".
     awarenessChanged = Signal(bool, str)
 
+    #: The feeling now and the resting mood, or "" with moods off.
+    feelingShown = Signal(str, str)
+    #: The character's name and a FeelingExplanation, or None with moods off.
+    feelingExplained = Signal(str, object)
+    #: The patterns learned, each a Learned.
+    learnedShown = Signal(object)
+    #: Today's DeskTime and the minutes in each application, both None with
+    #: desk awareness off, and the names that are not counted.
+    deskShown = Signal(object, object, object)
+    speechSettingsShown = Signal(object)
+    #: "" when saved, or why not.
+    speechSettingsSaved = Signal(str)
+    #: Whether replies are said aloud, and the talk key.
+    voiceSettingsShown = Signal(bool, str)
+    toolServersShown = Signal(object)
+    toolServersFailed = Signal(str)
+    #: Paused or not, until when as words, and how long the pause lasted.
+    pauseChanged = Signal(bool, str, str)
+    #: Where the companion was left, as a Placement.
+    placementShown = Signal(object)
+    #: Whether the first close was already explained.
+    closeHintShown = Signal(bool)
+    #: The ambient state of the companion: active, waiting or dozing.
+    ambientChanged = Signal(str)
+    #: A ProactiveMessage to show beside the companion.
+    proactiveShown = Signal(object)
+    #: The greeting of the day as a stored Message, and why it was said.
+    greetingShown = Signal(object, str)
+    #: A line from the application in the conversation, never stored.
+    noticeShown = Signal(str)
+    #: Report the next pause in typing.
+    watchForPause = Signal()
+    #: The voice of the character and the speed of its mood.
+    voiceChanged = Signal(str, float)
+
     # ── to the model thread ───────────────────────────────────────────────
     askPrepare = Signal(object)
     #: A :class:`~src.app.chat_worker.ReplyRequest`.
@@ -78,6 +113,10 @@ class Bridge(QObject):
     askEmbed = Signal(object)
     #: A :class:`~src.app.chat_worker.SummaryJob`.
     askSummary = Signal(object)
+    #: A :class:`~src.app.chat_worker.WordJob`.
+    askWord = Signal(object)
+    #: The tool servers to use from the next reply.
+    addOnsChanged = Signal(object)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)

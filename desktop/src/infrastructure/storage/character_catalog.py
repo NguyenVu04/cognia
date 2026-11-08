@@ -51,4 +51,5 @@ def _template(entry: dict) -> Template:
         ),
         card_line=entry["card_line"],
         sample_answer=entry["sample_answer"],
+        voice=entry["voice"],
     )

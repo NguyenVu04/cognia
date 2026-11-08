@@ -158,7 +158,7 @@ def test_every_table_is_strict(engine: Engine) -> None:
         ).all()
     tables = [(name, sql) for name, sql in tables if not outside_orm(name)]
 
-    assert len(tables) == 18
+    assert len(tables) == 19
     assert all(sql.rstrip().endswith("STRICT") for _, sql in tables)
 
 

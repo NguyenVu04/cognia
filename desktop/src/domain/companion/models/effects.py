@@ -22,5 +22,13 @@ class ShowGesture:
     name: str
 
 
+@dataclass(frozen=True)
+class ShowAmbient:
+    """Show the companion waiting, dozing or active. Ambient motion is not
+    speech, so it passes no gate."""
+
+    state: str
+
+
 # Every kind of effect. A new kind joins this union.
-Effect = ShowExpression | ShowGesture
+Effect = ShowExpression | ShowGesture | ShowAmbient

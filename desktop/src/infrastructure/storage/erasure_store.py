@@ -32,7 +32,7 @@ GROUP_TABLES: dict[Group, tuple[str, ...]] = {
     Group.SPEECH: ("decision_factors", "speech_decisions"),
     Group.EVENTS: ("emotion_changes", "events"),
     Group.CHARACTER: ("character_proposals", "character_versions"),
-    Group.SETTINGS: ("app_exclusions",),
+    Group.SETTINGS: ("app_exclusions", "tool_servers"),
 }
 
 # The rows a person would call items.

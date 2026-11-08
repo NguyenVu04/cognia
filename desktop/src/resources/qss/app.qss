@@ -1,12 +1,8 @@
-/* Global surface, selection and scrollbars.
-   Font properties are deliberately absent — see src/ui/theme.py. */
+/* Global surface, selection, scroll bars and text entry.
+   Font properties stay out of style sheets: they take whole pixels only. */
 
 QWidget {
     color: $TEXT;
-    background: transparent;
-}
-
-QLabel {
     background: transparent;
 }
 
@@ -16,9 +12,6 @@ QToolTip {
     border: 1px solid $BORDER;
     padding: 6px 9px;
 }
-
-/* ::-webkit-scrollbar { width: 8px; height: 8px }
-   thumb #3f424d, radius 8px, track transparent */
 
 QScrollBar:vertical {
     background: transparent;
@@ -59,23 +52,47 @@ QScrollArea {
     border: 0;
 }
 
-/* Text entry. The design gives inputs #141625 on a #3f424d ring, and lifts the
-   ring to the accent on focus in place of the web build's focus outline. */
-
-QLineEdit, QTextEdit, QPlainTextEdit {
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QTimeEdit, QKeySequenceEdit QLineEdit {
     background: $BG_INSET;
     border: 1px solid $BORDER;
-    border-radius: 8px;
+    border-radius: 10px;
     color: $TEXT;
-    padding: 11px 14px;
+    padding: 9px 12px;
     selection-background-color: $WASH_30;
     selection-color: $TEXT;
 }
 
-QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
+QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus,
+QTimeEdit:focus {
     border-color: $ACCENT;
 }
 
-QTextEdit, QPlainTextEdit {
-    padding: 10px 12px;
+QLineEdit:disabled, QSpinBox:disabled, QTimeEdit:disabled {
+    color: $TEXT_FAINT;
+}
+
+QMenu {
+    background: $BG_CARD;
+    border: 1px solid $BORDER;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+QMenu::item {
+    padding: 8px 18px 8px 12px;
+    border-radius: 6px;
+}
+
+QMenu::item:selected {
+    background: $WASH_30;
+}
+
+QMenu::item:disabled {
+    color: $TEXT_FAINT;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: $BORDER;
+    margin: 5px 8px;
 }

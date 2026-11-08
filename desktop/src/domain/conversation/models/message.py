@@ -1,9 +1,9 @@
 """One line of a conversation.
 
-``role`` is the design's own one-letter convention — ``"u"`` for the user and
-``"c"`` for the companion — so the bubbles keep reading it the way they always
-have. ``note`` is the "Stored — you told me" chip the design shows underneath a
-companion message; nothing writes it yet.
+``role`` is ``"u"`` for the user and ``"c"`` for the companion. ``note`` is the
+chip under a companion message that says what was stored; it is not kept, so a
+message read back from the store has none. ``rating`` is the user's thumbs up
+(1) or down (-1) on a companion message, or ``None``.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ class Message:
     text: str
     created_at: datetime
     note: str = ""
+    rating: int | None = None
 
     @property
     def from_user(self) -> bool:

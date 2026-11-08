@@ -5,7 +5,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta, tzinfo
 
 from src.domain.companion import rules
-from src.domain.companion.models import CompanionState, StepResult
+from src.domain.companion.models import (
+    CompanionState,
+    FeelingExplanation,
+    StepResult,
+)
 from src.domain.emotion.emotion_service import EmotionService
 from src.domain.emotion.models import Pad
 from src.domain.events.models import EventKind, Payload
@@ -22,6 +26,10 @@ class CompanionService:
     def __init__(self, log: EventLog, emotion: EmotionService) -> None:
         self._log = log
         self._emotion = emotion
+
+    def temperaments(self):
+        """The temperament of each character version, by its id."""
+        return self._emotion.temperaments()
 
     def start(self) -> CompanionState:
         """The state after every event in the log."""
@@ -52,6 +60,16 @@ class CompanionService:
         ``ValueError`` with no character."""
         since = at - timedelta(days=rules.CAUSE_DAYS)
         return rules.explain_feeling(
+            state, self._log.read_since(since), self._emotion.temperaments(), at, zone
+        )
+
+    def explanation(
+        self, state: CompanionState, at: datetime, zone: tzinfo
+    ) -> FeelingExplanation | None:
+        """The feeling at ``at`` and what moved it, as figures. ``None`` with
+        moods off. Raises ``ValueError`` with no character."""
+        since = at - timedelta(days=rules.CAUSE_DAYS)
+        return rules.feeling_explanation(
             state, self._log.read_since(since), self._emotion.temperaments(), at, zone
         )
 

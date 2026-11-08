@@ -71,6 +71,12 @@ class ConversationStore(Protocol):
         :class:`ConversationStoreFailed` if nothing could be removed."""
         ...
 
+    def rate(self, message_id: str, rating: int | None) -> None:
+        """Keep the user's rating of a companion message: 1, -1, or ``None`` to
+        take it back. Raises :class:`ConversationStoreFailed` if it cannot be
+        written."""
+        ...
+
     def close(self) -> None:
         """Release whatever the store is holding."""
         ...

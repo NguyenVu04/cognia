@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from src.domain.conversation.models import Conversation
 from src.ui.dialogs.conversation_menu import MAX_LIST_HEIGHT, ConversationMenu
-from src.ui.widgets.buttons import TextButton
+from src.ui.widgets.buttons import IconButton
 
 NOW = datetime(2026, 11, 6, 9, 0, tzinfo=timezone.utc)
 
@@ -28,7 +28,7 @@ def test_delete_emits_id(qtbot) -> None:
     caught: list[str] = []
     menu.deleteRequested.connect(caught.append)
 
-    deletes = menu.findChildren(TextButton, "delete")
+    deletes = menu.findChildren(IconButton, "delete")
     deletes[1].click()
 
     assert caught == ["c1"]

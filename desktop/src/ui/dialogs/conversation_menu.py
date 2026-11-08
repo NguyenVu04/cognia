@@ -1,12 +1,4 @@
-"""The conversation picker on the Companion screen.
-
-Built the way :mod:`src.ui.dialogs.tray_menu` is, and for the same reason a
-native ``QMenu`` cannot carry the design's radius and drop shadow.
-
-This control was added beyond the designed screens. It exists because
-conversations now outlive the window and there has to be some way back to an
-earlier one.
-"""
+"""The conversation picker on the Companion screen."""
 
 from __future__ import annotations
 
@@ -17,74 +9,56 @@ from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
 
 from src.domain.conversation.models import Conversation
 from src.ui import theme
-from src.ui.widgets.buttons import TextButton, menu_button
+from src.ui.widgets.buttons import Button, IconButton
+from src.ui.widgets.frameless import FramelessWindow
+from src.ui.widgets.layout import clear
 from src.ui.widgets.scroll import ScrollPane
-from src.ui.widgets.shadow import ShadowWindow
 from src.ui.widgets.surface import rule
 from src.ui.widgets.typography import kicker
 
-WIDTH = 288
-#: Past this, the list scrolls, so the popup never grows taller than the window.
+WIDTH = 300
+# Past this the list scrolls, so the popup never grows taller than the window.
 MAX_LIST_HEIGHT = 360
 
 
-class ConversationMenu(ShadowWindow):
+class ConversationMenu(FramelessWindow):
     """Past conversations, most recent first, plus a way to start another."""
 
-    chosen = Signal(str)  # the Conversation id
+    chosen = Signal(str)
     newRequested = Signal()
-    deleteRequested = Signal(str)  # the Conversation id
+    deleteRequested = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(
-            radius=11,
-            fill=theme.BG_CARD,
-            ring=theme.BORDER,
-            blur=48,
-            dy=20,
-            shadow_colour=theme.SHADOW.darker(),
-            margin=40,
-            flags=Qt.WindowType.Popup,
-            parent=parent,
-        )
+        super().__init__(fill=theme.BG_CARD, flags=Qt.WindowType.Popup, parent=parent)
         self.body.setFixedWidth(WIDTH)
-
         content = self.body.body()
-        content.setContentsMargins(8, 8, 8, 8)
-        content.setSpacing(0)
+        content.setContentsMargins(8, 10, 8, 8)
 
         heading = QWidget()
         heading_layout = QVBoxLayout(heading)
-        heading_layout.setContentsMargins(12, 8, 12, 10)
-        heading_layout.setSpacing(0)
-        heading_layout.addWidget(kicker("Conversations", alpha=0.38, px=10.5))
+        heading_layout.setContentsMargins(10, 0, 10, 8)
+        heading_layout.addWidget(kicker("Conversations"))
         content.addWidget(heading)
 
         self._scroll = ScrollPane()
         self._list_layout = self._scroll.column
+        self._list_layout.setSpacing(2)
         content.addWidget(self._scroll)
+        content.addSpacing(6)
+        content.addWidget(rule(theme.BORDER_SUBTLE))
+        content.addSpacing(6)
 
-        divider = QWidget()
-        divider_layout = QVBoxLayout(divider)
-        divider_layout.setContentsMargins(12, 7, 12, 7)
-        divider_layout.setSpacing(0)
-        divider_layout.addWidget(rule(theme.BORDER_SUBTLE))
-        content.addWidget(divider)
-
-        start = menu_button("New conversation", "chat-circle")
+        start = Button("New conversation", variant="ghost", icon_name="plus")
+        start.setToolTip("Ctrl+N")
         start.clicked.connect(self._start)
         content.addWidget(start)
-
         self.layout().setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
-    def setConversations(  # noqa: N802 - matches Qt naming
+    def setConversations(
         self, conversations: Sequence[Conversation], current_id: str | None = None
     ) -> None:
         """Rebuild the list. The current conversation is marked, not hidden."""
-        while (item := self._list_layout.takeAt(0)) is not None:
-            if (widget := item.widget()) is not None:
-                widget.deleteLater()
-
+        clear(self._list_layout)
         for conversation in conversations:
             self._list_layout.addWidget(
                 self._row(conversation, conversation.id == current_id)
@@ -94,7 +68,6 @@ class ConversationMenu(ShadowWindow):
         self._scroll.setFixedHeight(min(wanted, MAX_LIST_HEIGHT))
 
     def rows(self) -> int:
-        """How many conversations the list holds."""
         return self._list_layout.count()
 
     def _row(self, conversation: Conversation, here: bool) -> QWidget:
@@ -102,17 +75,15 @@ class ConversationMenu(ShadowWindow):
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
-        button = menu_button(
-            conversation.title, "check-circle" if here else "chat-circle"
+        button = Button(
+            conversation.title,
+            variant="ghost",
+            icon_name="check" if here else "chat-circle",
+            align_left=True,
         )
         button.clicked.connect(lambda _=False, i=conversation.id: self._choose(i))
         layout.addWidget(button, 1)
-        delete = TextButton(
-            "", font=theme.font(13), fg=theme.muted(0.45), radius=7,
-            padding=(9, 10), hover_fill=theme.wash(0.12),
-            hover_fg=theme.ACCENT_TEXT, icon_name="trash", icon_px=13,
-        )
-        delete.setToolTip("Delete conversation")
+        delete = IconButton("trash", "Delete conversation", px=15, box=32)
         delete.setObjectName("delete")
         delete.clicked.connect(lambda _=False, i=conversation.id: self._delete(i))
         layout.addWidget(delete)
@@ -131,11 +102,7 @@ class ConversationMenu(ShadowWindow):
         self.newRequested.emit()
 
     def popup_under(self, anchor: QPoint) -> None:
-        """Show with the visible surface's top-left corner at ``anchor``.
-
-        The window is larger than what is drawn by the transparent gutter the
-        shadow is painted into, so the offset is taken from the surface.
-        """
+        """Show with the top-left corner at ``anchor``."""
         self.adjustSize()
-        self.move(anchor.x() - self.margin, anchor.y() - self.margin)
+        self.move(anchor)
         self.show()

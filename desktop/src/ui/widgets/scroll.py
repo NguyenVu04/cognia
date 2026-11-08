@@ -46,11 +46,11 @@ class ScrollPane(QScrollArea):
         if self.content.minimumHeight() != wanted:
             self.content.setMinimumHeight(wanted)
 
-    def resizeEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def resizeEvent(self, event) -> None:
         self._sync_height()
         super().resizeEvent(event)
 
-    def showEvent(self, event) -> None:  # noqa: N802 - Qt naming
+    def showEvent(self, event) -> None:
         self._sync_height()
         super().showEvent(event)
 

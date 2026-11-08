@@ -149,6 +149,14 @@ class ModelSupervisor:
     def state(self, server: str) -> ServerState:
         return self._servers[server].state
 
+    def retry(self) -> None:
+        """Let a server that failed to start be started again at the next
+        request."""
+        for slot in self._servers.values():
+            if slot.state is ServerState.FAILED:
+                slot.state = ServerState.STOPPED
+                slot.restarts = 0
+
     def remember_device(self, name: str | None) -> None:
         """The GPU chosen in an earlier run, read after this object exists.
         Call it before the first request for the chat server."""

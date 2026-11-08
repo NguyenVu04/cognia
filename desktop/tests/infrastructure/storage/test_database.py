@@ -57,8 +57,8 @@ def test_open_creates_schema(tmp_path: Path) -> None:
 
     tables = {name for name in tables if not outside_orm(name)}
     assert tables - {"alembic_version"} == set(Base.metadata.tables)
-    assert len(Base.metadata.tables) == 18
-    assert revision == "0007"
+    assert len(Base.metadata.tables) == 19
+    assert revision == "0008"
 
 
 def test_open_twice_changes_nothing(tmp_path: Path) -> None:

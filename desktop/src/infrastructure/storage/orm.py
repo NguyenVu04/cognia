@@ -475,6 +475,7 @@ class Settings(Base):
         _flag("awareness_on"),
         _flag("companion_hidden"),
         _flag("close_hint_shown"),
+        _flag("speak_aloud"),
         _STRICT,
     )
 
@@ -500,3 +501,28 @@ class Settings(Base):
     # The GPU that measured fastest for the chat model, by its name, so the
     # measurement runs once. NULL until measured.
     chat_device: Mapped[str | None]
+    speak_aloud: Mapped[int] = mapped_column(server_default=text("1"))
+    talk_hotkey: Mapped[str] = mapped_column(server_default=text("'Ctrl+Alt+Space'"))
+
+
+class ToolServer(Base):
+    """A tool server the user added. A row exists only after the user agreed
+    that the server may send data off the machine."""
+
+    __tablename__ = "tool_servers"
+    __table_args__ = (
+        _one_of("transport", "stdio", "http"),
+        CheckConstraint("transport <> 'stdio' OR length(command) > 0"),
+        CheckConstraint("transport <> 'http' OR length(url) > 0"),
+        CheckConstraint("json_valid(args)"),
+        _STRICT,
+    )
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    transport: Mapped[str]
+    command: Mapped[str] = mapped_column(server_default=text("''"))
+    args: Mapped[str] = mapped_column(server_default=text("'[]'"))
+    url: Mapped[str] = mapped_column(server_default=text("''"))
+    added_at: Mapped[str]
+    consented_at: Mapped[str]

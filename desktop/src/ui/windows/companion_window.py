@@ -1,81 +1,138 @@
 """The companion on the desktop.
 
-A frameless, always-on-top window holding the sprite and, above it, the break
-nudge. It can be dragged anywhere, hidden, and brought back, and it is never
-the only route to anything.
-
-Until the 3D character exists, the sprite is a placeholder that writes what the
-character would show: its face, a gesture, and an exercise done together. The
-methods keep the names the 3D page will have, so only their bodies change.
+A frameless window above other windows that never takes the keyboard focus. It
+draws the 3D character, which the user can drag anywhere. Hovering shows a
+button to hold while talking and a button to hide it. A message it says on its
+own appears in a bubble beside it. Hiding or pausing it ends the renderer, so a
+hidden companion costs nothing; showing it again loads the character again.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
-from PySide6.QtCore import QElapsedTimer, QPoint, Qt, QTimer, Signal
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
+from PySide6.QtCore import QElapsedTimer, QPoint, QRect, Qt, QTimer, Signal
+from PySide6.QtGui import QCursor, QGuiApplication
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
+from src.domain.speech.models import ProactiveMessage
 from src.domain.tools.models import ActivityStep
 from src.ui import theme
-from src.ui.widgets.hatch import HatchPanel
-from src.ui.widgets.nudge_bubble import NudgeBubble
-from src.ui.widgets.shadow import apply_shadow
+from src.ui.widgets.buttons import IconButton
+from src.ui.widgets.companion_stage import CompanionStage
+from src.ui.widgets.speech_bubble import SpeechBubble
+from src.ui.widgets.surface import Panel
+from src.ui.widgets.typography import label
 
-SPRITE_WIDTH = 172
-SPRITE_HEIGHT = 214
-MARGIN = 44  # transparent gutter the nudge shadow is painted into
-# A gesture is a short clip, about as long as this.
-GESTURE_MS = 2000
-_PLACEHOLDER = "anime-style sprite\ndrag me\n172×214"
+WIDTH = 300
+HEIGHT = 460
+FRAME_LIMIT = 30
+_NEVER_FOCUS = (
+    Qt.WindowType.Window
+    | Qt.WindowType.FramelessWindowHint
+    | Qt.WindowType.WindowStaysOnTopHint
+    | Qt.WindowType.Tool
+    | Qt.WindowType.WindowDoesNotAcceptFocus
+)
+SHOWN = "shown"
+HIDDEN = "hidden"
+PAUSED = "paused"
 
 
-class CompanionWindow(QWidget):
-    """Sprite plus nudge. Presentational — it observes nothing."""
+def fit_on_screen(position: QPoint, size: tuple[int, int], screen: QRect) -> QPoint:
+    """``position`` moved the least distance that puts the whole window inside
+    ``screen``."""
+    width, height = size
+    x = min(max(position.x(), screen.left()), screen.right() - width + 1)
+    y = min(max(position.y(), screen.top()), screen.bottom() - height + 1)
+    return QPoint(x, y)
 
-    moved = Signal()
-    #: An exercise stopped: its name and how many seconds it ran.
-    activityEnded = Signal(str, int)
+
+class _DragSurface(QWidget):
+    """Takes the mouse over the character, which the web view would keep."""
+
+    dragged = Signal(QPoint)
+    released = Signal()
+    doubleClicked = Signal()
+    pointer = Signal(float, float)
+    left = Signal()
+    entered = Signal()
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setMouseTracking(True)
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self._offset: QPoint | None = None
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            window = self.window()
+            self._offset = (
+                event.globalPosition().toPoint() - window.frameGeometry().topLeft()
+            )
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._offset is not None:
+            self.dragged.emit(event.globalPosition().toPoint() - self._offset)
+            return
+        # Within the window only: the pointer elsewhere is never read.
+        x = event.position().x() / max(1, self.width()) * 2 - 1
+        y = 1 - event.position().y() / max(1, self.height()) * 2
+        self.pointer.emit(x, y)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._offset is not None:
+            self._offset = None
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+            self.released.emit()
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        self.doubleClicked.emit()
+
+    def enterEvent(self, event) -> None:
+        self.entered.emit()
+
+    def leaveEvent(self, event) -> None:
+        self.left.emit()
+
+
+class _TalkButton(IconButton):
+    """Held down, it keeps the microphone open."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
-            parent,
-            Qt.WindowType.Window
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool,  # keeps it off the taskbar
+            "microphone",
+            "Hold to talk",
+            px=18,
+            box=38,
+            colour=theme.ACCENT_TEXT,
+            parent=parent,
         )
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+
+class CompanionWindow(QWidget):
+    #: The window was dropped at a new place: x, y and the name of its screen.
+    moved = Signal(int, int, str)
+    #: An exercise stopped: its name and how many seconds it ran.
+    activityEnded = Signal(str, int)
+    hideRequested = Signal()
+    talkPressed = Signal()
+    talkReleased = Signal()
+    #: The character cannot be drawn: the reason.
+    drawingFailed = Signal(str)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent, _NEVER_FOCUS)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setCursor(Qt.CursorShape.OpenHandCursor)
-        self._drag_offset: QPoint | None = None
-        self.margin = MARGIN
-
-        column = QVBoxLayout(self)
-        column.setContentsMargins(MARGIN, MARGIN, MARGIN, MARGIN)
-        column.setSpacing(12)
-        # The window is exactly its content: hiding the nudge shrinks it.
-        column.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
-
-        # The bubble is right-aligned with the sprite and overhangs to the left.
-        bubble_row = QHBoxLayout()
-        bubble_row.setContentsMargins(0, 0, 0, 0)
-        bubble_row.addStretch(1)
-        self.nudge = NudgeBubble()
-        apply_shadow(self.nudge, blur=40, dy=18, colour=theme.SHADOW)
-        self.nudge.dismissed.connect(self.hideNudge)
-        bubble_row.addWidget(self.nudge)
-        column.addLayout(bubble_row)
-
-        sprite_row = QHBoxLayout()
-        sprite_row.setContentsMargins(0, 0, 0, 0)
-        sprite_row.addStretch(1)
-        self._expression = ""
-        self._gesture = ""
-        self._gesture_timer = QTimer(self)
-        self._gesture_timer.setSingleShot(True)
-        self._gesture_timer.setInterval(GESTURE_MS)
-        self._gesture_timer.timeout.connect(self._end_gesture)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setFixedSize(WIDTH, HEIGHT)
+        self._appearance = ""
+        self._stage: CompanionStage | None = None
+        self._expression = ("neutral", 1.0)
+        self._ambient = "active"
         self._activity = ""
         self._steps: tuple[ActivityStep, ...] = ()
         self._step = 0
@@ -84,34 +141,138 @@ class CompanionWindow(QWidget):
         self._tick = QTimer(self)
         self._tick.setInterval(1000)
         self._tick.timeout.connect(self._count_down)
-        self.sprite = HatchPanel(
-            _PLACEHOLDER,
-            radius=10, alpha=0.07, ring=theme.muted(0.09),
-            fill=QColor(theme.BG_WINDOW.red(), theme.BG_WINDOW.green(),
-                        theme.BG_WINDOW.blue(), 219),
-        )
-        self.sprite.setFixedSize(SPRITE_WIDTH, SPRITE_HEIGHT)
-        sprite_row.addWidget(self.sprite)
-        column.addLayout(sprite_row)
 
-        self.adjustSize()
+        self._holder = QVBoxLayout(self)
+        self._holder.setContentsMargins(0, 0, 0, 0)
+
+        self.surface = _DragSurface(self)
+        self.surface.setGeometry(0, 0, WIDTH, HEIGHT)
+        self.surface.dragged.connect(self.move)
+        self.surface.released.connect(self._dropped)
+        self.surface.doubleClicked.connect(self.stopActivity)
+        self.surface.pointer.connect(lambda x, y: self._call("lookAt", x, y))
+        self.surface.left.connect(self._pointer_left)
+        self.surface.entered.connect(lambda: self.controls.setVisible(True))
+
+        self.step_label = label("", font=theme.font(14, 700))
+        self.step_panel = Panel(
+            fill=theme.OVERLAY,
+            ring=theme.BORDER,
+            radius=12,
+            padding=(6, 12, 6, 12),
+            parent=self,
+        )
+        self.step_panel.body().addWidget(self.step_label)
+        self.step_panel.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.step_panel.hide()
+
+        self.controls = QWidget(self)
+        row = QHBoxLayout(self.controls)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(6)
+        self.talk = _TalkButton()
+        self.talk.pressed.connect(self.talkPressed)
+        self.talk.released.connect(self.talkReleased)
+        row.addWidget(self.talk)
+        self.hide_button = IconButton(
+            "eye-slash", "Hide from the desktop", px=17, box=38
+        )
+        self.hide_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.hide_button.clicked.connect(self.hideRequested)
+        row.addWidget(self.hide_button)
+        self.controls.adjustSize()
+        self.controls.move(
+            WIDTH - self.controls.width() - 10, HEIGHT - self.controls.height() - 10
+        )
+        self.controls.hide()
+
+        self.bubble_window = QWidget(None, _NEVER_FOCUS)
+        self.bubble_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.bubble_window.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        bubble_layout = QVBoxLayout(self.bubble_window)
+        bubble_layout.setContentsMargins(0, 0, 0, 0)
+        self.bubble = SpeechBubble()
+        self.bubble.closed.connect(self.hideBubble)
+        bubble_layout.addWidget(self.bubble)
+
+    # ── the character ─────────────────────────────────────────────────────
+
+    def setAppearance(self, appearance_id: str) -> None:
+        """Draw this character, loading it again if it changed."""
+        if appearance_id == self._appearance:
+            return
+        self._appearance = appearance_id
+        if self._stage is not None:
+            self._end_stage()
+            self._start_stage()
+
+    def setDrawingState(self, drawing: str) -> None:
+        """``shown`` draws the character; ``hidden`` and ``paused`` end the
+        renderer and take the window off the screen."""
+        if drawing == SHOWN:
+            if self._stage is None:
+                self._start_stage()
+            self.show()
+            return
+        self.stopActivity()
+        self.hideBubble()
+        self.hide()
+        self._end_stage()
+
+    def isDrawing(self) -> bool:
+        return self._stage is not None
+
+    def _start_stage(self) -> None:
+        if not self._appearance:
+            return
+        stage = CompanionStage(self._appearance)
+        stage.failed.connect(self.drawingFailed)
+        self._holder.addWidget(stage)
+        self._stage = stage
+        stage.call("setFrameLimit", FRAME_LIMIT)
+        stage.call("setExpression", *self._expression)
+        stage.call("setAmbient", self._ambient)
+        self.step_panel.raise_()
+        self.surface.raise_()
+        self.controls.raise_()
+
+    def _end_stage(self) -> None:
+        if self._stage is None:
+            return
+        self._holder.removeWidget(self._stage)
+        self._stage.hide()
+        self._stage.deleteLater()
+        self._stage = None
+
+    def _call(self, function: str, *args) -> None:
+        if self._stage is not None:
+            self._stage.call(function, *args)
 
     # ── what the character shows ──────────────────────────────────────────
 
-    def setExpression(self, preset: str, weight: float) -> None:  # noqa: N802
-        """Show the face ``preset`` at ``weight``, from 0 to 1."""
-        self._expression = f"{preset} · {weight:.2f}"
-        self._refresh()
+    def setExpression(self, preset: str, weight: float) -> None:
+        self._expression = (preset, weight)
+        self._call("setExpression", preset, weight)
 
-    def playGesture(self, name: str) -> None:  # noqa: N802 - matches Qt naming
-        """Play ``name`` once. A new gesture replaces the one playing."""
-        self._gesture = name
-        self._gesture_timer.start()
-        self._refresh()
+    def setAmbient(self, state: str) -> None:
+        """``active``, ``waiting`` or ``dozing``."""
+        self._ambient = state
+        self._call("setAmbient", state)
 
-    def playActivity(  # noqa: N802 - matches Qt naming
-        self, name: str, steps: Sequence[ActivityStep]
-    ) -> None:
+    def playGesture(self, name: str) -> None:
+        """Play a gesture once. One that arrives while another plays is dropped."""
+        self._call("playGesture", name)
+
+    def startThink(self) -> None:
+        self._call("startThink")
+
+    def endThink(self) -> None:
+        self._call("endThink")
+
+    def setMouth(self, weights: Mapping[str, float]) -> None:
+        self._call("setMouth", dict(weights))
+
+    def playActivity(self, name: str, steps: Sequence[ActivityStep]) -> None:
         """Do the exercise ``name`` step by step. It ends when the steps run
         out, or on :meth:`stopActivity`."""
         if not steps:
@@ -120,21 +281,24 @@ class CompanionWindow(QWidget):
         self._left = self._steps[0].seconds
         self._ran.start()
         self._tick.start()
-        self._refresh()
+        self._show_step()
 
-    def stopActivity(self) -> None:  # noqa: N802 - matches Qt naming
+    def stopActivity(self) -> None:
         """End the exercise now, and say how long it ran."""
         if not self._activity:
             return
         name, seconds = self._activity, int(self._ran.elapsed() // 1000)
         self._tick.stop()
         self._activity, self._steps = "", ()
-        self._refresh()
+        self.step_panel.hide()
+        self._call("stopActivity")
         self.activityEnded.emit(name, seconds)
 
-    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt naming
-        self.stopActivity()
-        super().mouseDoubleClickEvent(event)
+    def activity(self) -> str:
+        return self._activity
+
+    def stepText(self) -> str:
+        return self.step_label.text()
 
     def _count_down(self) -> None:
         self._left -= 1
@@ -144,55 +308,76 @@ class CompanionWindow(QWidget):
                 self.stopActivity()
                 return
             self._left = self._steps[self._step].seconds
-        self._refresh()
+            self._show_step()
+            return
+        self._show_label()
 
-    def caption(self) -> str:
-        """What the placeholder shows now."""
-        lines = [line for line in self._state_lines() if line]
-        return "\n".join([*lines, "drag me"]) if lines else _PLACEHOLDER
+    def _show_step(self) -> None:
+        self._call("activityStep", self._activity, self._steps[self._step].label)
+        self._show_label()
 
-    def _state_lines(self) -> list[str]:
-        doing = ""
-        if self._activity:
-            step = self._steps[self._step].label
-            doing = f"{self._activity} · {step} · {self._left}"
-        return [self._expression, self._gesture, doing]
+    def _show_label(self) -> None:
+        step = self._steps[self._step].label
+        self.step_label.setText(f"{step[0].upper()}{step[1:]} · {self._left}")
+        self.step_panel.adjustSize()
+        self.step_panel.move((WIDTH - self.step_panel.width()) // 2, 12)
+        self.step_panel.show()
 
-    def _end_gesture(self) -> None:
-        self._gesture = ""
-        self._refresh()
+    # ── the bubble ────────────────────────────────────────────────────────
 
-    def _refresh(self) -> None:
-        self.sprite.setCaption(self.caption())
+    def showBubble(self, message: ProactiveMessage) -> None:
+        self.bubble.showMessage(message)
+        self.bubble_window.adjustSize()
+        self._place_bubble()
+        self.bubble_window.show()
 
-    # ── nudge ─────────────────────────────────────────────────────────────
+    def hideBubble(self) -> None:
+        self.bubble_window.hide()
 
-    def showNudge(self) -> None:  # noqa: N802 - matches Qt naming
-        self.nudge.reset()
-        self.nudge.setVisible(True)
-        self.adjustSize()
+    def _place_bubble(self) -> None:
+        """Above the character, or below it when there is no room above."""
+        size = self.bubble_window.size()
+        x = self.x() + (WIDTH - size.width()) // 2
+        y = self.y() + 40 - size.height()
+        screen = self.screen().availableGeometry()
+        if y < screen.top():
+            y = self.y() + HEIGHT - 40
+        self.bubble_window.move(
+            fit_on_screen(QPoint(x, y), (size.width(), size.height()), screen)
+        )
 
-    def hideNudge(self) -> None:  # noqa: N802 - matches Qt naming
-        self.nudge.setVisible(False)
-        self.adjustSize()
+    # ── place ─────────────────────────────────────────────────────────────
 
-    # ── dragging ──────────────────────────────────────────────────────────
+    def place(self, position: QPoint | None) -> bool:
+        """Put the window at ``position``, or at the bottom right of the primary
+        screen when there is none. Returns whether it had to move the window
+        to keep it wholly on a screen."""
+        primary = QGuiApplication.primaryScreen().availableGeometry()
+        if position is None:
+            self.move(primary.right() - WIDTH - 24, primary.bottom() - HEIGHT - 8)
+            return False
+        target = QGuiApplication.screenAt(position + QPoint(WIDTH // 2, HEIGHT // 2))
+        area = target.availableGeometry() if target is not None else primary
+        fitted = fit_on_screen(position, (WIDTH, HEIGHT), area)
+        self.move(fitted)
+        return fitted != position
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt naming
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_offset = (
-                event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-            )
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        super().mousePressEvent(event)
+    def _dropped(self) -> None:
+        if self.bubble_window.isVisible():
+            self._place_bubble()
+        screen = self.screen()
+        self.moved.emit(self.x(), self.y(), screen.name() if screen else "")
 
-    def mouseMoveEvent(self, event) -> None:  # noqa: N802 - Qt naming
-        if self._drag_offset is not None:
-            self.move(event.globalPosition().toPoint() - self._drag_offset)
-            self.moved.emit()
-        super().mouseMoveEvent(event)
+    def _pointer_left(self) -> None:
+        self._call("lookAt", None, None)
+        over = self.controls.geometry().contains(self.mapFromGlobal(QCursor.pos()))
+        self.controls.setVisible(over)
 
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 - Qt naming
-        self._drag_offset = None
-        self.setCursor(Qt.CursorShape.OpenHandCursor)
-        super().mouseReleaseEvent(event)
+    def leaveEvent(self, event) -> None:
+        self.controls.setVisible(False)
+        super().leaveEvent(event)
+
+    def moveEvent(self, event) -> None:
+        super().moveEvent(event)
+        if self.bubble_window.isVisible():
+            self._place_bubble()

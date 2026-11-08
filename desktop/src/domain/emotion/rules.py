@@ -21,6 +21,8 @@ CALM_RADIUS = 0.25
 MIN_CONFIDENCE = 0.5
 # An exercise done together counts once it lasted this long.
 ACTIVITY_MIN_SECONDS = 60
+# The voice carries the mood through its speed, since it has no pitch setting.
+SPEED_PER_AROUSAL = 0.15
 
 _ZERO = Pad(0.0, 0.0, 0.0)
 _IGNORED = Pad(-0.30, 0.0, 0.0)
@@ -173,6 +175,14 @@ def name(point: Pad) -> str:
     if point.pleasure >= 0:
         return "lively" if point.arousal > 0 else "pleased"
     return "restless" if point.arousal > 0 else "low"
+
+
+def speech_speed(point: Pad | None, moods_on: bool = True) -> float:
+    """How fast the voice speaks for ``point``: 1.0 when calm, with moods off
+    or with no feeling, and faster or slower with arousal otherwise."""
+    if point is None or not moods_on or name(point) == "calm":
+        return 1.0
+    return 1.0 + SPEED_PER_AROUSAL * point.arousal
 
 
 def expression(point: Pad, moods_on: bool = True) -> Expression:

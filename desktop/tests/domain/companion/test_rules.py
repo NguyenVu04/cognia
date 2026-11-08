@@ -65,9 +65,11 @@ def test_initial_state() -> None:
 def test_step_before_character() -> None:
     state = rules.initial_state()
 
-    result = rules.step(state, _presence(1, 0), TEMPERAMENTS)
+    event = _presence(1, 0)
 
-    assert result == StepResult(state, (), None)
+    result = rules.step(state, event, TEMPERAMENTS)
+
+    assert result == StepResult(state, (), None, event)
 
 
 def test_step_first_character_rests() -> None:

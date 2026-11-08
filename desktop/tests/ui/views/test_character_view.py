@@ -6,7 +6,7 @@ import pytest
 from src.domain.character.models import CHOSEN, RESTORED, Version
 from src.domain.emotion.models import Pad, Temperament
 from src.ui.views.character import CharacterView
-from src.ui.widgets.buttons import TextButton
+from src.ui.widgets.buttons import Button
 
 MONDAY = datetime(2026, 11, 2, 8, 0, tzinfo=timezone.utc)
 TUESDAY = datetime(2026, 11, 3, 8, 0, tzinfo=timezone.utc)
@@ -42,7 +42,7 @@ def test_earlier_rows(view: CharacterView) -> None:
 
 
 def test_restore_emits_version_id(view: CharacterView, qtbot) -> None:
-    (button,) = view.versions.itemAt(0).widget().findChildren(TextButton)
+    (button,) = view.versions.itemAt(0).widget().findChildren(Button)
 
     with qtbot.waitSignal(view.restoreRequested) as signal:
         button.click()
@@ -62,3 +62,9 @@ def test_no_earlier_versions(view: CharacterView) -> None:
 
     assert view.versions.count() == 0
     assert not view.none_earlier.isHidden()
+
+
+def test_portrait_from_the_vrm(view: CharacterView) -> None:
+    pixmap = view.picture.pixmap()
+
+    assert pixmap is not None and not pixmap.isNull()

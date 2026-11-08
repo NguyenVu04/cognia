@@ -45,6 +45,7 @@ TITLE_LENGTH = 40
 NOT_DELETED = "The conversation could not be deleted. Nothing was changed."
 NOT_READ = "The conversation could not be read."
 NOT_SAVED = "The conversation could not be saved. Nothing was changed."
+NOT_RATED = "The rating could not be saved. Nothing was changed."
 
 # The file spells a role in full, so that it reads without this code.
 _ROLE_TO_STORED = {USER: "user", COMPANION: "companion"}
@@ -216,6 +217,17 @@ class SqliteConversationStore:
                 rows.reverse()
         return [self._message(row) for row in rows]
 
+    def rate(self, message_id: str, rating: int | None) -> None:
+        try:
+            with self._db.transaction() as db:
+                db.execute(
+                    update(messages)
+                    .where(messages.c.id == message_id)
+                    .values(rating=rating)
+                )
+        except SQLAlchemyError as error:
+            raise ConversationStoreFailed(NOT_RATED) from error
+
     def close(self) -> None:
         pass
 
@@ -237,4 +249,5 @@ class SqliteConversationStore:
             role=_ROLE_FROM_STORED[row.role],
             text=row.text,
             created_at=datetime.fromisoformat(row.created_at),
+            rating=row.rating,
         )

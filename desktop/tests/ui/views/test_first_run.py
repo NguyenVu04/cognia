@@ -26,7 +26,7 @@ def test_four_cards_and_nothing_picked(view: FirstRunView) -> None:
     assert [c.template.id for c in view._cards] == ["yuna", "rin", "mira", "shiori"]
     assert not view.confirm.isEnabled()
     assert view.sample.isHidden()
-    assert view.eyebrow.text() == "First run"
+    assert view.eyebrow.text() == "WELCOME"
     assert view.back.isHidden()
 
 
@@ -46,7 +46,7 @@ def test_change_mode(view: FirstRunView, templates, qtbot) -> None:
 
     assert not card(view, "yuna").isEnabled()
     assert card(view, "rin").isEnabled()
-    assert view.eyebrow.text() == "Change character"
+    assert view.eyebrow.text() == "CHANGE CHARACTER"
     assert not view.back.isHidden()
     with qtbot.waitSignal(view.backRequested):
         view.back.click()

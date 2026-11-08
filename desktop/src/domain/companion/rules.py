@@ -11,8 +11,10 @@ from dataclasses import replace
 from datetime import datetime, tzinfo
 
 from src.domain.companion.models import (
+    Cause,
     CompanionState,
     Effect,
+    FeelingExplanation,
     ShowExpression,
     ShowGesture,
     StepResult,
@@ -61,7 +63,7 @@ def step(
     chosen = _gesture(state, event)
     if chosen is not None:
         effects += (ShowGesture(chosen),)
-    return StepResult(state, effects, next_wake=None)
+    return StepResult(state, effects, next_wake=None, event=event)
 
 
 def shown_at(
@@ -132,6 +134,37 @@ def _is_moods_setting(event: Event) -> bool:
     )
 
 
+def feeling_explanation(
+    state: CompanionState,
+    events: Iterable[Event],
+    temperaments: Mapping[str, Temperament],
+    at: datetime,
+    zone: tzinfo,
+) -> FeelingExplanation | None:
+    """The feeling at ``at``, the last events among ``events`` that moved it with
+    how far each pushed, the temperament and whether the sadness floor stopped
+    the last event. ``None`` with moods off. Raises ``ValueError`` with no
+    character."""
+    if not state.moods_on:
+        return None
+    point = shown_at(state, at, temperaments)
+    if point is None or state.emotion is None:
+        raise ValueError("No character is in force.")
+    temperament = _temperament(temperaments, state.version_id)
+    pushes = [(e, emotion_rules.appraise(e)) for e in events]
+    causes = tuple(
+        _cause(e, push, zone) for e, push in pushes if push != _ZERO
+    )[-CAUSE_LIMIT:]
+    return FeelingExplanation(
+        feeling=emotion_rules.name(point),
+        point=point,
+        rest=emotion_rules.name(temperament.rest),
+        temperament=temperament,
+        causes=causes,
+        floor_reached=state.emotion.floor_reached,
+    )
+
+
 def explain_feeling(
     state: CompanionState,
     events: Iterable[Event],
@@ -139,44 +172,40 @@ def explain_feeling(
     at: datetime,
     zone: tzinfo,
 ) -> str:
-    """The feeling at ``at``, the last events among ``events`` that moved it with
-    how far each pushed, and the resting mood, from the recorded figures only.
+    """:func:`feeling_explanation` as one sentence, for the model.
+
     Raises ``ValueError`` with no character."""
-    if not state.moods_on:
+    found = feeling_explanation(state, events, temperaments, at, zone)
+    if found is None:
         return MOODS_OFF
-    point = shown_at(state, at, temperaments)
-    if point is None:
-        raise ValueError("No character is in force.")
-    rest = emotion_rules.name(_temperament(temperaments, state.version_id).rest)
-    causes = [(e, emotion_rules.appraise(e)) for e in events]
-    causes = [(e, push) for e, push in causes if push != _ZERO][-CAUSE_LIMIT:]
-    if not causes:
+    if not found.causes:
         return (
             f"Nothing has moved the feeling in the last {CAUSE_DAYS} days. It is "
-            f"the resting mood: {rest}."
+            f"the resting mood: {found.rest}."
         )
+    point = found.point
     feeling = (
-        f"Feeling now: {emotion_rules.name(point)} (pleasure {point.pleasure:.2f}, "
+        f"Feeling now: {found.feeling} (pleasure {point.pleasure:.2f}, "
         f"arousal {point.arousal:.2f})."
     )
-    moved = "; ".join(_cause(e, push, zone) for e, push in causes)
-    return f"{feeling} Events that moved it: {moved}. Resting mood: {rest}."
+    moved = "; ".join(cause.text() for cause in found.causes)
+    return f"{feeling} Events that moved it: {moved}. Resting mood: {found.rest}."
 
 
-def _cause(event: Event, push: Pad, zone: tzinfo) -> str:
+def _cause(event: Event, push: Pad, zone: tzinfo) -> Cause:
     when = event.occurred_at.astimezone(zone)
     day = f"{DAYS[when.weekday()][:3]} {when.day} {MONTHS[when.month - 1][:3]}"
+    interpretation = ""
     if event.kind == EventKind.USER_MESSAGE:
         kind = str(event.payload.get("class", "message")).replace("_", " ")
         confidence = event.payload.get("confidence")
         if isinstance(confidence, int | float):
-            kind = f"{kind} (confidence {confidence:.2f})"
+            interpretation = f"{kind} (confidence {confidence:.2f})"
+            kind = interpretation
     else:
         kind = event.kind.value.replace("_", " ")
-    return (
-        f"{day} {when:%H:%M}, {kind}: pleasure {push.pleasure:+.2f}, "
-        f"arousal {push.arousal:+.2f}"
-    )
+    return Cause(when=f"{day} {when:%H:%M}", what=kind, push=push,
+                 interpretation=interpretation)
 
 
 def _gesture(state: CompanionState, event: Event) -> str | None:

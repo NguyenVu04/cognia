@@ -1,18 +1,9 @@
-"""Filled, ringed, rounded panels — the card shapes the design repeats.
+"""Filled, ringed, rounded panels.
 
-Two Qt behaviours shape this module:
-
-* A style sheet set on a widget applies to that widget **and all its
-  descendants**. An unscoped ``border-bottom`` on a row therefore draws a line
-  under every label inside it too. Everything here scopes its rules to its own
-  object name, which is unique per instance.
-* Qt ignores ``background`` and ``border`` on a bare ``QWidget`` unless
-  ``WA_StyledBackground`` is set.
-
-The design draws every card as ``box-shadow: 0 0 0 1px <ring>``, a ring that
-sits outside the box and costs no space. Qt has no such thing, so the ring
-becomes a 1px border and :class:`Panel` takes one pixel back off each padding
-edge to keep the interior the size the design specifies.
+A style sheet set on a widget also applies to all its descendants, so every
+widget here scopes its rules to its own unique object name. Qt also ignores
+``background`` and ``border`` on a bare ``QWidget`` unless
+``WA_StyledBackground`` is set, which these widgets do.
 """
 
 from __future__ import annotations
@@ -31,23 +22,23 @@ _ids = count()
 
 
 class _Scoped:
-    """Mixin giving a widget style rules that cannot leak to its children."""
+    """Gives a widget style rules that cannot leak to its children."""
 
     def _init_scope(self) -> None:
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName(f"{type(self).__name__}{next(_ids)}")
         self._rules: list[str] = []
 
-    def setRules(self, rules: str) -> None:  # noqa: N802 - matches Qt naming
+    def setRules(self, rules: str) -> None:
         self._rules = [rules]
-        self._applyRules()
+        self._apply_rules()
 
-    def addRules(self, rules: str) -> None:  # noqa: N802 - matches Qt naming
-        """Add rules without disturbing what is already set."""
+    def addRules(self, rules: str) -> None:
+        """Add rules and keep those already set."""
         self._rules.append(rules)
-        self._applyRules()
+        self._apply_rules()
 
-    def _applyRules(self) -> None:  # noqa: N802 - matches Qt naming
+    def _apply_rules(self) -> None:
         self.setStyleSheet(f"#{self.objectName()} {{ {' '.join(self._rules)} }}")
 
 
@@ -60,14 +51,15 @@ class StyledWidget(_Scoped, QWidget):
 
 
 def bottom_rule(parent: QWidget | None = None) -> StyledWidget:
-    """A row carrying the design's ``border-bottom`` hairline."""
+    """A row with a hairline under it."""
     widget = StyledWidget(parent)
     widget.setRules(f"border-bottom: 1px solid {theme.css(theme.HAIRLINE)};")
     return widget
 
 
 class Panel(_Scoped, QFrame):
-    """A rounded surface, optionally ringed."""
+    """A rounded surface, optionally ringed. A ring takes one pixel off each
+    padding edge, so the inside keeps the size asked for."""
 
     def __init__(
         self,
@@ -80,20 +72,15 @@ class Panel(_Scoped, QFrame):
     ) -> None:
         super().__init__(parent)
         self._init_scope()
-
         rules = [
             f"border-radius: {radius}px;",
             f"background: {theme.css(fill)};" if fill is not None
             else "background: transparent;",
+            f"border: 1px solid {theme.css(ring)};" if ring is not None
+            else "border: 0;",
         ]
-        inset = 0
-        if ring is not None:
-            rules.append(f"border: 1px solid {theme.css(ring)};")
-            inset = 1
-        else:
-            rules.append("border: 0;")
         self.setRules(" ".join(rules))
-
+        inset = 1 if ring is not None else 0
         top, right, bottom, left = padding
         layout = QVBoxLayout(self)
         layout.setContentsMargins(
@@ -109,19 +96,17 @@ class Panel(_Scoped, QFrame):
         return self.layout()
 
 
-def rule(colour: QColor, thickness: int = 1) -> StyledWidget:
-    """A horizontal hairline, as the design's divider inside a card."""
+def card(padding: Padding = (16, 18, 16, 18), radius: int = 12) -> Panel:
+    """The standard card: card fill on a subtle ring."""
+    return Panel(
+        fill=theme.BG_CARD, ring=theme.BORDER_SUBTLE, radius=radius, padding=padding
+    )
+
+
+def rule(colour: QColor = theme.HAIRLINE, thickness: int = 1) -> StyledWidget:
+    """A horizontal hairline."""
     line = StyledWidget()
     line.setFixedHeight(thickness)
     line.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-    line.setRules(f"background: {theme.css(colour)}; border: 0;")
-    return line
-
-
-def vrule(colour: QColor, thickness: int = 1) -> StyledWidget:
-    """A vertical hairline."""
-    line = StyledWidget()
-    line.setFixedWidth(thickness)
-    line.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
     line.setRules(f"background: {theme.css(colour)}; border: 0;")
     return line
