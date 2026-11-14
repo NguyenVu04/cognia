@@ -12,6 +12,7 @@ MEMORY_GROUPS = (
     Group.LEARNING,
     Group.SPEECH,
     Group.EVENTS,
+    Group.DIAGNOSTICS,
 )
 
 
@@ -36,9 +37,28 @@ class FakeStore:
         self.compacted += 1
 
 
+class FakeLog:
+    def __init__(self, lines: int = 7) -> None:
+        self.lines = lines
+        self.failing = False
+
+    def entries(self) -> int:
+        return self.lines
+
+    def erase(self) -> None:
+        if self.failing:
+            raise ErasureFailed("no")
+        self.lines = 0
+
+
 @pytest.fixture
 def store() -> FakeStore:
     return FakeStore()
+
+
+@pytest.fixture
+def log() -> FakeLog:
+    return FakeLog()
 
 
 def test_groups_memory() -> None:
@@ -53,25 +73,25 @@ def test_groups_everything() -> None:
     )
 
 
-def test_preview_counts_in_order(store) -> None:
-    counts = ErasureService(store).preview(Level.MEMORY)
+def test_preview_counts_in_order(store, log) -> None:
+    counts = ErasureService(store, log).preview(Level.MEMORY)
 
     assert counts[0] == GroupCount(Group.CONVERSATIONS, len("conversations"))
     assert [c.group for c in counts] == list(MEMORY_GROUPS)
 
 
-def test_erase_all_succeed(store) -> None:
-    report = ErasureService(store).erase(Level.EVERYTHING)
+def test_erase_all_succeed(store, log) -> None:
+    report = ErasureService(store, log).erase(Level.EVERYTHING)
 
     assert report.complete
     assert report.erased == rules.groups(Level.EVERYTHING)
     assert store.compacted == 1
 
 
-def test_erase_continues_after_a_failure(store) -> None:
+def test_erase_continues_after_a_failure(store, log) -> None:
     store.failing = {Group.DESK}
 
-    report = ErasureService(store).erase(Level.MEMORY)
+    report = ErasureService(store, log).erase(Level.MEMORY)
 
     assert report.failed == (Group.DESK,)
     assert Group.EVENTS in report.erased
@@ -80,18 +100,18 @@ def test_erase_continues_after_a_failure(store) -> None:
     assert not report.complete
 
 
-def test_compact_failure_is_reported(store) -> None:
+def test_compact_failure_is_reported(store, log) -> None:
     store.compact_fails = True
 
-    report = ErasureService(store).erase(Level.MEMORY)
+    report = ErasureService(store, log).erase(Level.MEMORY)
 
     assert report.compacted is False
     assert not report.complete
 
 
-def test_second_erase_removes_what_is_left(store) -> None:
+def test_second_erase_removes_what_is_left(store, log) -> None:
     store.failing = {Group.DESK}
-    service = ErasureService(store)
+    service = ErasureService(store, log)
     service.erase(Level.MEMORY)
     store.failing = set()
 
@@ -100,3 +120,32 @@ def test_second_erase_removes_what_is_left(store) -> None:
 
 def test_report_complete_needs_compaction() -> None:
     assert not ErasureReport((Group.MEMORY,), (), compacted=False).complete
+
+
+def test_both_levels_include_diagnostics() -> None:
+    assert Group.DIAGNOSTICS in rules.groups(Level.MEMORY)
+    assert Group.DIAGNOSTICS in rules.groups(Level.EVERYTHING)
+
+
+def test_preview_counts_log_lines(store, log) -> None:
+    counts = ErasureService(store, log).preview(Level.MEMORY)
+
+    assert counts[-1] == GroupCount(Group.DIAGNOSTICS, 7)
+
+
+def test_erase_removes_log_and_not_through_the_store(store, log) -> None:
+    report = ErasureService(store, log).erase(Level.MEMORY)
+
+    assert log.lines == 0
+    assert Group.DIAGNOSTICS in report.erased
+    assert Group.DIAGNOSTICS not in store.erased
+
+
+def test_failed_log_erasure_is_reported(store, log) -> None:
+    log.failing = True
+
+    report = ErasureService(store, log).erase(Level.MEMORY)
+
+    assert report.failed == (Group.DIAGNOSTICS,)
+    assert Group.EVENTS in report.erased
+    assert not report.complete

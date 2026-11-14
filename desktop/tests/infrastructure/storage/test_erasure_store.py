@@ -101,7 +101,7 @@ def test_every_table_is_erased_or_reset() -> None:
 def test_counts(filled: Database) -> None:
     store = SqliteErasureStore(filled)
 
-    counts = {group: store.count(group) for group in Group}
+    counts = {group: store.count(group) for group in GROUP_TABLES}
 
     assert counts[Group.CONVERSATIONS] == 1
     assert counts[Group.MEMORY] == 1

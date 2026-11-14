@@ -30,10 +30,12 @@ from src.app.commands import (
     SendMessage,
     SetAwareness,
     Stop,
+    StopReply,
     SummaryMade,
     ToolRequested,
     TurnPrepared,
 )
+from src.app.core.chat import STOPPED
 from src.app.core_host import NOT_OPENED, STEP_FAILED, CoreHost
 from src.domain.awareness import rules as awareness_rules
 from src.domain.awareness.models import PresenceChange
@@ -492,6 +494,63 @@ def test_tripwire_reply_lost_shows_required_line(core: Core) -> None:
 
     (text,) = core.recorder.wait("replyFailed")
     assert text == f"The model could not start.\n\n{safety_rules.required_line()}"
+
+
+def test_model_crisis_reply_lost_shows_required_line(core: Core) -> None:
+    send_turn(core, found=praise(crisis=True))
+    core.bridge.send(ReplyLost(1, "The model could not start."))
+
+    (text,) = core.recorder.wait("replyFailed")
+    assert text == f"The model could not start.
+
+{safety_rules.required_line()}"
+
+
+def test_stop_abandons_turn(core: Core, path: Path) -> None:
+    send_turn(core)
+    core.bridge.send(StopReply())
+
+    assert core.recorder.wait("replyFailed") == (STOPPED,)
+    core.bridge.send(ReplyArrived(1, "Noted: “Has a cat”."))
+    barrier(core)
+    assert core.recorder.all("replyFinished") == []
+    assert rows(path, "SELECT count(*) FROM messages") == [(1,)]
+    assert rows(path, "SELECT count(*) FROM memory_items") == [(0,)]
+    # The next message starts a new turn.
+    core.bridge.send(SendMessage("Still there?"))
+    core.recorder.wait("askPrepare", 2)
+
+
+def test_stop_with_no_turn_does_nothing(core: Core) -> None:
+    choose_rin(core)
+    core.bridge.send(StopReply())
+    barrier(core)
+
+    assert core.recorder.all("replyFailed") == []
+
+
+def test_stop_on_tripwire_turn_keeps_safety_line(core: Core) -> None:
+    choose_rin(core)
+    core.bridge.send(SendMessage("I want to die"))
+    core.recorder.wait("askPrepare")
+    core.bridge.send(StopReply())
+
+    (text,) = core.recorder.wait("replyFailed")
+    assert text == f"{STOPPED}
+
+{safety_rules.required_line()}"
+
+
+def test_stop_after_prepare_keeps_user_message_event(core: Core, path: Path) -> None:
+    send_turn(core, found=praise())
+    core.bridge.send(StopReply())
+    core.recorder.wait("replyFailed")
+
+    # The message was said and read, so its event stays; nothing else is kept.
+    assert rows(path, "SELECT count(*) FROM events WHERE kind = 'user_message'") == [
+        (1,)
+    ]
+    assert rows(path, "SELECT count(*) FROM messages") == [(1,)]
 
 
 def test_expression_after_choosing(core: Core) -> None:

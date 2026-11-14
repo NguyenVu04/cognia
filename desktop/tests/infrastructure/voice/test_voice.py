@@ -11,7 +11,7 @@ from shiboken6 import VoidPtr
 from src.infrastructure.voice import microphone, mouth
 from src.infrastructure.voice.hotkey import WM_HOTKEY, TalkHotkey, _Filter, parse
 from src.infrastructure.voice.microphone import level, silence_ended, wav
-from src.infrastructure.voice.sentences import split_ready
+from src.infrastructure.voice.sentences import SentenceStream, split_ready
 from src.infrastructure.voice.speaker import Clip, Speaker, pcm16
 from src.infrastructure.voice.transcriber import (
     SpeechUnavailable,
@@ -83,6 +83,50 @@ def test_split_ready(buffer: str, ready: list[str], rest: str) -> None:
 
 
 # ── microphone ────────────────────────────────────────────────────────────
+
+
+def test_stream_gives_whole_sentences() -> None:
+    stream = SentenceStream()
+
+    assert stream.feed("Hi. How") == ["Hi."]
+    assert stream.feed(" are you?") == []
+    assert stream.finish("Hi. How are you?") == ["How are you?"]
+
+
+def test_finish_says_text_added_after_stream() -> None:
+    stream = SentenceStream()
+    stream.feed("I am here. ")
+
+    said = stream.finish("I am here.
+
+I am a fictional character. Talk to someone.")
+
+    assert said == ["I am a fictional character.", "Talk to someone."]
+
+
+def test_drop_forgets_unsaid_words() -> None:
+    stream = SentenceStream()
+    stream.feed("Half a sen")
+
+    stream.drop()
+
+    assert stream.feed("New. ") == ["New."]
+    assert stream.finish("New.") == []
+
+
+def test_finish_with_unrelated_final_says_only_the_rest() -> None:
+    stream = SentenceStream()
+    stream.feed("One. Two")
+
+    assert stream.finish("Something else entirely.") == ["Two"]
+
+
+def test_finish_starts_the_next_reply_clean() -> None:
+    stream = SentenceStream()
+    stream.feed("One. Two")
+    stream.finish("One. Two")
+
+    assert stream.feed("Three. ") == ["Three."]
 
 
 def test_wav_header() -> None:

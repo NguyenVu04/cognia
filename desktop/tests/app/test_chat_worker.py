@@ -210,6 +210,30 @@ def test_cancel_drops_the_reply(qtbot) -> None:
     assert finished == []
 
 
+def test_cancel_before_request_starts_no_stream(qtbot) -> None:
+    replier = FakeReplier()
+    chat = worker(qtbot, replier=replier)
+    finished, failed = collect(chat.finished), collect(chat.failed)
+    chunks = collect(chat.chunk)
+    chat.cancel()
+
+    chat.request(reply_request())
+
+    assert replier.turns == []
+    assert (finished, failed, chunks) == ([], [], [])
+
+
+def test_prepare_clears_cancel(qtbot) -> None:
+    chat = worker(qtbot)
+    finished = collect(chat.finished)
+    chat.cancel()
+
+    chat.prepare(request())
+    chat.request(reply_request())
+
+    assert [done.text for done in finished] == ["Hello"]
+
+
 def test_embed_emits_pairs(qtbot) -> None:
     chat = worker(qtbot)
     caught = collect(chat.embedded)
@@ -283,6 +307,35 @@ def test_sync_summary_ignores_send_flag(qtbot) -> None:
     chat.summarize(job(turn_id=3))
 
     assert caught == [SummaryDone(job(turn_id=3), "They met.")]
+
+
+def test_turn_summary_clears_stale_cancel(qtbot) -> None:
+    chat = worker(qtbot, replier=FakeReplier(pieces=("They met.",)))
+    caught = collect(chat.summarized)
+    chat.cancel()
+
+    chat.summarize(job(turn_id=3))
+
+    assert caught == [SummaryDone(job(turn_id=3), "They met.")]
+
+
+def test_cancel_stops_turn_summary(qtbot) -> None:
+    replier = FakeReplier(pieces=("They ", "met."))
+    chat = worker(qtbot, replier=replier)
+    caught = collect(chat.summarized)
+    original = replier.stream_text
+
+    def cancel_after_first(system_prompt, text):
+        for n, piece in enumerate(original(system_prompt, text)):
+            if n == 1:
+                chat.cancel()
+            yield piece
+
+    replier.stream_text = cancel_after_first
+    chat.summarize(job(turn_id=3))
+
+    assert caught == []
+    assert replier.closed
 
 
 def test_sync_summary_failure_emits_empty(qtbot) -> None:
